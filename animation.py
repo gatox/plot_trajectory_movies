@@ -106,7 +106,6 @@ class PlotDB:
                 line0 = self.ax0.axvline(x[0],linestyle='--', c = 'purple')
                 handles1.append(line0)
                 labels1.append(fr"Hop:($S_{int(curr[0])} \to S_{int(new[0])}$) at {int(x[0])} fs")
-        col = len(labels1)    
 
         # the second subplot
         self.ax1.set_ylabel("Angle (degrees)", fontweight = 'bold', fontsize = 18)
@@ -130,16 +129,11 @@ class PlotDB:
         plt.setp(self.ax0.get_xticklabels(), visible=False)
 
         # put legend on first subplot
+        handles = handles + handles2
+        labels = labels + labels2
+        col = len(labels)    
         self.ax0.legend(handles1,labels1,loc='upper center', bbox_to_anchor=(0.5, 1.2), prop={'size': 18}, ncol=col)
-        self.ax1.legend(handles2,labels2,loc='lower center', bbox_to_anchor=(0.5, -0.3), prop={'size': 18}, ncol=3)
-
-        # remove vertical gap between subplots
-        #plt.subplots_adjust(hspace=.0)
-        #plt.xlim([0, 200])
-        #plt.xlabel('Time (fs)', fontweight = 'bold', fontsize = 16)
-        #plt.savefig("Energy_angles_time.pdf", bbox_inches='tight')
-        #plt.savefig("Energy_angles_time.png", bbox_inches='tight')
-        #plt.close()
+        #self.ax1.legend(handles2,labels2,loc='lower center', bbox_to_anchor=(0.5, -0.3), prop={'size': 18}, ncol=3)
         return self.transition_point,
 
     def init_plot(self):
