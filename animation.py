@@ -129,10 +129,10 @@ class PlotDB:
         plt.setp(self.ax0.get_xticklabels(), visible=False)
 
         # put legend on first subplot
-        handles = handles + handles2
-        labels = labels + labels2
+        handles = handles1 + handles2
+        labels = labels1 + labels2
         col = len(labels)    
-        self.ax0.legend(handles1,labels1,loc='upper center', bbox_to_anchor=(0.5, 1.2), prop={'size': 18}, ncol=col)
+        self.ax0.legend(handles,labels,loc='upper center', bbox_to_anchor=(0.5, 1.2), prop={'size': 18}, ncol=col)
         #self.ax1.legend(handles2,labels2,loc='lower center', bbox_to_anchor=(0.5, -0.3), prop={'size': 18}, ncol=3)
         return self.transition_point,
 
