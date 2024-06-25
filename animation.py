@@ -23,7 +23,7 @@ class PlotDB:
         self.S1_energies =  (np.array(self.output["energy"])[:,1] - self.ene_min)*self.ev
 
         plt.rcParams['font.size'] = self.fs_rcParams
-        self.fig = plt.figure(figsize=(9, 12))
+        self.fig = plt.figure(figsize=(7, 10))
         gs = self.fig.add_gridspec(2, 1, hspace=0)
         self.ax0 = self.fig.add_subplot(gs[0])
         self.ax1 = self.fig.add_subplot(gs[1])
@@ -86,7 +86,7 @@ class PlotDB:
         atom_5=4
 
         # the first subplot
-        self.ax0.set_ylabel("Energy (eV)", fontweight = 'bold', fontsize = 18)
+        self.ax0.set_ylabel("Energy (eV)", fontweight = 'bold', fontsize = 16)
         self.ax0.set_xlim(self.times.min(), self.times.max())
         self.ax0.set_ylim(min(self.S0_energies) - 1, max(self.S1_energies) + 1)
         self.ax0.set_facecolor('white')
@@ -108,8 +108,8 @@ class PlotDB:
                 labels1.append(fr"Hop:($S_{int(curr[0])} \to S_{int(new[0])}$) at {int(x[0])} fs")
 
         # the second subplot
-        self.ax1.set_ylabel("Angle (degrees)", fontweight = 'bold', fontsize = 18)
-        self.ax1.set_xlabel("Time (fs)", fontweight = 'bold', fontsize = 18)
+        self.ax1.set_ylabel("Angle (degrees)", fontweight = 'bold', fontsize = 16)
+        self.ax1.set_xlabel("Time (fs)", fontweight = 'bold', fontsize = 16)
         self.ax1.set_xlim(self.times.min(), self.times.max())
         dihedral = self.dihedral(atom_3, atom_1, atom_2, atom_5)
         dihedral_nan = self.high_180(dihedral)
@@ -127,13 +127,12 @@ class PlotDB:
                 x = self.times[i]
                 line1 = self.ax1.axvline(x[0],linestyle='--', c = 'purple')
         plt.setp(self.ax0.get_xticklabels(), visible=False)
+        # Adjust layout to prevent overlap
+        plt.tight_layout()
+        plt.subplots_adjust(top=0.9)  # Adjust the top padding as needed
 
-        # put legend on first subplot
-        handles = handles1 + handles2
-        labels = labels1 + labels2
-        col = len(labels)    
-        self.ax0.legend(handles,labels,loc='upper center', bbox_to_anchor=(0.5, 1.2), prop={'size': 18}, ncol=col)
-        #self.ax1.legend(handles2,labels2,loc='lower center', bbox_to_anchor=(0.5, -0.3), prop={'size': 18}, ncol=3)
+        self.ax0.legend(handles1,labels1,loc='upper center', bbox_to_anchor=(0.5, 1.15), prop={'size': 16}, ncol=len(labels1))
+        self.ax1.legend(handles2,labels2,loc='upper center', bbox_to_anchor=(0.5, 2.27), prop={'size': 16}, ncol=len(labels2))
         return self.transition_point,
 
     def init_plot(self):
