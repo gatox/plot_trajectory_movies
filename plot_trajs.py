@@ -234,7 +234,7 @@ def _plots(filename, xstart, xstop, outfile):
     plt.legend(traj_leb,labels,loc='upper center', bbox_to_anchor=(0.5, 1.15), prop={'size': 12}, ncol=4)
     plt.xlabel('Time (fs)', fontweight = 'bold', fontsize = fs_xlabel)
 
-def _plot_energy(filename, xstart, xstop, t_f, outfile, ax):
+def _plot_energy(filename, xstart, xstop, outfile, ax):
     #traj_leb = _plot_traj(filename.replace('.dat',''))
     name = filename.replace('.dat','')
     prop = read_prop()
@@ -261,8 +261,7 @@ def _plot_energy(filename, xstart, xstop, t_f, outfile, ax):
                 color = '#1f77b4' #blue
                 plt.plot([t_i,t_f], [p_i,p_f],color=color, linewidth=0.6, alpha=0.8)
     
-    #plt.xlim([t_0, t_max])
-    plt.xlim([t_0, t_f])
+    plt.xlim([t_0, t_max])
     plt.ylim([xstart, xstop])
     ax.spines['right'].set_visible(True)
     ax.grid(alpha=0.5, linestyle='dashed', linewidth=0.5)
@@ -277,7 +276,7 @@ def _plot_energy(filename, xstart, xstop, t_f, outfile, ax):
     plt.savefig(outfile.replace(".pdf",".png"), bbox_inches='tight')
     plt.close()
 
-def _no_density_plots(filename, xstart, xstop, t_f, outfile):
+def _no_density_plots(filename, xstart, xstop, outfile):
     plt.rcParams['font.size'] = fs_rcParams
     fig, ax = plt.subplots()
     if filename == "dis_r12.dat":
@@ -321,7 +320,7 @@ def _no_density_plots(filename, xstart, xstop, t_f, outfile):
         plt.savefig(outfile, bbox_inches='tight')
         plt.close()
     elif filename == "etot.dat":
-        _plot_energy(filename, xstart, xstop, t_f, outfile, ax)
+        _plot_energy(filename, xstart, xstop, outfile, ax)
     elif filename == "pyr_3210.dat":
         _plots(filename, xstart, xstop, outfile)
         plt.ylabel('$\mathbf{Pyramidalization (degrees)}$', fontsize = fs_ylabel) 
