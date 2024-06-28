@@ -135,7 +135,6 @@ def _plot_traj(name):
             t_f = time[j]
             p_i = para[j-1,i]
             p_f = _high_180(para[j-1,i],para[j,i])
-            print(t_i,t_f,p_i,p_f)
             if hop[j-1,i]==1:
                 color = '#ff7f0e' #orange
                 s_1, = plt.plot([t_i,t_f], [p_i,p_f],color=color, linewidth=0.6, alpha=0.8)
@@ -247,7 +246,6 @@ def _plot_energy(filename, xstart, xstop, outfile, ax):
     time = time.to_numpy()
     hop = pop.to_numpy()[:,1:] # removing time column
     para = no_time(name+".dat") 
-    print(len(para),len(hop), trajs, mdsteps)
     for i in range(trajs):          #trajectories
         for j in range(1,mdsteps):   #time_steps 
             t_i = time[j-1]
@@ -349,8 +347,9 @@ if __name__ == '__main__':
     ##label = sys.argv[1] 
     #results = ["etot", "dis_r12", "dis_r25", "dis_r14", "dis_r13", "angle_014", "pyr_3210"]
     #results = ["dihe_3014", "dihe_2014", "etot", "dis_r12", "dis_r25", "dis_r14", "dis_r13", "angle_014", "pyr_3210"]
-    results = ["etot"]
-    traj_plots(results, "etot")
+    #results = ["etot"]
+    results = ["dihe_3014", "dihe_2014"]
+    traj_plots(results, "traj")
     #traj_plots(results, label)
     #_no_density_three_plots("pyr_3210","angle_014","dihe_2014")
     #_no_density_three_plots_dist("dis_r12","dis_r25","dis_r13")
