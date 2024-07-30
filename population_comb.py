@@ -122,7 +122,7 @@ class PlotComb:
         plt.yticks(fontsize=15)
         plt.ylim([-0.05, 1.05])
         plt.xlabel('Time (fs)', fontweight = 'bold', fontsize = 16)
-        plt.ylabel('$\mathbf{S_1\ Population}$', fontsize = 16)
+        plt.ylabel('$\mathbf{S_2\ Population}$', fontsize = 16)
         plt.legend(loc='upper right',fontsize=13, frameon=False)
         ax.spines['right'].set_visible(True)
         ax1 = ax.twinx()
