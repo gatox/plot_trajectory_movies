@@ -24,27 +24,25 @@ class PlotComb:
         self.aa = 0.5291772105638411 
         self.fs_rcParams = '20'
         self.t_0 = 0
-        self.t_max = 200 #fs
+        self.t_max = 400 #fs
         self.fs_ylabel = 18
         self.fs_xlabel = 18
         self.fs_yticks = 18
         self.fs_xticks = 18
-        self.legend = "yes"
-        self.label = "fssh"
 
-    def read_prop(self):
-        sampling = open("../test_fssh/sampling.inp", 'r+')    
+    def read_prop(self, fssh):
+        sampling = open(os.path.join(fssh,"sampling.inp"), 'r+')    
         for line in sampling:
             if "n_conditions" in line:
                 trajs = int(line.split()[2])
         #LVC
-        spp = open("../test_fssh/spp.inp", 'r+')
+        spp = open(os.path.join(fssh,"spp.inp"), 'r+')
         self.model = None
         for line in spp:
             if "model =" in line:
                 self.model = str(line.split()[2])
         #LVC
-        prop = open("../test_fssh/prop.inp", 'r+')    
+        prop = open(os.path.join(fssh,"prop.inp"), 'r+')    
         tully = None
         for line in prop:
             if "dt" in line:
@@ -77,8 +75,8 @@ class PlotComb:
                     properties = namedtuple("properties", "dt mdsteps nstates states trajs")
                     return properties(timestep/self.fs, int(time_final/timestep), nstates, [i for i in range(nstates)], trajs)
 
-    def get_popu_adi(self, filename):
-        prop = self.read_prop()
+    def get_popu_adi(self, fssh, filename):
+        prop = self.read_prop(fssh)
         states = prop.states
         trajs = prop.trajs
         nstates = prop.nstates
@@ -106,34 +104,54 @@ class PlotComb:
                     ave_popu.append(ref/int(trajs-nans))
         return ave_time, ave_popu
     
-    def plot_population_adi_S1(self):
-        prop = self.read_prop()
-        time, population_0 = self.get_popu_adi("../test_fssh/pop.dat")
-        time, population_1 = self.get_popu_adi("../test_lz/pop.dat")
-        time, population_2 = self.get_popu_adi("../test_lz_nac/pop.dat")
-        time, population_3 = self.get_popu_adi("../vdf_lz_momentum/pop.dat")
+    def plot_population_adi(self,index,fs,lz_p,lz_nacs):
+    #def plot_population_adi(self,index,fs,lz_p,lz_nacs,lz_p_rk):
+        prop = self.read_prop(fs)
+        time_0, population_0 = self.get_popu_adi(fs,os.path.join(fs,"pop.dat"))
+        time_1, population_1 = self.get_popu_adi(fs,os.path.join(lz_p,"pop.dat"))
+        time_2, population_2 = self.get_popu_adi(fs,os.path.join(lz_nacs,"pop.dat"))
+        #time_3, population_3 = self.get_popu_adi(fs,os.path.join(lz_p_rk,"pop.dat"))
         fig, ax = plt.subplots()
-        plt.plot(time,np.array(population_0)[:,1], label = 'FSSH')
-        plt.plot(time,np.array(population_1)[:,1], label = 'LZSH_P')
-        plt.plot(time,np.array(population_2)[:,1], label = 'LZSH_NACs')
-        plt.plot(time,np.array(population_3)[:,1], label = 'LZSH_P_REDKIN')
+        plt.plot(time_0,np.array(population_0)[:,index], label = 'FSSH')
+        plt.plot(time_1,np.array(population_1)[:,index], label = 'LZSH_P')
+        plt.plot(time_2,np.array(population_2)[:,index], label = 'LZSH_NACs')
+        #plt.plot(time_3,np.array(population_3)[:,index], label = 'LZSH_P_REDKIN')
         plt.xlim([self.t_0, self.t_max])
         plt.xticks(fontsize=15)
         plt.yticks(fontsize=15)
-        plt.ylim([-0.05, 1.05])
         plt.xlabel('Time (fs)', fontweight = 'bold', fontsize = 16)
-        plt.ylabel('$\mathbf{S_2\ Population}$', fontsize = 16)
-        plt.legend(loc='upper right',fontsize=13, frameon=False)
+        plt.ylabel('$\mathbf{S_%i\ Population}$' %index, fontsize = 16)
         ax.spines['right'].set_visible(True)
-        ax1 = ax.twinx()
-        ax1.set_ylim([-0.05, 1.05])
+        if index == 0:
+            plt.ylim([-0.05, 1.05])
+            plt.legend(loc='lower right',fontsize=13, frameon=False)
+            ax1 = ax.twinx()
+            ax1.set_ylim([-0.05, 1.05])
+        elif index ==1:
+            plt.ylim([-0.05, 1.05])
+            plt.legend(loc='upper right',fontsize=13, frameon=False)
+            ax1 = ax.twinx()
+            ax1.set_ylim([-0.05, 1.05])
+        elif index ==2:
+            plt.ylim([-0.005, 0.12])
+            plt.legend(loc='upper right',fontsize=13, frameon=False)
+            ax1 = ax.twinx()
+            ax1.set_ylim([-0.005, 0.12])
         ax1.tick_params(labelsize=15)
         ax1.set_ylabel(" ")
-        plt.savefig("population_adi_comb.pdf", bbox_inches='tight')
-        plt.savefig("population_adi_comb.png", bbox_inches='tight')
+        plt.savefig("population_adi_comb_S%i.pdf" %index, bbox_inches='tight')
+        plt.savefig("population_adi_comb_S%i.png" %index, bbox_inches='tight')
         plt.close()
 
 if __name__=="__main__":
+    #state
+    index = 0
+    #paths
+    fs = "fssh"
+    lz_p = "lz_p"
+    lz_nacs = "lz_nac"
+    #lz_p_rk = "lz_p_rk"
     out = PlotComb()
-    out.plot_population_adi_S1()
+    #out.plot_population_adi(index,fs,lz_p,lz_nacs,lz_p_rk)
+    out.plot_population_adi(index,fs,lz_p,lz_nacs)
 
