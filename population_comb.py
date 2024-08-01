@@ -18,17 +18,11 @@ from pysurf.database import PySurfDB
 
 class PlotComb:
 
-    def __init__(self):
+    def __init__(self, t_0, t_max):
         self.ev = 27.211324570273 
         self.fs = 0.02418884254
         self.aa = 0.5291772105638411 
         self.fs_rcParams = '20'
-        self.t_0 = 0
-        self.t_max = 400 #fs
-        self.fs_ylabel = 18
-        self.fs_xlabel = 18
-        self.fs_yticks = 18
-        self.fs_xticks = 18
 
     def read_prop(self, fssh):
         sampling = open(os.path.join(fssh,"sampling.inp"), 'r+')    
@@ -151,7 +145,10 @@ if __name__=="__main__":
     lz_p = "lz_p"
     lz_nacs = "lz_nac"
     #lz_p_rk = "lz_p_rk"
-    out = PlotComb()
+    #time in fs
+    t_0 = 0
+    t_max = 400
+    out = PlotComb(t_0, t_max)
     #out.plot_population_adi(index,fs,lz_p,lz_nacs,lz_p_rk)
     out.plot_population_adi(index,fs,lz_p,lz_nacs)
 
