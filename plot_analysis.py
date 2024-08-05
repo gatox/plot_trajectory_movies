@@ -98,6 +98,13 @@ class Population:
         traj_allowed = self.skip_traj()
         if  self.skip == "yes":
             trajs = len(traj_allowed)
+        #LVC
+        spp = open("spp.inp", 'r+')
+        self.model = None
+        for line in spp:
+            if "model =" in line:
+                self.model = str(line.split()[2])
+        #LVC
         prop = open("prop.inp", 'r+')    
         tully = None
         for line in prop:
@@ -108,6 +115,8 @@ class Population:
                 mdsteps = int(line.split()[2])
             elif "nstates" in line:
                 nstates = int(line.split()[2])
+            elif "prob =" in line:
+                prob = str(line.split()[2])
             #LZ
             elif "time_final" in line:
                 time_final = int(line.split()[3])
@@ -122,8 +131,8 @@ class Population:
                 method = str(line.split()[2])
                 if method == "Surface_Hopping":
                     self.results = "results.db"
-                    properties = namedtuple("properties", "dt mdsteps nstates states trajs")
-                    return properties(dt, mdsteps, nstates, states, trajs)
+                    properties = namedtuple("properties", "dt mdsteps nstates states trajs prob")
+                    return properties(dt, mdsteps, nstates, states, trajs, prob)
                 elif method == "LandauZener":
                     self.results = "prop.db"
                     properties = namedtuple("properties", "dt mdsteps nstates states trajs")
@@ -134,25 +143,27 @@ class Population:
         crd = []
         rootdir = 'prop'
         prop = self.read_prop()
+        prob = prop.prob
         mdsteps = prop.mdsteps
         trajs = prop.trajs
-        matrix_0  = np.empty([trajs,mdsteps + 1])*np.nan
-        matrix_1  = np.empty([trajs,mdsteps + 1])*np.nan
         matrix_2  = np.empty([trajs,mdsteps + 1])*np.nan
-        matrix_3  = np.empty([trajs,mdsteps + 1])*np.nan
-        matrix_4  = np.empty([trajs,mdsteps + 1])*np.nan
-        matrix_5  = np.empty([trajs,mdsteps + 1])*np.nan
-        matrix_6  = np.empty([trajs,mdsteps + 1])*np.nan
-        matrix_7  = np.empty([trajs,mdsteps + 1])*np.nan
-        matrix_8  = np.empty([trajs,mdsteps + 1])*np.nan
-        matrix_9  = np.empty([trajs,mdsteps + 1])*np.nan
-        matrix_10 = np.empty([trajs,mdsteps + 1])*np.nan
-        matrix_11 = np.empty([trajs,mdsteps + 1])*np.nan
-        matrix_12 = np.empty([trajs,mdsteps + 1])*np.nan
-        matrix_13 = np.empty([trajs,mdsteps + 1])*np.nan
-        matrix_14 = np.empty([trajs,mdsteps + 1])*np.nan
-        matrix_pyr = np.empty([trajs,mdsteps + 1])*np.nan
-        matrix_dihe = np.empty([trajs,mdsteps + 1])*np.nan
+        if prob != "lz" and self.model is None:
+            matrix_0  = np.empty([trajs,mdsteps + 1])*np.nan
+            matrix_1  = np.empty([trajs,mdsteps + 1])*np.nan
+            matrix_3  = np.empty([trajs,mdsteps + 1])*np.nan
+            matrix_4  = np.empty([trajs,mdsteps + 1])*np.nan
+            matrix_5  = np.empty([trajs,mdsteps + 1])*np.nan
+            matrix_6  = np.empty([trajs,mdsteps + 1])*np.nan
+            matrix_7  = np.empty([trajs,mdsteps + 1])*np.nan
+            matrix_8  = np.empty([trajs,mdsteps + 1])*np.nan
+            matrix_9  = np.empty([trajs,mdsteps + 1])*np.nan
+            matrix_10 = np.empty([trajs,mdsteps + 1])*np.nan
+            matrix_11 = np.empty([trajs,mdsteps + 1])*np.nan
+            matrix_12 = np.empty([trajs,mdsteps + 1])*np.nan
+            matrix_13 = np.empty([trajs,mdsteps + 1])*np.nan
+            matrix_14 = np.empty([trajs,mdsteps + 1])*np.nan
+            matrix_pyr = np.empty([trajs,mdsteps + 1])*np.nan
+            matrix_dihe = np.empty([trajs,mdsteps + 1])*np.nan
         traj = 0
         allowed = self.skip_traj()
         for rootdir, dirs, files in os.walk(rootdir):
@@ -163,45 +174,46 @@ class Population:
                 print("Reading database from:",path)
                 db = PySurfDB.load_database(os.path.join(path,self.results), read_only=True)
                 row = len(np.array(db["currstate"]))
-                #row = len(np.array(db["fosc"]))
                 for t in range(row):
                     pop = np.array(db["currstate"][t])
-                    var = np.array(db["fosc"][t], dtype=float)
-                    matrix_0[traj][t] = var[0]
-                    matrix_1[traj][t] = var[1]
+                    matrix_2[traj][t] = pop[0]
                     etot = np.array(db["etot"][t])
                     ene = np.array(db["energy"][t])
                     if t==0:
                         self.ini_etot = etot[0] 
-                    matrix_2[traj][t] = pop[0]
-                    matrix_3[traj][t] = self.dihedral(np.array(db["crd"][t], dtype=float),3,0,1,4) #H4-C1-N2-H5
-                    self.ini_dihe_2014 = self.dihedral(np.array(db["crd"][t-1], dtype=float),2,0,1,4)
-                    self.fin_dihe_2014 = self.dihedral(np.array(db["crd"][t], dtype=float),2,0,1,4)
-                    if 40 < self.ini_dihe_2014 < 60 and 40 < self.fin_dihe_2014 < 60 and self.fin_dihe_2014 > self.ini_dihe_2014:
-                        if t<=80:
-                            traj_neg = 0
-                        else:   
-                            traj_neg = 1
-                    else:
-                        traj_neg = 2
-                    matrix_4[traj][t] = self.dihedral(np.array(db["crd"][t], dtype=float),2,0,1,4) #H3-C1-N2-H5
-                    matrix_5[traj][t] = (etot[0]-self.ini_etot)*self.ev
-                    matrix_6[traj][t] = self.dis_dimer(np.array(db["crd"][t], dtype=float),0,1) #C1-N2  
-                    matrix_7[traj][t] = self.dis_dimer(np.array(db["crd"][t], dtype=float),1,4) #N2-H5  
-                    matrix_8[traj][t] = self.dis_dimer(np.array(db["crd"][t], dtype=float),0,3) #C1-H4  
-                    matrix_9[traj][t] = self.dis_dimer(np.array(db["crd"][t], dtype=float),0,2) #C1-H3  
-                    matrix_10[traj][t] = self.angle(np.array(db["crd"][t], dtype=float),0,1,4) #C1-N2-H5  
-                    matrix_11[traj][t] = self.pyramidalization_angle(np.array(db["crd"][t], dtype=float),3,2,1,0) #H4-H3-N2-C1  
-                    matrix_12[traj][t] = (ene[1]-ene[0])*self.ev #Energy gap between S_1 and S_0 
-                    matrix_13[traj][t] = ene[0]
-                    matrix_14[traj][t] = (ene[1]+ene[0])/2 #Average between (S_1 and S_0)
-                    matrix_dihe[traj][t] = self.dihedral(np.array(db["crd"][t], dtype=float),2,0,1,4) #H3-C1-N2-H5
-                    matrix_pyr[traj][t] = self.pyramidalization_angle(np.array(db["crd"][t], dtype=float),3,2,1,0) #H4-H3-N2-C1 
-                matrix_14[traj][:]=(matrix_14[traj][:]-matrix_13[traj][:].min())*self.ev # - E_S_0_min
-                if traj_neg == 1:
-                    matrix_dihe[traj][:] = -matrix_dihe[traj][:]
-                    matrix_pyr[traj][:] = -matrix_pyr[traj][:]
-                    print("traj:",traj)
+                    if prob != "lz" and self.model is None: 
+                        var = np.array(db["fosc"][t], dtype=float)
+                        matrix_0[traj][t] = var[0]
+                        matrix_1[traj][t] = var[1]
+                        matrix_3[traj][t] = self.dihedral(np.array(db["crd"][t], dtype=float),3,0,1,4) #H4-C1-N2-H5
+                        self.ini_dihe_2014 = self.dihedral(np.array(db["crd"][t-1], dtype=float),2,0,1,4)
+                        self.fin_dihe_2014 = self.dihedral(np.array(db["crd"][t], dtype=float),2,0,1,4)
+                        if 40 < self.ini_dihe_2014 < 60 and 40 < self.fin_dihe_2014 < 60 and self.fin_dihe_2014 > self.ini_dihe_2014:
+                            if t<=80:
+                                traj_neg = 0
+                            else:   
+                                traj_neg = 1
+                        else:
+                            traj_neg = 2
+                        matrix_4[traj][t] = self.dihedral(np.array(db["crd"][t], dtype=float),2,0,1,4) #H3-C1-N2-H5
+                        matrix_5[traj][t] = (etot[0]-self.ini_etot)*self.ev
+                        matrix_6[traj][t] = self.dis_dimer(np.array(db["crd"][t], dtype=float),0,1) #C1-N2  
+                        matrix_7[traj][t] = self.dis_dimer(np.array(db["crd"][t], dtype=float),1,4) #N2-H5  
+                        matrix_8[traj][t] = self.dis_dimer(np.array(db["crd"][t], dtype=float),0,3) #C1-H4  
+                        matrix_9[traj][t] = self.dis_dimer(np.array(db["crd"][t], dtype=float),0,2) #C1-H3  
+                        matrix_10[traj][t] = self.angle(np.array(db["crd"][t], dtype=float),0,1,4) #C1-N2-H5  
+                        matrix_11[traj][t] = self.pyramidalization_angle(np.array(db["crd"][t], dtype=float),3,2,1,0) #H4-H3-N2-C1  
+                        matrix_12[traj][t] = (ene[1]-ene[0])*self.ev #Energy gap between S_1 and S_0 
+                        matrix_13[traj][t] = ene[0]
+                        matrix_14[traj][t] = (ene[1]+ene[0])/2 #Average between (S_1 and S_0)
+                        matrix_dihe[traj][t] = self.dihedral(np.array(db["crd"][t], dtype=float),2,0,1,4) #H3-C1-N2-H5
+                        matrix_pyr[traj][t] = self.pyramidalization_angle(np.array(db["crd"][t], dtype=float),3,2,1,0) #H4-H3-N2-C1 
+                if prob != "lz" and self.model is None:
+                    matrix_14[traj][:]=(matrix_14[traj][:]-matrix_13[traj][:].min())*self.ev # - E_S_0_min
+                    if traj_neg == 1:
+                        matrix_dihe[traj][:] = -matrix_dihe[traj][:]
+                        matrix_pyr[traj][:] = -matrix_pyr[traj][:]
+                        print("traj:",traj)
                 traj +=1
         #        #acstate.append(np.array(db["currstate"]))
         #        acstate.append(np.array(db["fosc"]))
@@ -213,8 +225,12 @@ class Population:
         #return var(matrix_0,matrix_1)
         #var = namedtuple("var", "dihe_polar pyr_polar") 
         #return var(matrix_dihe,matrix_pyr)
-        var = namedtuple("var", "p_c0 p_c1 pop dihe_3014 dihe_2014 etot dis_r12 dis_r25 dis_r14 dis_r13 angle_014 pyr_3210 e_gap ave") 
-        return var(matrix_0, matrix_1, matrix_2, matrix_3, matrix_4, matrix_5, matrix_6, matrix_7, matrix_8, matrix_9, matrix_10, matrix_11, matrix_12, matrix_14)
+        if prob != "lz" and self.model is None:
+            var = namedtuple("var", "p_c0 p_c1 pop dihe_3014 dihe_2014 etot dis_r12 dis_r25 dis_r14 dis_r13 angle_014 pyr_3210 e_gap ave") 
+            return var(matrix_0, matrix_1, matrix_2, matrix_3, matrix_4, matrix_5, matrix_6, matrix_7, matrix_8, matrix_9, matrix_10, matrix_11, matrix_12, matrix_14)
+        else:
+            var = namedtuple("var", "pop")
+            return var(matrix_2)
 
     def plot_population_compare(self, time, popu):
         prop = self.read_prop()
@@ -535,10 +551,10 @@ class Population:
         fig, ax = plt.subplots()
         print(len(time),len(np.array(population)[:,0]))
         print(len(time),len(np.array(population)[:,1]))
-        plt.plot(time[:-1],np.array(population)[:,0], color='#1f77b4', label = '$S_0$ CP')
-        plt.plot(time[:-1],np.array(population)[:,1], color='#ff7f0e', label = '$S_1$ CP')
-        plt.plot(time[:-1],population_c[0], color='#1f77b4', linestyle='--', label = '$S_0$ QP')
-        plt.plot(time[:-1],population_c[1], color='#ff7f0e', linestyle='--', label = '$S_1$ QP')
+        plt.plot(time,np.array(population)[:,0], color='#1f77b4', label = '$S_0$ CP')
+        plt.plot(time,np.array(population)[:,1], color='#ff7f0e', label = '$S_1$ CP')
+        plt.plot(time,population_c[0], color='#1f77b4', linestyle='--', label = '$S_0$ QP')
+        plt.plot(time,population_c[1], color='#ff7f0e', linestyle='--', label = '$S_1$ QP')
         plt.xlim([self.t_0, self.t_max])
         plt.xticks(fontsize=15)
         plt.yticks(fontsize=15)
@@ -1624,8 +1640,8 @@ if __name__=="__main__":
     skip = sys.argv[1]
     popu = Population(skip)
     popu.write_csvs()
-    ##popu.plot_population_pop_c()
-    ##popu.plot_population_adi()
+    #popu.plot_population_pop_c()
+    popu.plot_population_adi()
     #popu.plot_dihedral_hops_time()
     #popu.plot_ene_angle_hops()
     #popu.plot_ene_dihedral_hops()
@@ -1635,8 +1651,8 @@ if __name__=="__main__":
     #popu.plot_histogram_hops(8)
     #popu.plot_dihedral_angle_map_hops()
     #popu.plot_energies_diff_time()
-    ##popu.plot_population_adi_fitted()
-    popu.get_qy_popu()
+    #popu.plot_population_adi_fitted()
+    #popu.get_qy_popu()
     #popu.plot_angle_dihedral_hops()
     #print(popu.get_all_var())
 

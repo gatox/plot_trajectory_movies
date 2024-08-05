@@ -23,6 +23,8 @@ class PlotComb:
         self.fs = 0.02418884254
         self.aa = 0.5291772105638411 
         self.fs_rcParams = '20'
+        self.t_0 = t_0
+        self.t_max = t_max
 
     def read_prop(self, fssh):
         sampling = open(os.path.join(fssh,"sampling.inp"), 'r+')    
