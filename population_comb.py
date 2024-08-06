@@ -1,18 +1,11 @@
 import os
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-from matplotlib import cm
 import numpy as np
 import sys
 import csv
 
-from time import sleep
-from tqdm.auto import tqdm
-from pandas import (read_csv, DataFrame)
-from scipy.optimize import curve_fit
-from scipy.stats.distributions import t
-
-from Bio.PDB.vectors import (Vector, calc_dihedral, calc_angle)
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import cm
 from collections import (namedtuple, Counter)
 from pysurf.database import PySurfDB
 
