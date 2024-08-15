@@ -93,18 +93,17 @@ class PlotComb:
                     ave_popu.append(ref/int(trajs-nans))
         return ave_time, ave_popu
     
-    def plot_population_adi(self,index,fs,lz_p,lz_nacs):
-    #def plot_population_adi(self,index,fs,lz_p,lz_nacs,lz_p_rk):
+    def plot_population_adi(self,index,fs,lz_p,lz_nacs,lz_p_rk):
         prop = self.read_prop(fs)
         time_0, population_0 = self.get_popu_adi(fs,os.path.join(fs,"pop.dat"))
         time_1, population_1 = self.get_popu_adi(fs,os.path.join(lz_p,"pop.dat"))
         time_2, population_2 = self.get_popu_adi(fs,os.path.join(lz_nacs,"pop.dat"))
-        #time_3, population_3 = self.get_popu_adi(fs,os.path.join(lz_p_rk,"pop.dat"))
+        time_3, population_3 = self.get_popu_adi(fs,os.path.join(lz_p_rk,"pop.dat"))
         fig, ax = plt.subplots()
         plt.plot(time_0,np.array(population_0)[:,index], label = 'FSSH')
         plt.plot(time_1,np.array(population_1)[:,index], label = 'LZSH_P')
         plt.plot(time_2,np.array(population_2)[:,index], label = 'LZSH_NACs')
-        #plt.plot(time_3,np.array(population_3)[:,index], label = 'LZSH_P_REDKIN')
+        plt.plot(time_3,np.array(population_3)[:,index], label = 'LZSH_P_REDKIN')
         plt.xlim([self.t_0, self.t_max])
         plt.xticks(fontsize=15)
         plt.yticks(fontsize=15)
@@ -134,16 +133,17 @@ class PlotComb:
 
 if __name__=="__main__":
     #state
-    index = 0
+    #index = 0
     #paths
     fs = "fssh"
     lz_p = "lz_p"
     lz_nacs = "lz_nac"
-    #lz_p_rk = "lz_p_rk"
+    lz_p_rk = "lz_p_rk"
     #time in fs
     t_0 = 0
     t_max = 400
     out = PlotComb(t_0, t_max)
-    #out.plot_population_adi(index,fs,lz_p,lz_nacs,lz_p_rk)
-    out.plot_population_adi(index,fs,lz_p,lz_nacs)
+    for i in range(3):
+        out.plot_population_adi(i,fs,lz_p,lz_nacs,lz_p_rk)
+    
 
