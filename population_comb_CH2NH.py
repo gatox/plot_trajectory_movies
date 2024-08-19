@@ -94,6 +94,92 @@ class PlotComb:
                     ave_popu.append(ref/int(trajs-nans))
         return ave_time, ave_popu
 
+    def plot_1d_histogram_2_plots_samen_energy(self, xms_caspt2,sa_casscf,sa_oo_vqe,n_bins=8):
+        hop_0_10, hop_0_01 = self.get_histogram_hops(xms_caspt2,os.path.join(xms_caspt2,"pop.dat"))
+        hop_1_10, hop_1_01 = self.get_histogram_hops(sa_casscf,os.path.join(sa_casscf,"pop.dat"))
+        hop_2_10,hop_2_01 = self.get_histogram_hops(sa_oo_vqe,os.path.join(sa_oo_vqe,"pop.dat"))
+        bins = [x for x in range(self.t_0, self.t_max+1,int(self.t_max/n_bins))]
+        hops_l = [r"$S_1$ $\rightarrow$ $S_0$",r"$S_0$ $\rightarrow$ $S_1$"]
+        plt.rcParams['font.size'] = self.fs_rcParams
+        fig = plt.figure(figsize=(8,8))
+        # set height ratios for subplots
+        gs = gridspec.GridSpec(2, 1, height_ratios=[1, 1])
+        # the first subplot
+        hop_10 = [hop_0_10,hop_1_10,hop_2_10]
+        ax0 = plt.subplot(gs[0])
+        ax0.hist(hop_10, bins = bins, color=self.colors, label=self.labels)
+            
+        # the second subplot
+        # shared axis X
+        hop_01 = [hop_0_01,hop_1_01,hop_2_01]
+        ax1 = plt.subplot(gs[1], sharex = ax0)
+        ax1.hist(hop_01, bins = bins, color=self.colors, label=self.labels)
+
+        # Set a single y-axis label for both histograms
+        fig.supylabel('Number of Hops', fontweight='bold', fontsize=16)
+        
+        # Set labels and legends
+        ax0.text(0.95, 0.9, f'(a) {hops_l[0]}', transform=ax0.transAxes,
+             fontsize=16, fontweight='bold', va='top', ha='right')
+        ax1.text(0.95, 0.9, f'(b) {hops_l[1]}', transform=ax1.transAxes,
+             fontsize=16, fontweight='bold', va='top', ha='right')
+
+        plt.setp(ax0.get_xticklabels(), visible=False)
+
+        # put legend on first subplot
+        ax0.legend(loc='upper center', bbox_to_anchor=(0.5, 1.2), prop={'size': 14}, ncol=3)
+
+        # remove vertical gap between subplots
+        plt.subplots_adjust(hspace=.0)
+        plt.xlim([0, 200])
+        plt.xlabel('Time (fs)', fontweight = 'bold', fontsize = 16)
+        plt.savefig("number_of_hops_2_samen_time.pdf", bbox_inches='tight')
+        plt.savefig("number_of_hops_2_samen_time.png", bbox_inches='tight')
+        plt.close()
+
+    def plot_1d_histogram_2_plots_samen(self, xms_caspt2,sa_casscf,sa_oo_vqe,n_bins=8):
+        hop_0_10, hop_0_01 = self.get_histogram_hops(xms_caspt2,os.path.join(xms_caspt2,"pop.dat"))
+        hop_1_10, hop_1_01 = self.get_histogram_hops(sa_casscf,os.path.join(sa_casscf,"pop.dat"))
+        hop_2_10,hop_2_01 = self.get_histogram_hops(sa_oo_vqe,os.path.join(sa_oo_vqe,"pop.dat"))
+        bins = [x for x in range(self.t_0, self.t_max+1,int(self.t_max/n_bins))]
+        hops_l = [r"$S_1$ $\rightarrow$ $S_0$",r"$S_0$ $\rightarrow$ $S_1$"]
+        plt.rcParams['font.size'] = self.fs_rcParams
+        fig = plt.figure(figsize=(8,8))
+        # set height ratios for subplots
+        gs = gridspec.GridSpec(2, 1, height_ratios=[1, 1])
+        # the first subplot
+        hop_10 = [hop_0_10,hop_1_10,hop_2_10]
+        ax0 = plt.subplot(gs[0])
+        ax0.hist(hop_10, bins = bins, color=self.colors, label=self.labels)
+            
+        # the second subplot
+        # shared axis X
+        hop_01 = [hop_0_01,hop_1_01,hop_2_01]
+        ax1 = plt.subplot(gs[1], sharex = ax0)
+        ax1.hist(hop_01, bins = bins, color=self.colors, label=self.labels)
+
+        # Set a single y-axis label for both histograms
+        fig.supylabel('Number of Hops', fontweight='bold', fontsize=16)
+        
+        # Set labels and legends
+        ax0.text(0.95, 0.9, f'(a) {hops_l[0]}', transform=ax0.transAxes,
+             fontsize=16, fontweight='bold', va='top', ha='right')
+        ax1.text(0.95, 0.9, f'(b) {hops_l[1]}', transform=ax1.transAxes,
+             fontsize=16, fontweight='bold', va='top', ha='right')
+
+        plt.setp(ax0.get_xticklabels(), visible=False)
+
+        # put legend on first subplot
+        ax0.legend(loc='upper center', bbox_to_anchor=(0.5, 1.2), prop={'size': 14}, ncol=3)
+
+        # remove vertical gap between subplots
+        plt.subplots_adjust(hspace=.0)
+        plt.xlim([0, 200])
+        plt.xlabel('Time (fs)', fontweight = 'bold', fontsize = 16)
+        plt.savefig("number_of_hops_2_samen_time.pdf", bbox_inches='tight')
+        plt.savefig("number_of_hops_2_samen_time.png", bbox_inches='tight')
+        plt.close()
+
     def plot_1d_histogram_2_plots(self, xms_caspt2,sa_casscf,sa_oo_vqe,n_bins=8):
         hop_0_10, hop_0_01 = self.get_histogram_hops(xms_caspt2,os.path.join(xms_caspt2,"pop.dat"))
         hop_1_10, hop_1_01 = self.get_histogram_hops(sa_casscf,os.path.join(sa_casscf,"pop.dat"))
@@ -220,6 +306,7 @@ if __name__=="__main__":
     out = PlotComb(t_0, t_max)
     #out.plot_population_adi(index,xms_caspt2,sa_casscf,sa_oo_vqe)
     #out.plot_1d_histogram(xms_caspt2,sa_casscf,sa_oo_vqe, 8)
-    out.plot_1d_histogram_2_plots(xms_caspt2,sa_casscf,sa_oo_vqe, 8)
+    #out.plot_1d_histogram_2_plots(xms_caspt2,sa_casscf,sa_oo_vqe, 8)
+    out.plot_1d_histogram_2_plots_samen(xms_caspt2,sa_casscf,sa_oo_vqe, 8)
     
 
