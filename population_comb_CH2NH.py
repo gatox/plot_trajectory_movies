@@ -94,11 +94,11 @@ class PlotComb:
                     ave_popu.append(ref/int(trajs-nans))
         return ave_time, ave_popu
 
-    def plot_1d_histogram_2_plots_samen_energy(self, xms_caspt2,sa_casscf,sa_oo_vqe,n_bins=8):
-        hop_0_10, hop_0_01 = self.get_histogram_hops(xms_caspt2,os.path.join(xms_caspt2,"pop.dat"))
-        hop_1_10, hop_1_01 = self.get_histogram_hops(sa_casscf,os.path.join(sa_casscf,"pop.dat"))
-        hop_2_10,hop_2_01 = self.get_histogram_hops(sa_oo_vqe,os.path.join(sa_oo_vqe,"pop.dat"))
-        bins = [x for x in range(self.t_0, self.t_max+1,int(self.t_max/n_bins))]
+    def plot_1d_histogram_2_plots_samen_energy(self, xms_caspt2,sa_casscf,sa_oo_vqe,n_bins=20):
+        hop_0_10, hop_0_01 = self.get_histogram_hops_energy(xms_caspt2)
+        hop_1_10, hop_1_01 = self.get_histogram_hops_energy(sa_casscf)
+        hop_2_10,hop_2_01 = self.get_histogram_hops_energy(sa_oo_vqe)
+        bins = [x for x in np.linspace(0, 3, 21)]
         hops_l = [r"$S_1$ $\rightarrow$ $S_0$",r"$S_0$ $\rightarrow$ $S_1$"]
         plt.rcParams['font.size'] = self.fs_rcParams
         fig = plt.figure(figsize=(8,8))
@@ -131,10 +131,10 @@ class PlotComb:
 
         # remove vertical gap between subplots
         plt.subplots_adjust(hspace=.0)
-        plt.xlim([0, 200])
-        plt.xlabel('Time (fs)', fontweight = 'bold', fontsize = 16)
-        plt.savefig("number_of_hops_2_samen_time.pdf", bbox_inches='tight')
-        plt.savefig("number_of_hops_2_samen_time.png", bbox_inches='tight')
+        plt.xlim([0, 3])
+        plt.xlabel('Energy Gap (eV)', fontweight = 'bold', fontsize = 16)
+        plt.savefig("number_of_hops_2_samen_energy.pdf", bbox_inches='tight')
+        plt.savefig("number_of_hops_2_samen_energy.png", bbox_inches='tight')
         plt.close()
 
     def plot_1d_histogram_2_plots_samen(self, xms_caspt2,sa_casscf,sa_oo_vqe,n_bins=8):
@@ -180,10 +180,55 @@ class PlotComb:
         plt.savefig("number_of_hops_2_samen_time.png", bbox_inches='tight')
         plt.close()
 
+    def plot_1d_histogram_2_plots_energy(self, xms_caspt2,sa_casscf,sa_oo_vqe,n_bins=31):
+        hop_0_10, hop_0_01 = self.get_histogram_hops_energy(xms_caspt2)
+        hop_1_10, hop_1_01 = self.get_histogram_hops_energy(sa_casscf)
+        hop_2_10,hop_2_01 = self.get_histogram_hops_energy(sa_oo_vqe)
+        bins = [x for x in np.linspace(0, 3, n_bins)]
+        hops_l = [r"$S_1$ $\rightarrow$ $S_0$",r"$S_0$ $\rightarrow$ $S_1$"]
+        plt.rcParams['font.size'] = self.fs_rcParams
+        fig = plt.figure(figsize=(8,8))
+        # set height ratios for subplots
+        gs = gridspec.GridSpec(2, 1, height_ratios=[1, 1])
+        # the first subplot
+        ax0 = plt.subplot(gs[0])
+        ax0.hist(hop_0_10, bins = bins, ec = self.colors[0], label=self.labels[0] ,fc='none', lw=2)
+        ax0.hist(hop_1_10, bins = bins, ec = self.colors[1], label=self.labels[1] ,fc='none', lw=2)
+        ax0.hist(hop_2_10, bins = bins, ec = self.colors[2], label=self.labels[2] ,fc='none', lw=2)
+            
+        # the second subplot
+        # shared axis X
+        ax1 = plt.subplot(gs[1], sharex = ax0)
+        ax1.hist(hop_0_01, bins = bins, ec = self.colors[0], label="" ,fc='none', lw=2)
+        ax1.hist(hop_1_01, bins = bins, ec = self.colors[1], label="" ,fc='none', lw=2)
+        ax1.hist(hop_2_01, bins = bins, ec = self.colors[2], label="" ,fc='none', lw=2)
+
+        # Set a single y-axis label for both histograms
+        fig.supylabel('Number of Hops', fontweight='bold', fontsize=16)
+        
+        # Set labels and legends
+        ax0.text(0.95, 0.9, f'(a) {hops_l[0]}', transform=ax0.transAxes,
+             fontsize=16, fontweight='bold', va='top', ha='right')
+        ax1.text(0.95, 0.9, f'(b) {hops_l[1]}', transform=ax1.transAxes,
+             fontsize=16, fontweight='bold', va='top', ha='right')
+
+        plt.setp(ax0.get_xticklabels(), visible=False)
+
+        # put legend on first subplot
+        ax0.legend(loc='upper center', bbox_to_anchor=(0.5, 1.2), prop={'size': 14}, ncol=3)
+
+        # remove vertical gap between subplots
+        plt.subplots_adjust(hspace=.0)
+        plt.xlim([0, 3])
+        plt.xlabel('Energy Gap (eV)', fontweight = 'bold', fontsize = 16)
+        plt.savefig("number_of_hops_2_energy.pdf", bbox_inches='tight')
+        plt.savefig("number_of_hops_2_energy.png", bbox_inches='tight')
+        plt.close()
+
     def plot_1d_histogram_2_plots(self, xms_caspt2,sa_casscf,sa_oo_vqe,n_bins=8):
-        hop_0_10, hop_0_01 = self.get_histogram_hops(xms_caspt2,os.path.join(xms_caspt2,"pop.dat"))
-        hop_1_10, hop_1_01 = self.get_histogram_hops(sa_casscf,os.path.join(sa_casscf,"pop.dat"))
-        hop_2_10,hop_2_01 = self.get_histogram_hops(sa_oo_vqe,os.path.join(sa_oo_vqe,"pop.dat"))
+        hop_0_10, hop_0_01 = self.get_histogram_hops(xms_caspt2)
+        hop_1_10, hop_1_01 = self.get_histogram_hops(sa_casscf)
+        hop_2_10,hop_2_01 = self.get_histogram_hops(sa_oo_vqe)
         bins = [x for x in range(self.t_0, self.t_max+1,int(self.t_max/n_bins))]
         hops_l = [r"$S_1$ $\rightarrow$ $S_0$",r"$S_0$ $\rightarrow$ $S_1$"]
         plt.rcParams['font.size'] = self.fs_rcParams
@@ -225,10 +270,88 @@ class PlotComb:
         plt.savefig("number_of_hops_2_time.png", bbox_inches='tight')
         plt.close()
 
+    def plot_1d_histogram_4_plots_S1_S0(self, xms_caspt2,sa_casscf,sa_oo_vqe):
+        hop_0_10_e, hop_0_01_e = self.get_histogram_hops_energy(xms_caspt2, "e_gap.dat")
+        hop_1_10_e, hop_1_01_e = self.get_histogram_hops_energy(sa_casscf, "e_gap.dat")
+        hop_2_10_e, hop_2_01_e = self.get_histogram_hops_energy(sa_oo_vqe, "e_gap.dat")
+        hop_0_10_d, hop_0_01_d = self.get_histogram_hops_energy(xms_caspt2, "dihe_2014.dat")
+        hop_1_10_d, hop_1_01_d = self.get_histogram_hops_energy(sa_casscf, "dihe_2014.dat")
+        hop_2_10_d, hop_2_01_d = self.get_histogram_hops_energy(sa_oo_vqe, "dihe_2014.dat")
+        hop_0_10_a, hop_0_01_a = self.get_histogram_hops_energy(xms_caspt2, "angle_014.dat")
+        hop_1_10_a, hop_1_01_a = self.get_histogram_hops_energy(sa_casscf, "angle_014.dat")
+        hop_2_10_a, hop_2_01_a = self.get_histogram_hops_energy(sa_oo_vqe, "angle_014.dat")
+        hop_0_10_p, hop_0_01_p = self.get_histogram_hops_energy(xms_caspt2, "pyr_3210.dat")
+        hop_1_10_p, hop_1_01_p = self.get_histogram_hops_energy(sa_casscf, "pyr_3210.dat")
+        hop_2_10_p, hop_2_01_p = self.get_histogram_hops_energy(sa_oo_vqe, "pyr_3210.dat")
+        bins_ene = [x for x in np.linspace(0, 3, 31)]
+        bins_hnch = [x for x in np.linspace(-180, 180, 31)]
+        bins_hnc = [x for x in np.linspace(0, 180, 31)]
+        bins_pyr = [x for x in np.linspace(-180, 180, 31)]
+        plt.rcParams['font.size'] = self.fs_rcParams
+        fig = plt.figure(figsize=(10,8))
+        # set height ratios for subplots
+        gs = gridspec.GridSpec(2, 2, height_ratios=[1, 1])
+        # the 1st subplot
+        ax00 = plt.subplot(gs[0,0])
+        ax00.hist(hop_0_10_e, bins = bins_ene, ec = self.colors[0], label=self.labels[0] ,fc='none', lw=2)
+        ax00.hist(hop_1_10_e, bins = bins_ene, ec = self.colors[1], label=self.labels[1] ,fc='none', lw=2)
+        ax00.hist(hop_2_10_e, bins = bins_ene, ec = self.colors[2], label=self.labels[2] ,fc='none', lw=2)
+        ax00.set_xlim([0,3])
+        ax00.set_xlabel('Energy Gap (eV)', fontweight = 'bold', fontsize = 16)
+            
+        # the 2nd subplot
+        # shared axis X
+        ax01 = plt.subplot(gs[0,1])
+        ax01.hist(hop_0_10_d, bins = bins_hnch, ec = self.colors[0], label="" ,fc='none', lw=2)
+        ax01.hist(hop_1_10_d, bins = bins_hnch, ec = self.colors[1], label="" ,fc='none', lw=2)
+        ax01.hist(hop_2_10_d, bins = bins_hnch, ec = self.colors[2], label="" ,fc='none', lw=2)
+        ax01.set_xlim([-180,180])
+        ax01.set_xlabel('$\mathbf{\sphericalangle H_3C_1N_2H_5(degrees)}$', fontsize=16,fontweight = 'bold')
+
+        # the 3rd subplot
+        # shared axis X
+        ax10 = plt.subplot(gs[1,0])
+        ax10.hist(hop_0_10_a, bins = bins_hnc, ec = self.colors[0], label="" ,fc='none', lw=2)
+        ax10.hist(hop_1_10_a, bins = bins_hnc, ec = self.colors[1], label="" ,fc='none', lw=2)
+        ax10.hist(hop_2_10_a, bins = bins_hnc, ec = self.colors[2], label="" ,fc='none', lw=2)
+        ax10.set_xlim([0,180])
+        ax10.set_xlabel('$\mathbf{\sphericalangle C_1N_2H_5(degrees)}$', fontsize=16,fontweight = 'bold')
+
+        # the 4th subplot
+        # shared axis X
+        ax11 = plt.subplot(gs[1,1])
+        ax11.hist(hop_0_10_p, bins = bins_pyr, ec = self.colors[0], label="" ,fc='none', lw=2)
+        ax11.hist(hop_1_10_p, bins = bins_pyr, ec = self.colors[1], label="" ,fc='none', lw=2)
+        ax11.hist(hop_2_10_p, bins = bins_pyr, ec = self.colors[2], label="" ,fc='none', lw=2)
+        ax11.set_xlim([-180,180])
+        ax11.set_xlabel('$\mathbf{Pyramidalization (degrees)}$', fontsize=16,fontweight = 'bold')
+
+        # Set a single y-axis label for both histograms
+        fig.supylabel('Number of Hops', fontweight='bold', fontsize=16)
+        
+        ## Set labels and legends
+        #ax0.text(0.95, 0.9, f'(a) {hops_l[0]}', transform=ax0.transAxes,
+        #     fontsize=16, fontweight='bold', va='top', ha='right')
+        #ax1.text(0.95, 0.9, f'(b) {hops_l[1]}', transform=ax1.transAxes,
+        #     fontsize=16, fontweight='bold', va='top', ha='right')
+
+        #plt.setp(ax0.get_xticklabels(), visible=False)
+
+        # put legend on first subplot
+        ax00.legend(loc='upper center', bbox_to_anchor=(0.5, 1.2), prop={'size': 14}, ncol=3)
+
+        # remove vertical gap between subplots
+        #plt.subplots_adjust(hspace=.0)
+        #plt.xlim([0, 3])
+        #plt.xlabel('Energy Gap (eV)', fontweight = 'bold', fontsize = 16)
+        plt.savefig("number_of_hops_4.pdf", bbox_inches='tight')
+        plt.savefig("number_of_hops_4.png", bbox_inches='tight')
+        plt.close()
+
     def plot_1d_histogram(self,xms_caspt2,sa_casscf,sa_oo_vqe,n_bins=8):
-        hop_0_10, hop_0_01 = self.get_histogram_hops(xms_caspt2,os.path.join(xms_caspt2,"pop.dat"))
-        hop_1_10, hop_1_01 = self.get_histogram_hops(sa_casscf,os.path.join(sa_casscf,"pop.dat"))
-        hop_2_10,hop_2_01 = self.get_histogram_hops(sa_oo_vqe,os.path.join(sa_oo_vqe,"pop.dat"))
+        hop_0_10, hop_0_01 = self.get_histogram_hops(xms_caspt2)
+        hop_1_10, hop_1_01 = self.get_histogram_hops(sa_casscf)
+        hop_2_10,hop_2_01 = self.get_histogram_hops(sa_oo_vqe)
         plt.rcParams['font.size'] = self.fs_rcParams
         plt.xlim([self.t_0, self.t_max])
         bins = [x for x in range(self.t_0, self.t_max+1,int(self.t_max/n_bins))]
@@ -243,9 +366,8 @@ class PlotComb:
         plt.savefig("number_of_hops_time.png", bbox_inches='tight')
         plt.close()
 
-    def get_histogram_hops(self, fssh, pop_name):
-        prop = self.read_prop(fssh)
-        nstates = prop.nstates
+    def get_histogram_hops(self, folder):
+        pop_name = os.path.join(folder,"pop.dat")
         pop = read_csv(pop_name)
         time = pop['time']
         time = time.to_numpy()
@@ -262,6 +384,24 @@ class PlotComb:
                     hop_01.append(x)
         return hop_10, hop_01
 
+    def get_histogram_hops_energy(self, folder, parameter):
+        e_gap_name = os.path.join(folder,parameter)
+        pop_name = os.path.join(folder,"pop.dat")
+        e_gap = read_csv(e_gap_name)
+        pop = read_csv(pop_name)
+        hop = pop.to_numpy()[:,1:] # removing time column
+        ene_d = e_gap.to_numpy()[:,1:] # removing time column
+        mdsteps,trajs = hop.shape 
+        hop_10 = []
+        hop_01 = []
+        for j in range(1,mdsteps):   #time_steps 
+            for i in range(trajs):          #trajectories
+                ene = ene_d[j,i] 
+                if hop[j-1,i]==1 and hop[j,i]==0:
+                    hop_10.append(ene)
+                elif hop[j-1,i]==0 and hop[j,i]==1:
+                    hop_01.append(ene)
+        return hop_10, hop_01
     
     def plot_population_adi(self,index,xms_caspt2,sa_casscf,sa_oo_vqe):
         time_0, population_0 = self.get_popu_adi(xms_caspt2,os.path.join(xms_caspt2,"pop.dat"))
@@ -307,6 +447,9 @@ if __name__=="__main__":
     #out.plot_population_adi(index,xms_caspt2,sa_casscf,sa_oo_vqe)
     #out.plot_1d_histogram(xms_caspt2,sa_casscf,sa_oo_vqe, 8)
     #out.plot_1d_histogram_2_plots(xms_caspt2,sa_casscf,sa_oo_vqe, 8)
-    out.plot_1d_histogram_2_plots_samen(xms_caspt2,sa_casscf,sa_oo_vqe, 8)
+    #out.plot_1d_histogram_2_plots_samen(xms_caspt2,sa_casscf,sa_oo_vqe, 8)
+    #out.plot_1d_histogram_2_plots_samen_energy(xms_caspt2,sa_casscf,sa_oo_vqe, 20)
+    #out.plot_1d_histogram_2_plots_energy(xms_caspt2,sa_casscf,sa_oo_vqe, 31)
+    out.plot_1d_histogram_4_plots_S1_S0(xms_caspt2,sa_casscf,sa_oo_vqe)
     
 
