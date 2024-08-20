@@ -1,5 +1,6 @@
 import os
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 from matplotlib import gridspec
 import numpy as np
 import sys
@@ -17,7 +18,8 @@ class PlotComb:
         self.ev = 27.211324570273 
         self.fs = 0.02418884254
         self.aa = 0.5291772105638411 
-        self.fs_rcParams = '20'
+        self.fs_rcParams = '10'
+        self.f_size = '11'
         self.t_0 = t_0
         self.colors = plt.rcParams['axes.prop_cycle'].by_key()['color'][:3] 
         self.labels = ["XMS-CASPT2","SA-CASSCF","SA-OO-VQE"]
@@ -283,21 +285,23 @@ class PlotComb:
         hop_0_10_p, hop_0_01_p = self.get_histogram_hops_energy(xms_caspt2, "pyr_3210.dat")
         hop_1_10_p, hop_1_01_p = self.get_histogram_hops_energy(sa_casscf, "pyr_3210.dat")
         hop_2_10_p, hop_2_01_p = self.get_histogram_hops_energy(sa_oo_vqe, "pyr_3210.dat")
-        bins_ene = [x for x in np.linspace(0, 3, 31)]
-        bins_hnch = [x for x in np.linspace(-180, 180, 31)]
-        bins_hnc = [x for x in np.linspace(0, 180, 31)]
-        bins_pyr = [x for x in np.linspace(-180, 180, 31)]
+        bins_ene = [x for x in np.linspace(0, 3, 16)]
+        bins_hnch = [x for x in np.linspace(-180, 180, 19)]
+        bins_hnc = [x for x in np.linspace(0, 180, 19)]
+        bins_pyr = [x for x in np.linspace(-180, 180, 19)]
         plt.rcParams['font.size'] = self.fs_rcParams
         fig = plt.figure(figsize=(10,8))
         # set height ratios for subplots
         gs = gridspec.GridSpec(2, 2, height_ratios=[1, 1])
+        #gs = gridspec.GridSpec(2, 2, height_ratios=[1, 1], left=0.15, wspace=0.25, hspace=0.25)
         # the 1st subplot
         ax00 = plt.subplot(gs[0,0])
         ax00.hist(hop_0_10_e, bins = bins_ene, ec = self.colors[0], label=self.labels[0] ,fc='none', lw=2)
         ax00.hist(hop_1_10_e, bins = bins_ene, ec = self.colors[1], label=self.labels[1] ,fc='none', lw=2)
         ax00.hist(hop_2_10_e, bins = bins_ene, ec = self.colors[2], label=self.labels[2] ,fc='none', lw=2)
         ax00.set_xlim([0,3])
-        ax00.set_xlabel('Energy Gap (eV)', fontweight = 'bold', fontsize = 16)
+        ax00.xaxis.set_major_locator(ticker.MultipleLocator(0.6))
+        ax00.set_xlabel('Energy Gap (eV)', fontweight='bold', fontsize= self.f_size)
             
         # the 2nd subplot
         # shared axis X
@@ -306,7 +310,8 @@ class PlotComb:
         ax01.hist(hop_1_10_d, bins = bins_hnch, ec = self.colors[1], label="" ,fc='none', lw=2)
         ax01.hist(hop_2_10_d, bins = bins_hnch, ec = self.colors[2], label="" ,fc='none', lw=2)
         ax01.set_xlim([-180,180])
-        ax01.set_xlabel('$\mathbf{\sphericalangle H_3C_1N_2H_5(degrees)}$', fontsize=16,fontweight = 'bold')
+        ax01.xaxis.set_major_locator(ticker.MultipleLocator(60))
+        ax01.set_xlabel('$\mathbf{\sphericalangle H_3C_1N_2H_5(degrees)}$', fontsize=self.f_size)
 
         # the 3rd subplot
         # shared axis X
@@ -315,7 +320,8 @@ class PlotComb:
         ax10.hist(hop_1_10_a, bins = bins_hnc, ec = self.colors[1], label="" ,fc='none', lw=2)
         ax10.hist(hop_2_10_a, bins = bins_hnc, ec = self.colors[2], label="" ,fc='none', lw=2)
         ax10.set_xlim([0,180])
-        ax10.set_xlabel('$\mathbf{\sphericalangle C_1N_2H_5(degrees)}$', fontsize=16,fontweight = 'bold')
+        ax10.xaxis.set_major_locator(ticker.MultipleLocator(30))
+        ax10.set_xlabel('$\mathbf{\sphericalangle C_1N_2H_5(degrees)}$', fontsize=self.f_size)
 
         # the 4th subplot
         # shared axis X
@@ -324,21 +330,28 @@ class PlotComb:
         ax11.hist(hop_1_10_p, bins = bins_pyr, ec = self.colors[1], label="" ,fc='none', lw=2)
         ax11.hist(hop_2_10_p, bins = bins_pyr, ec = self.colors[2], label="" ,fc='none', lw=2)
         ax11.set_xlim([-180,180])
-        ax11.set_xlabel('$\mathbf{Pyramidalization (degrees)}$', fontsize=16,fontweight = 'bold')
+        ax11.xaxis.set_major_locator(ticker.MultipleLocator(60))
+        ax11.set_xlabel('$\mathbf{Pyramidalization (degrees)}$', fontsize=self.f_size)
 
         # Set a single y-axis label for both histograms
-        fig.supylabel('Number of Hops', fontweight='bold', fontsize=16)
+        fig.supylabel('Number of Hops', fontweight='bold', fontsize=18)
+        # Adjust space between the title and subplots
+        plt.subplots_adjust(top=0.9, bottom=0.1, left=0.09, right=0.9, hspace=0.2)
         
-        ## Set labels and legends
-        #ax0.text(0.95, 0.9, f'(a) {hops_l[0]}', transform=ax0.transAxes,
-        #     fontsize=16, fontweight='bold', va='top', ha='right')
-        #ax1.text(0.95, 0.9, f'(b) {hops_l[1]}', transform=ax1.transAxes,
-        #     fontsize=16, fontweight='bold', va='top', ha='right')
+        # Set labels and legends
+        ax00.text(0.95, 0.95, f'(a)', transform=ax00.transAxes,
+             fontsize=self.f_size, fontweight='bold', va='top', ha='right')
+        ax01.text(0.95, 0.95, f'(b)', transform=ax01.transAxes,
+             fontsize=self.f_size, fontweight='bold', va='top', ha='right')
+        ax10.text(0.95, 0.95, f'(c)', transform=ax10.transAxes,
+             fontsize=self.f_size, fontweight='bold', va='top', ha='right')
+        ax11.text(0.95, 0.95, f'(d)', transform=ax11.transAxes,
+             fontsize=self.f_size, fontweight='bold', va='top', ha='right')
 
         #plt.setp(ax0.get_xticklabels(), visible=False)
 
         # put legend on first subplot
-        ax00.legend(loc='upper center', bbox_to_anchor=(0.5, 1.2), prop={'size': 14}, ncol=3)
+        ax00.legend(loc='upper center', bbox_to_anchor=(1, 1.2), prop={'size': 14}, ncol=3)
 
         # remove vertical gap between subplots
         #plt.subplots_adjust(hspace=.0)
