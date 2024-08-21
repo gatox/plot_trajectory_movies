@@ -2,6 +2,7 @@ import os
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 from matplotlib import gridspec
+from scipy import stats
 import numpy as np
 import sys
 import csv
@@ -24,6 +25,13 @@ class PlotComb:
         self.colors = plt.rcParams['axes.prop_cycle'].by_key()['color'][:3] 
         self.labels = ["XMS-CASPT2","SA-CASSCF","SA-OO-VQE"]
         self.t_max = t_max
+        # Define bins
+        bins_ene = np.linspace(0, 3, 16)
+        bins_hnch = np.linspace(-180, 180, 19)
+        bins_hnc = np.linspace(0, 180, 19)
+        bins_pyr = np.linspace(-180, 180, 19)
+        bins = namedtuple("bins","ene hnch hnc pyr")
+        self.bins = bins(bins_ene,bins_hnch,bins_hnc,bins_pyr)
 
     def read_prop(self, fssh):
         #LVC
@@ -272,63 +280,115 @@ class PlotComb:
         plt.savefig("number_of_hops_2_time.png", bbox_inches='tight')
         plt.close()
 
-    def plot_1d_histogram_4_plots_S1_S0(self, xms_caspt2,sa_casscf,sa_oo_vqe):
-        hop_0_10_e, hop_0_01_e = self.get_histogram_hops_energy(xms_caspt2, "e_gap.dat")
-        hop_1_10_e, hop_1_01_e = self.get_histogram_hops_energy(sa_casscf, "e_gap.dat")
-        hop_2_10_e, hop_2_01_e = self.get_histogram_hops_energy(sa_oo_vqe, "e_gap.dat")
-        hop_0_10_d, hop_0_01_d = self.get_histogram_hops_energy(xms_caspt2, "dihe_2014.dat")
-        hop_1_10_d, hop_1_01_d = self.get_histogram_hops_energy(sa_casscf, "dihe_2014.dat")
-        hop_2_10_d, hop_2_01_d = self.get_histogram_hops_energy(sa_oo_vqe, "dihe_2014.dat")
-        hop_0_10_a, hop_0_01_a = self.get_histogram_hops_energy(xms_caspt2, "angle_014.dat")
-        hop_1_10_a, hop_1_01_a = self.get_histogram_hops_energy(sa_casscf, "angle_014.dat")
-        hop_2_10_a, hop_2_01_a = self.get_histogram_hops_energy(sa_oo_vqe, "angle_014.dat")
-        hop_0_10_p, hop_0_01_p = self.get_histogram_hops_energy(xms_caspt2, "pyr_3210.dat")
-        hop_1_10_p, hop_1_01_p = self.get_histogram_hops_energy(sa_casscf, "pyr_3210.dat")
-        hop_2_10_p, hop_2_01_p = self.get_histogram_hops_energy(sa_oo_vqe, "pyr_3210.dat")
-        bins_ene = [x for x in np.linspace(0, 3, 16)]
-        bins_hnch = [x for x in np.linspace(-180, 180, 19)]
-        bins_hnc = [x for x in np.linspace(0, 180, 19)]
-        bins_pyr = [x for x in np.linspace(-180, 180, 19)]
+    def _index(self, val, array):
+        index = -1
+        for i in range(array.size):
+            if array[i] == val:
+                index = i
+                break
+        return i
+        
+
+    def _calculate_stats(self, data, bins):
+        hist, bin_edges = np.histogram(data, bins=bins)
+        bin_centers = 0.5 * (bin_edges[1:] + bin_edges[:-1])
+        max_val = bin_centers[np.argmax(hist)]  # Maximum (Mode)
+        hist_mean = round(hist.mean())
+        mean_val = bin_centers[self._index(hist_mean,hist)]
+        return {
+            'max': max_val,
+            'his': hist, 
+            'his_mean': hist_mean, 
+            'bin_edges':bin_edges,
+            'bin_centers':bin_centers,
+            'median': mean_val,
+        #    'median': median_val,
+        #    'mean': mean_val,
+        #    'variance': variance,
+        #    'skewness': skewness,
+        #    'kurtosis': kurt,
+        #    'mode': mode_val,
+        #    'outliers': outliers
+        #    'mean': mean_val,
+        #    'variance': variance,
+        #    'skewness': skewness,
+        #    'kurtosis': kurt,
+        #    'mode': mode_val,
+        #    'outliers': outliers
+            'bin': bin_edges, 
+            'bin_centers': bin_centers,
+        }
+    
+    def print_stat(self, xms_caspt2, sa_casscf, sa_oo_vqe):
+        energy = self._hop_10(xms_caspt2,sa_casscf,sa_oo_vqe,"e_gap.dat") 
+        torsion = self._hop_10(xms_caspt2,sa_casscf,sa_oo_vqe,"dihe_2014.dat")
+        bending = self._hop_10(xms_caspt2,sa_casscf,sa_oo_vqe,"angle_014.dat")
+        pyramidal = self._hop_10(xms_caspt2,sa_casscf,sa_oo_vqe,"pyr_3210.dat")
+        pars = namedtuple("pars", "ene hnch hnc pyr")
+        pars = pars(energy,torsion,bending,pyramidal)
+        for par in pars._fields:
+            par_method = getattr(pars, par)
+            for method in par_method._fields:  
+                res = self._calculate_stats(getattr(par_method,method), getattr(self.bins,par))
+                # Open the text file in write mode
+                with open(f'Analysis_{method}_{par}', 'w') as f:
+                    for key, value in res.items():
+                        # Write key and value to the file
+                        f.write(f'{key}: {value}\n')
+
+    def _hop_10(self, xms_caspt2, sa_casscf, sa_oo_vqe, data):
+        hop_10_xms, hop_01_xms = self.get_histogram_hops_energy(xms_caspt2, data)
+        hop_10_cas, hop_01_cas = self.get_histogram_hops_energy(sa_casscf, data)
+        hop_10_vqe, hop_01_vqe = self.get_histogram_hops_energy(sa_oo_vqe, data)
+        hops = namedtuple("hops","xms cas vqe") 
+        return hops(hop_10_xms,hop_10_cas,hop_10_vqe)
+
+    def plot_1d_histogram_4_plots_S1_S0(self, xms_caspt2, sa_casscf, sa_oo_vqe):
+        #e_gap
+        hop_e = self._hop_10(xms_caspt2,sa_casscf,sa_oo_vqe,"e_gap.dat")
+        #dihe_2014
+        hop_d = self._hop_10(xms_caspt2,sa_casscf,sa_oo_vqe,"dihe_2014.dat")
+        #angle_014
+        hop_a = self._hop_10(xms_caspt2,sa_casscf,sa_oo_vqe,"angle_014.dat")
+        #pyr_3210
+        hop_p = self._hop_10(xms_caspt2,sa_casscf,sa_oo_vqe,"pyr_3210.dat")
+
         plt.rcParams['font.size'] = self.fs_rcParams
         fig = plt.figure(figsize=(10,8))
         # set height ratios for subplots
         gs = gridspec.GridSpec(2, 2, height_ratios=[1, 1])
-        #gs = gridspec.GridSpec(2, 2, height_ratios=[1, 1], left=0.15, wspace=0.25, hspace=0.25)
         # the 1st subplot
         ax00 = plt.subplot(gs[0,0])
-        ax00.hist(hop_0_10_e, bins = bins_ene, ec = self.colors[0], label=self.labels[0] ,fc='none', lw=2)
-        ax00.hist(hop_1_10_e, bins = bins_ene, ec = self.colors[1], label=self.labels[1] ,fc='none', lw=2)
-        ax00.hist(hop_2_10_e, bins = bins_ene, ec = self.colors[2], label=self.labels[2] ,fc='none', lw=2)
+        ax00.hist(hop_e.xms, bins = self.bins.ene, ec = self.colors[0], label=self.labels[0] ,fc='none', lw=2)
+        ax00.hist(hop_e.cas, bins = self.bins.ene, ec = self.colors[1], label=self.labels[1] ,fc='none', lw=2)
+        ax00.hist(hop_e.vqe, bins = self.bins.ene, ec = self.colors[2], label=self.labels[2] ,fc='none', lw=2)
         ax00.set_xlim([0,3])
         ax00.xaxis.set_major_locator(ticker.MultipleLocator(0.6))
         ax00.set_xlabel('Energy Gap (eV)', fontweight='bold', fontsize= self.f_size)
             
         # the 2nd subplot
-        # shared axis X
         ax01 = plt.subplot(gs[0,1])
-        ax01.hist(hop_0_10_d, bins = bins_hnch, ec = self.colors[0], label="" ,fc='none', lw=2)
-        ax01.hist(hop_1_10_d, bins = bins_hnch, ec = self.colors[1], label="" ,fc='none', lw=2)
-        ax01.hist(hop_2_10_d, bins = bins_hnch, ec = self.colors[2], label="" ,fc='none', lw=2)
+        ax01.hist(hop_d.xms, bins = self.bins.hnch, ec = self.colors[0], label="" ,fc='none', lw=2)
+        ax01.hist(hop_d.cas, bins = self.bins.hnch, ec = self.colors[1], label="" ,fc='none', lw=2)
+        ax01.hist(hop_d.vqe, bins = self.bins.hnch, ec = self.colors[2], label="" ,fc='none', lw=2)
         ax01.set_xlim([-180,180])
         ax01.xaxis.set_major_locator(ticker.MultipleLocator(60))
         ax01.set_xlabel('$\mathbf{\sphericalangle H_3C_1N_2H_5(degrees)}$', fontsize=self.f_size)
 
         # the 3rd subplot
-        # shared axis X
         ax10 = plt.subplot(gs[1,0])
-        ax10.hist(hop_0_10_a, bins = bins_hnc, ec = self.colors[0], label="" ,fc='none', lw=2)
-        ax10.hist(hop_1_10_a, bins = bins_hnc, ec = self.colors[1], label="" ,fc='none', lw=2)
-        ax10.hist(hop_2_10_a, bins = bins_hnc, ec = self.colors[2], label="" ,fc='none', lw=2)
+        ax10.hist(hop_a.xms, bins = self.bins.hnc, ec = self.colors[0], label="" ,fc='none', lw=2)
+        ax10.hist(hop_a.cas, bins = self.bins.hnc, ec = self.colors[1], label="" ,fc='none', lw=2)
+        ax10.hist(hop_a.vqe, bins = self.bins.hnc, ec = self.colors[2], label="" ,fc='none', lw=2)
         ax10.set_xlim([0,180])
         ax10.xaxis.set_major_locator(ticker.MultipleLocator(30))
         ax10.set_xlabel('$\mathbf{\sphericalangle C_1N_2H_5(degrees)}$', fontsize=self.f_size)
 
         # the 4th subplot
-        # shared axis X
         ax11 = plt.subplot(gs[1,1])
-        ax11.hist(hop_0_10_p, bins = bins_pyr, ec = self.colors[0], label="" ,fc='none', lw=2)
-        ax11.hist(hop_1_10_p, bins = bins_pyr, ec = self.colors[1], label="" ,fc='none', lw=2)
-        ax11.hist(hop_2_10_p, bins = bins_pyr, ec = self.colors[2], label="" ,fc='none', lw=2)
+        ax11.hist(hop_p.xms, bins = self.bins.pyr, ec = self.colors[0], label="" ,fc='none', lw=2)
+        ax11.hist(hop_p.cas, bins = self.bins.pyr, ec = self.colors[1], label="" ,fc='none', lw=2)
+        ax11.hist(hop_p.vqe, bins = self.bins.pyr, ec = self.colors[2], label="" ,fc='none', lw=2)
         ax11.set_xlim([-180,180])
         ax11.xaxis.set_major_locator(ticker.MultipleLocator(60))
         ax11.set_xlabel('$\mathbf{Pyramidalization (degrees)}$', fontsize=self.f_size)
@@ -348,15 +408,9 @@ class PlotComb:
         ax11.text(0.95, 0.95, f'(d)', transform=ax11.transAxes,
              fontsize=self.f_size, fontweight='bold', va='top', ha='right')
 
-        #plt.setp(ax0.get_xticklabels(), visible=False)
-
         # put legend on first subplot
         ax00.legend(loc='upper center', bbox_to_anchor=(1, 1.2), prop={'size': 14}, ncol=3)
 
-        # remove vertical gap between subplots
-        #plt.subplots_adjust(hspace=.0)
-        #plt.xlim([0, 3])
-        #plt.xlabel('Energy Gap (eV)', fontweight = 'bold', fontsize = 16)
         plt.savefig("number_of_hops_4.pdf", bbox_inches='tight')
         plt.savefig("number_of_hops_4.png", bbox_inches='tight')
         plt.close()
@@ -463,6 +517,7 @@ if __name__=="__main__":
     #out.plot_1d_histogram_2_plots_samen(xms_caspt2,sa_casscf,sa_oo_vqe, 8)
     #out.plot_1d_histogram_2_plots_samen_energy(xms_caspt2,sa_casscf,sa_oo_vqe, 20)
     #out.plot_1d_histogram_2_plots_energy(xms_caspt2,sa_casscf,sa_oo_vqe, 31)
-    out.plot_1d_histogram_4_plots_S1_S0(xms_caspt2,sa_casscf,sa_oo_vqe)
+    #out.plot_1d_histogram_4_plots_S1_S0(xms_caspt2,sa_casscf,sa_oo_vqe)
+    out.print_stat(xms_caspt2, sa_casscf, sa_oo_vqe)
     
 
