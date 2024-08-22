@@ -302,22 +302,10 @@ class PlotComb:
             'bin_edges':bin_edges,
             'bin_centers':bin_centers,
             'median': mean_val,
-        #    'median': median_val,
-        #    'mean': mean_val,
-        #    'variance': variance,
-        #    'skewness': skewness,
-        #    'kurtosis': kurt,
-        #    'mode': mode_val,
-        #    'outliers': outliers
-        #    'mean': mean_val,
-        #    'variance': variance,
-        #    'skewness': skewness,
-        #    'kurtosis': kurt,
-        #    'mode': mode_val,
-        #    'outliers': outliers
             'bin': bin_edges, 
             'bin_centers': bin_centers,
         }
+
     
     def print_stat(self, xms_caspt2, sa_casscf, sa_oo_vqe):
         energy = self._hop_10(xms_caspt2,sa_casscf,sa_oo_vqe,"e_gap.dat") 
@@ -452,6 +440,12 @@ class PlotComb:
         return hop_10, hop_01
 
     def get_histogram_hops_energy(self, folder, parameter):
+        if "xms_caspt2" in folder:
+            print("Average values for xms_caspt2")
+        if "sa_casscf" in folder:
+            print("Average values for sa_casscf")
+        if "sa_oo_vqe" in folder:
+            print("Average values for sa_oo_vqe")
         e_gap_name = os.path.join(folder,parameter)
         pop_name = os.path.join(folder,"pop.dat")
         e_gap = read_csv(e_gap_name)
@@ -461,13 +455,34 @@ class PlotComb:
         mdsteps,trajs = hop.shape 
         hop_10 = []
         hop_01 = []
+        hop_10_hnch_lower = []
+        hop_10_hnch_upper = []
+        #hop_10_hnc = []
+        #hop_10_pyr = []
         for j in range(1,mdsteps):   #time_steps 
             for i in range(trajs):          #trajectories
                 ene = ene_d[j,i] 
                 if hop[j-1,i]==1 and hop[j,i]==0:
                     hop_10.append(ene)
+                    if parameter == "dihe_2014.dat" and ene < 0:
+                        hop_10_hnch_lower.append(ene)
+                    elif parameter == "dihe_2014.dat" and ene > 0:
+                        hop_10_hnch_upper.append(ene)
+                    #elif parameter == "angle_014.dat":
+                    #    hop_10_hnc.append(ene)
+                    #elif parameter == "pyr_3210.dat":
+                    #    hop_10_pyr.append(ene)
                 elif hop[j-1,i]==0 and hop[j,i]==1:
                     hop_01.append(ene)
+        if parameter in ["dihe_2014.dat"]:
+            print(f"Average hnch < 0:", sum(hop_10_hnch_lower)/len(hop_10_hnch_lower))
+            print(f"Average hnch > 0:", sum(hop_10_hnch_upper)/len(hop_10_hnch_upper))
+        elif parameter in ["angle_014.dat"]:
+            print(f"Average hnc:", sum(hop_10)/len(hop_10))
+        elif parameter in ["pyr_3210.dat"]:
+            print(f"Average pyr:", sum(hop_10)/len(hop_10))
+        elif parameter in ["e_gap.dat"]:
+            print(f"Average e_gap:", sum(hop_10)/len(hop_10))
         return hop_10, hop_01
     
     def plot_population_adi(self,index,xms_caspt2,sa_casscf,sa_oo_vqe):
@@ -517,7 +532,7 @@ if __name__=="__main__":
     #out.plot_1d_histogram_2_plots_samen(xms_caspt2,sa_casscf,sa_oo_vqe, 8)
     #out.plot_1d_histogram_2_plots_samen_energy(xms_caspt2,sa_casscf,sa_oo_vqe, 20)
     #out.plot_1d_histogram_2_plots_energy(xms_caspt2,sa_casscf,sa_oo_vqe, 31)
-    #out.plot_1d_histogram_4_plots_S1_S0(xms_caspt2,sa_casscf,sa_oo_vqe)
-    out.print_stat(xms_caspt2, sa_casscf, sa_oo_vqe)
+    out.plot_1d_histogram_4_plots_S1_S0(xms_caspt2,sa_casscf,sa_oo_vqe)
+    #out.print_stat(xms_caspt2, sa_casscf, sa_oo_vqe)
     
 
