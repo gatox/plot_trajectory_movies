@@ -293,17 +293,11 @@ class PlotComb:
         hist, bin_edges = np.histogram(data, bins=bins)
         bin_centers = 0.5 * (bin_edges[1:] + bin_edges[:-1])
         max_val = bin_centers[np.argmax(hist)]  # Maximum (Mode)
-        hist_mean = round(hist.mean())
-        mean_val = bin_centers[self._index(hist_mean,hist)]
         return {
             'max': max_val,
             'his': hist, 
-            'his_mean': hist_mean, 
-            'bin_edges':bin_edges,
             'bin_centers':bin_centers,
-            'median': mean_val,
-            'bin': bin_edges, 
-            'bin_centers': bin_centers,
+            'bin_edges':bin_edges,
         }
 
     
