@@ -312,7 +312,6 @@ class PlotComb:
             par_method = getattr(pars, par)
             for method in par_method._fields:  
                 res = self._calculate_stats(getattr(par_method,method), getattr(self.bins,par))
-                # Open the text file in write mode
                 with open(f'Analysis_{method}_{par}', 'w') as f:
                     for key, value in res.items():
                         # Write key and value to the file
