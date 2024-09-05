@@ -74,6 +74,31 @@ class PlotComb:
                     properties = namedtuple("properties", "dt mdsteps nstates states")
                     return properties(timestep/self.fs, int(time_final/timestep), nstates, [i for i in range(nstates)])
 
+    def get_torsion_ave(self, folde):
+        filename = os.path.join(folder,"dihe_2014.dat"))
+        ave_time = []
+        ave_torsion = []
+        with open(filename, 'r') as fh:
+            reader = csv.DictReader(fh)
+            for row in reader:
+                ave_time.append(float(row['time']))
+                nans = 0
+                trajs = 0
+                ref = 0 
+                for k, val in row.items():
+                    if k == 'time':
+                        continue
+                    if val == 'nan':
+                        nans += 1
+                    else:
+                        ref += abs(float(val))
+                    trajs +=1
+                if int(trajs-nans) == 0:
+                    break
+                else:
+                    ave_torsion.append(ref/int(trajs-nans))
+        return ave_time, ave_torsion
+
     def get_popu_adi(self, fssh, filename):
         prop = self.read_prop(fssh)
         states = prop.states
@@ -477,6 +502,30 @@ class PlotComb:
         elif parameter in ["e_gap.dat"]:
             print(f"Average e_gap:", sum(hop_10)/len(hop_10))
         return hop_10, hop_01
+
+    def plot_torsion_ave(self,xms_caspt2,sa_casscf,sa_oo_vqe):
+        time_0, torsion_0 = self.get_torsion_ave(xms_caspt2)
+        time_1, torsion_1 = self.get_torsion_ave(sa_casscf)
+        time_2, torsion_2 = self.get_torsion_ave(sa_oo_vqe)
+        fig, ax = plt.subplots()
+        plt.plot(time_0,torsion_0, label = self.labels[0], lw=2)
+        plt.plot(time_1,torsion_1, label = self.labels[1], lw=2)
+        plt.plot(time_2,torsion_2, label = self.labels[2], lw=2)
+        plt.xlim([self.t_0, self.t_max])
+        plt.xticks(fontsize=15)
+        plt.yticks(fontsize=15)
+        plt.xlabel('Time (fs)', fontweight = 'bold', fontsize = 16)
+        plt.ylabel('Torsion (degrees)', fontweight = 'bold', fontsize = 16)
+        ax.spines['right'].set_visible(True)
+        plt.ylim([-1, 180])
+        plt.legend(loc='lower right',fontsize=13, frameon=False)
+        ax1 = ax.twinx()
+        ax1.set_ylim([-1, 180])
+        ax1.tick_params(labelsize=15)
+        ax1.set_ylabel(" ")
+        plt.savefig("torsion_comb_S%i.pdf" %index, bbox_inches='tight')
+        plt.savefig("torsion_adi_comb_S%i.png" %index, bbox_inches='tight')
+        plt.close()
     
     def plot_population_adi(self,index,xms_caspt2,sa_casscf,sa_oo_vqe):
         time_0, population_0 = self.get_popu_adi(xms_caspt2,os.path.join(xms_caspt2,"pop.dat"))
@@ -525,7 +574,8 @@ if __name__=="__main__":
     #out.plot_1d_histogram_2_plots_samen(xms_caspt2,sa_casscf,sa_oo_vqe, 8)
     #out.plot_1d_histogram_2_plots_samen_energy(xms_caspt2,sa_casscf,sa_oo_vqe, 20)
     #out.plot_1d_histogram_2_plots_energy(xms_caspt2,sa_casscf,sa_oo_vqe, 31)
-    out.plot_1d_histogram_4_plots_S1_S0(xms_caspt2,sa_casscf,sa_oo_vqe)
+    #out.plot_1d_histogram_4_plots_S1_S0(xms_caspt2,sa_casscf,sa_oo_vqe)
     #out.print_stat(xms_caspt2, sa_casscf, sa_oo_vqe)
+    out.plot_torsion_ave(xms_caspt2, sa_casscf, sa_oo_vqe)
     
 
