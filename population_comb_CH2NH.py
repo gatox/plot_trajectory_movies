@@ -74,8 +74,8 @@ class PlotComb:
                     properties = namedtuple("properties", "dt mdsteps nstates states")
                     return properties(timestep/self.fs, int(time_final/timestep), nstates, [i for i in range(nstates)])
 
-    def get_torsion_ave(self, folde):
-        filename = os.path.join(folder,"dihe_2014.dat"))
+    def get_torsion_ave(self, folder):
+        filename = os.path.join(folder,"dihe_2014.dat")
         ave_time = []
         ave_torsion = []
         with open(filename, 'r') as fh:
