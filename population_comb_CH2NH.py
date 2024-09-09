@@ -27,9 +27,11 @@ class PlotComb:
         self.t_max = t_max
         # Define bins
         bins_ene = np.linspace(0, 3, 16)
-        bins_hnch = np.linspace(-180, 180, 19)
+        #bins_hnch = np.linspace(-180, 180, 19)
+        bins_hnch = np.linspace(0, 180, 19)
         bins_hnc = np.linspace(0, 180, 19)
-        bins_pyr = np.linspace(-180, 180, 19)
+        #bins_pyr = np.linspace(-180, 180, 19)
+        bins_pyr = np.linspace(0, 180, 19)
         bins = namedtuple("bins","ene hnch hnc pyr")
         self.bins = bins(bins_ene,bins_hnch,bins_hnc,bins_pyr)
 
@@ -74,7 +76,82 @@ class PlotComb:
                     properties = namedtuple("properties", "dt mdsteps nstates states")
                     return properties(timestep/self.fs, int(time_final/timestep), nstates, [i for i in range(nstates)])
 
-    def get_torsion_ave(self, folder):
+    def get_torsion_qy_ave(self, folder):
+        prop = self.read_prop(folder)
+        states = prop.states
+        nstates = prop.nstates
+        filename = os.path.join(folder,"dihe_2014.dat")
+        popu = os.path.join(folder,"pop.dat")
+        ave_torsion = []
+        ave_time = []
+        ave_lower = []
+        ave_upper = []
+        ave_else = []
+        with open(filename, 'r') as f1, open(popu, 'r') as f2:
+            r_torsion = csv.DictReader(f1)
+            r_popu = csv.DictReader(f2)
+            for row_1, row_2 in zip(r_torsion, r_popu):
+                ave_time.append(float(row_1['time']))
+                nans = 0
+                trajs = 0
+                ref = 0 
+                ref_non_r = 0 
+                ref_rac = 0 
+                ref_rest = 0 
+                ref_S1 = 0
+                lower_50 = 0
+                upper_125 = 0
+                else_ang = 0
+                for k_1, val_1 in row_1.items():
+                    if k_1 == 'time':
+                        continue
+                    if val_1 == 'nan':
+                        nans += 1
+                    else:
+                        val_2 = float(row_2.get(k_1))
+                        ref_abs = abs(float(val_1))
+                        if val_2 == 0:
+                            if ref_abs <= 50:
+                                ref_non_r += ref_abs 
+                                lower_50 += 1
+                            elif ref_abs >= 125:
+                                ref_rac += ref_abs 
+                                upper_125 += 1
+                            else:
+                                ref_rest += ref_abs
+                                else_ang += 1
+                        else:
+                            ref += ref_abs 
+                            ref_S1 += 1
+                    trajs +=1
+                if int(trajs-nans) == 0:
+                    break
+                else:
+                    if upper_125 != 0:
+                        ave_upper.append(ref_rac/int(upper_125-nans))
+                    else:
+                        ave_upper.append(ref/int(trajs-nans))
+                    if lower_50 != 0:
+                        ave_lower.append(ref_non_r/int(lower_50-nans))
+                    else:
+                        ave_lower.append(ref/int(trajs-nans))
+                    if else_ang != 0:
+                        ave_else.append(ref_rest/else_ang)
+                    else:
+                        ave_else.append(ref/int(trajs-nans))
+        print('--------------------------------------------------------------')
+        print('Folder: ', folder)
+        print(f'lower_50/{trajs-nans}: ',lower_50/int(trajs-nans))
+        print('lower_50/(lower_50+upper_125): ',lower_50/(lower_50+upper_125))
+        print(f'upper_125/{trajs-nans}: ',upper_125/int(trajs-nans))
+        print('upper_125/(lower_50+upper_125): ',upper_125/(lower_50+upper_125))
+        print('lower_S0, upper_S0, rest_S0, S1: ', lower_50, upper_125, else_ang, ref_S1)
+        print('Total: ', lower_50 + upper_125 + else_ang + ref_S1)
+        print('Trajs - Nans: ', int(trajs-nans))
+        print('--------------------------------------------------------------')
+        return ave_time, ave_lower, ave_upper, ave_else
+
+    def get_bend_ave(self, folder):
         filename = os.path.join(folder,"dihe_2014.dat")
         ave_time = []
         ave_torsion = []
@@ -98,6 +175,95 @@ class PlotComb:
                 else:
                     ave_torsion.append(ref/int(trajs-nans))
         return ave_time, ave_torsion
+
+    #def get_torsion_ave(self, folder):
+    #    filename = os.path.join(folder,"dihe_2014.dat")
+    #    ave_time = []
+    #    ave_torsion = []
+    #    torsion_data = []
+    #    with open(filename, 'r') as fh:
+    #        reader = csv.DictReader(fh)
+    #        for row in reader:
+    #            ave_time.append(float(row['time']))
+    #            nans = 0
+    #            trajs = 0
+    #            ref = 0 
+    #            for k, val in row.items():
+    #                if k == 'time':
+    #                    continue
+    #                if val == 'nan':
+    #                    nans += 1
+    #                else:
+    #                    ref += abs(float(val))
+    #                trajs +=1
+    #            if int(trajs-nans) == 0:
+    #                break
+    #            else:
+    #                ave_torsion.append(np.mean(ref))
+    #                torsion_data.append(ref)          # Store the torsion data for this timestep
+    #                
+    #    torsion_data = np.array(torsion_data)       # Convert to numpy array for easy manipulation
+    #    torsion_std = np.std(torsion_data, axis=1)  # Calculate standard deviation across trajectories
+    #    
+    #    return ave_time, ave_torsion, torsion_std
+
+    def get_parameter_ave(self, folder, data):
+        filename = os.path.join(folder, data)
+        ave_time = []
+        ave_para = []
+        para_data = []  # Store all parameter values across time steps for each trajectory
+        
+        with open(filename, 'r') as fh:
+            reader = csv.DictReader(fh)
+            for row in reader:
+                ave_time.append(float(row['time']))
+                para_vals = []
+                for k, val in row.items():
+                    if k == 'time':
+                        continue
+                    if val != 'nan':  # Only consider valid (non-'nan') values
+                        para_vals.append(abs(float(val)))
+                
+                if len(para_vals) > 0:  # If we have valid para values
+                    ave_para.append(np.mean(para_vals))  # Compute average
+                    para_data.append(para_vals)  # Store the para values for std calculation
+        
+        # Convert para_data into a numpy array (2D array: rows -> time steps, columns -> trajectories)
+        para_data = np.array([np.pad(t, (0, max(len(x) for x in para_data) - len(t)), constant_values=np.nan) for t in para_data])
+        
+        # Compute standard deviation along axis=1 (time axis)
+        para_std = np.nanstd(para_data, axis=1)  # Use np.nanstd to ignore NaN values
+        
+        return ave_time, ave_para, para_std
+
+    def get_torsion_ave(self, folder):
+        filename = os.path.join(folder, "dihe_2014.dat")
+        ave_time = []
+        ave_torsion = []
+        torsion_data = []  # Store all torsion values across time steps for each trajectory
+        
+        with open(filename, 'r') as fh:
+            reader = csv.DictReader(fh)
+            for row in reader:
+                ave_time.append(float(row['time']))
+                torsion_vals = []
+                for k, val in row.items():
+                    if k == 'time':
+                        continue
+                    if val != 'nan':  # Only consider valid (non-'nan') values
+                        torsion_vals.append(abs(float(val)))
+                
+                if len(torsion_vals) > 0:  # If we have valid torsion values
+                    ave_torsion.append(np.mean(torsion_vals))  # Compute average
+                    torsion_data.append(torsion_vals)  # Store the torsion values for std calculation
+        
+        # Convert torsion_data into a numpy array (2D array: rows -> time steps, columns -> trajectories)
+        torsion_data = np.array([np.pad(t, (0, max(len(x) for x in torsion_data) - len(t)), constant_values=np.nan) for t in torsion_data])
+        
+        # Compute standard deviation along axis=1 (time axis)
+        torsion_std = np.nanstd(torsion_data, axis=1)  # Use np.nanstd to ignore NaN values
+        
+        return ave_time, ave_torsion, torsion_std
 
     def get_popu_adi(self, fssh, filename):
         prop = self.read_prop(fssh)
@@ -349,6 +515,87 @@ class PlotComb:
         hops = namedtuple("hops","xms cas vqe") 
         return hops(hop_10_xms,hop_10_cas,hop_10_vqe)
 
+    def _para(self, xms_caspt2, sa_casscf, sa_oo_vqe, data):
+        time_xms, ave_xms, std_xms = self.get_parameter_ave(xms_caspt2, data)
+        time_cas, ave_cas, std_cas = self.get_parameter_ave(sa_casscf, data)
+        time_vqe, ave_vqe, std_cas = self.get_parameter_ave(sa_oo_vqe, data)
+        para = namedtuple("para","t_xms av_xms std_xms t_cas av_cas std_cas t_vqe av_vqe std_vqe") 
+        return para(time_xms,ave_xms,std_xms,time_cas,ave_cas,std_cas,time_vqe,ave_vqe,std_vqe)
+
+    def plot_av_popu_torsion_bend(self, xms_caspt2, sa_casscf, sa_oo_vqe):
+        #popu
+        time_0, population_0 = self.get_popu_adi(xms_caspt2,os.path.join(xms_caspt2,"pop.dat"))
+        time_1, population_1 = self.get_popu_adi(sa_casscf,os.path.join(sa_casscf,"pop.dat"))
+        time_2, population_2 = self.get_popu_adi(sa_oo_vqe,os.path.join(sa_oo_vqe,"pop.dat"))
+        #dihe_2014
+        dihe = self._para(xms_caspt2,sa_casscf,sa_oo_vqe,"dihe_2014.dat")
+        #angle_014
+        bend = self._para(xms_caspt2,sa_casscf,sa_oo_vqe,"angle_014.dat")
+        #pyr_3210
+        pyr = self._para(xms_caspt2,sa_casscf,sa_oo_vqe,"pyr_3210.dat")
+
+        plt.rcParams['font.size'] = self.fs_rcParams
+        fig = plt.figure(figsize=(6,14))
+        # set height ratios for subplots
+        gs = gridspec.GridSpec(4, 1, height_ratios=[1,1,1,1])
+        # the 1st subplot
+        ax0 = plt.subplot(gs[0])
+        ax0.plot(time_0,np.array(population_0)[:,index], label = self.labels[0], lw=2)
+        ax0.plot(time_1,np.array(population_1)[:,index], label = self.labels[1], lw=2)
+        ax0.plot(time_2,np.array(population_2)[:,index], label = self.labels[2], lw=2)
+        ax0.set_xlim([self.t_0, self.t_max])
+        ax0.xaxis.set_major_locator(ticker.MultipleLocator(0.6))
+        ax0.set_ylabel('$\mathbf{S_%i\ Population}$' %index, fontsize = 16)
+            
+        # the 2nd subplot
+        ax1 = plt.subplot(gs[1], sharex = ax0)
+        ax01.hist(hop_d.xms, bins = self.bins.hnch, ec = self.colors[0], label="" ,fc='none', lw=2)
+        ax01.hist(hop_d.cas, bins = self.bins.hnch, ec = self.colors[1], label="" ,fc='none', lw=2)
+        ax01.hist(hop_d.vqe, bins = self.bins.hnch, ec = self.colors[2], label="" ,fc='none', lw=2)
+        ax01.set_xlim([0,180])
+        ax01.xaxis.set_major_locator(ticker.MultipleLocator(30))
+        ax01.set_xlabel('$\mathbf{\sphericalangle H_3C_1N_2H_5(degrees)}$', fontsize=self.f_size)
+
+        # the 3rd subplot
+        ax10 = plt.subplot(gs[1,0])
+        ax10.hist(hop_a.xms, bins = self.bins.hnc, ec = self.colors[0], label="" ,fc='none', lw=2)
+        ax10.hist(hop_a.cas, bins = self.bins.hnc, ec = self.colors[1], label="" ,fc='none', lw=2)
+        ax10.hist(hop_a.vqe, bins = self.bins.hnc, ec = self.colors[2], label="" ,fc='none', lw=2)
+        ax10.set_xlim([0,180])
+        ax10.xaxis.set_major_locator(ticker.MultipleLocator(30))
+        ax10.set_xlabel('$\mathbf{\sphericalangle C_1N_2H_5(degrees)}$', fontsize=self.f_size)
+
+        # the 4th subplot
+        ax11 = plt.subplot(gs[1,1])
+        ax11.hist(hop_p.xms, bins = self.bins.pyr, ec = self.colors[0], label="" ,fc='none', lw=2)
+        ax11.hist(hop_p.cas, bins = self.bins.pyr, ec = self.colors[1], label="" ,fc='none', lw=2)
+        ax11.hist(hop_p.vqe, bins = self.bins.pyr, ec = self.colors[2], label="" ,fc='none', lw=2)
+        ax11.set_xlim([0,180])
+        ax11.xaxis.set_major_locator(ticker.MultipleLocator(30))
+        ax11.set_xlabel('$\mathbf{Pyramidalization (degrees)}$', fontsize=self.f_size)
+
+        # Set a single y-axis label for both histograms
+        fig.supylabel('Number of Hops', fontweight='bold', fontsize=18)
+        # Adjust space between the title and subplots
+        plt.subplots_adjust(top=0.9, bottom=0.1, left=0.09, right=0.9, hspace=0.2)
+        
+        # Set labels and legends
+        ax00.text(0.95, 0.95, f'(a)', transform=ax00.transAxes,
+             fontsize=self.f_size, fontweight='bold', va='top', ha='right')
+        ax01.text(0.95, 0.95, f'(b)', transform=ax01.transAxes,
+             fontsize=self.f_size, fontweight='bold', va='top', ha='right')
+        ax10.text(0.95, 0.95, f'(c)', transform=ax10.transAxes,
+             fontsize=self.f_size, fontweight='bold', va='top', ha='right')
+        ax11.text(0.95, 0.95, f'(d)', transform=ax11.transAxes,
+             fontsize=self.f_size, fontweight='bold', va='top', ha='right')
+
+        # put legend on first subplot
+        ax00.legend(loc='upper center', bbox_to_anchor=(1, 1.2), prop={'size': 14}, ncol=3)
+
+        plt.savefig("number_of_hops_4.pdf", bbox_inches='tight')
+        plt.savefig("number_of_hops_4.png", bbox_inches='tight')
+        plt.close()
+
     def plot_1d_histogram_4_plots_S1_S0(self, xms_caspt2, sa_casscf, sa_oo_vqe):
         #e_gap
         hop_e = self._hop_10(xms_caspt2,sa_casscf,sa_oo_vqe,"e_gap.dat")
@@ -377,8 +624,8 @@ class PlotComb:
         ax01.hist(hop_d.xms, bins = self.bins.hnch, ec = self.colors[0], label="" ,fc='none', lw=2)
         ax01.hist(hop_d.cas, bins = self.bins.hnch, ec = self.colors[1], label="" ,fc='none', lw=2)
         ax01.hist(hop_d.vqe, bins = self.bins.hnch, ec = self.colors[2], label="" ,fc='none', lw=2)
-        ax01.set_xlim([-180,180])
-        ax01.xaxis.set_major_locator(ticker.MultipleLocator(60))
+        ax01.set_xlim([0,180])
+        ax01.xaxis.set_major_locator(ticker.MultipleLocator(30))
         ax01.set_xlabel('$\mathbf{\sphericalangle H_3C_1N_2H_5(degrees)}$', fontsize=self.f_size)
 
         # the 3rd subplot
@@ -395,8 +642,8 @@ class PlotComb:
         ax11.hist(hop_p.xms, bins = self.bins.pyr, ec = self.colors[0], label="" ,fc='none', lw=2)
         ax11.hist(hop_p.cas, bins = self.bins.pyr, ec = self.colors[1], label="" ,fc='none', lw=2)
         ax11.hist(hop_p.vqe, bins = self.bins.pyr, ec = self.colors[2], label="" ,fc='none', lw=2)
-        ax11.set_xlim([-180,180])
-        ax11.xaxis.set_major_locator(ticker.MultipleLocator(60))
+        ax11.set_xlim([0,180])
+        ax11.xaxis.set_major_locator(ticker.MultipleLocator(30))
         ax11.set_xlabel('$\mathbf{Pyramidalization (degrees)}$', fontsize=self.f_size)
 
         # Set a single y-axis label for both histograms
@@ -475,42 +722,52 @@ class PlotComb:
         hop_01 = []
         hop_10_hnch_lower = []
         hop_10_hnch_upper = []
-        #hop_10_hnc = []
-        #hop_10_pyr = []
+        hop_10_hnc = []
+        hop_10_pyr = []
         for j in range(1,mdsteps):   #time_steps 
             for i in range(trajs):          #trajectories
                 ene = ene_d[j,i] 
                 if hop[j-1,i]==1 and hop[j,i]==0:
-                    hop_10.append(ene)
+                    hop_10.append(abs(ene))
                     if parameter == "dihe_2014.dat" and ene < 0:
                         hop_10_hnch_lower.append(ene)
                     elif parameter == "dihe_2014.dat" and ene > 0:
                         hop_10_hnch_upper.append(ene)
-                    #elif parameter == "angle_014.dat":
-                    #    hop_10_hnc.append(ene)
-                    #elif parameter == "pyr_3210.dat":
-                    #    hop_10_pyr.append(ene)
+                    elif parameter == "angle_014.dat":
+                        hop_10_hnc.append(ene)
+                    elif parameter == "pyr_3210.dat":
+                        hop_10_pyr.append(ene)
                 elif hop[j-1,i]==0 and hop[j,i]==1:
                     hop_01.append(ene)
+                    #if parameter == "angle_014.dat":
+                    #    hop_10_hnc.append(ene)
+                    #elif parameter == "pyr_3210.dat":
+                    #    hop_10_pyr.append(abs(ene))
         if parameter in ["dihe_2014.dat"]:
             print(f"Average hnch < 0:", sum(hop_10_hnch_lower)/len(hop_10_hnch_lower))
             print(f"Average hnch > 0:", sum(hop_10_hnch_upper)/len(hop_10_hnch_upper))
+            print(f"Average abs(hnch):", sum(hop_10)/len(hop_10))
         elif parameter in ["angle_014.dat"]:
-            print(f"Average hnc:", sum(hop_10)/len(hop_10))
+            print(f"Average hnc:", sum(hop_10_hnc)/len(hop_10_hnc))
+            print(f"Average abc(hnc):", sum(hop_10)/len(hop_10))
         elif parameter in ["pyr_3210.dat"]:
-            print(f"Average pyr:", sum(hop_10)/len(hop_10))
+            print(f"Average pyr:", sum(hop_10_pyr)/len(hop_10_pyr))
+            print(f"Average abs(pyr):", sum(hop_10)/len(hop_10))
         elif parameter in ["e_gap.dat"]:
             print(f"Average e_gap:", sum(hop_10)/len(hop_10))
         return hop_10, hop_01
 
-    def plot_torsion_ave(self,xms_caspt2,sa_casscf,sa_oo_vqe):
-        time_0, torsion_0 = self.get_torsion_ave(xms_caspt2)
-        time_1, torsion_1 = self.get_torsion_ave(sa_casscf)
-        time_2, torsion_2 = self.get_torsion_ave(sa_oo_vqe)
+    def plot_torsion_ave_qy(self,xms_caspt2,sa_casscf,sa_oo_vqe):
+        time_0, lower_0, upper_0, else_0 = self.get_torsion_qy_ave(xms_caspt2)
+        time_1, lower_1, upper_1, else_1 = self.get_torsion_qy_ave(sa_casscf)
+        time_2, lower_2, upper_2, else_2 = self.get_torsion_qy_ave(sa_oo_vqe)
         fig, ax = plt.subplots()
-        plt.plot(time_0,torsion_0, label = self.labels[0], lw=2)
-        plt.plot(time_1,torsion_1, label = self.labels[1], lw=2)
-        plt.plot(time_2,torsion_2, label = self.labels[2], lw=2)
+        plt.plot(time_0,upper_0, label = self.labels[0], color = self.colors[0],lw=2)
+        plt.plot(time_1,upper_1, label = self.labels[1], color = self.colors[1],lw=2)
+        plt.plot(time_2,upper_2, label = self.labels[2], color = self.colors[2],lw=2)
+        plt.plot(time_0,lower_0, label = self.labels[0], color = self.colors[0],lw=2)
+        plt.plot(time_1,lower_1, label = self.labels[1], color = self.colors[1],lw=2)
+        plt.plot(time_2,lower_2, label = self.labels[2], color = self.colors[2],lw=2)
         plt.xlim([self.t_0, self.t_max])
         plt.xticks(fontsize=15)
         plt.yticks(fontsize=15)
@@ -523,9 +780,69 @@ class PlotComb:
         ax1.set_ylim([-1, 180])
         ax1.tick_params(labelsize=15)
         ax1.set_ylabel(" ")
-        plt.savefig("torsion_comb_S%i.pdf" %index, bbox_inches='tight')
-        plt.savefig("torsion_adi_comb_S%i.png" %index, bbox_inches='tight')
+        plt.savefig("torsion_ave_comb_qy.pdf", bbox_inches='tight')
+        plt.savefig("torsion_ave_comb_qy.png", bbox_inches='tight')
         plt.close()
+
+    def plot_torsion_ave(self, xms_caspt2, sa_casscf, sa_oo_vqe):
+        time_0, torsion_0, std_0 = self.get_torsion_ave(xms_caspt2)
+        time_1, torsion_1, std_1 = self.get_torsion_ave(sa_casscf)
+        time_2, torsion_2, std_2 = self.get_torsion_ave(sa_oo_vqe)
+
+        fig, ax = plt.subplots()
+
+        # Plot the lines
+        plt.plot(time_0, torsion_0, label=self.labels[0], lw=2)
+        plt.plot(time_1, torsion_1, label=self.labels[1], lw=2)
+        plt.plot(time_2, torsion_2, label=self.labels[2], lw=2)
+
+        # Plot the standard deviation (shaded area)
+        plt.fill_between(time_0, np.array(torsion_0) - np.array(std_0),
+                         np.array(torsion_0) + np.array(std_0), alpha=0.3, linestyle='-.', edgecolor=self.colors[0])
+        plt.fill_between(time_1, np.array(torsion_1) - np.array(std_1),
+                         np.array(torsion_1) + np.array(std_1), alpha=0.3, linestyle='--', edgecolor=self.colors[1])
+        plt.fill_between(time_2, np.array(torsion_2) - np.array(std_2),
+                         np.array(torsion_2) + np.array(std_2), alpha=0.3, linestyle=':', edgecolor=self.colors[2])
+
+        # Customize axis limits, labels, and formatting
+        plt.xlim([self.t_0, self.t_max])
+        plt.xticks(fontsize=15)
+        plt.yticks(fontsize=15)
+        plt.xlabel('Time (fs)', fontweight='bold', fontsize=16)
+        plt.ylabel('Torsion (degrees)', fontweight='bold', fontsize=16)
+
+        # Show legend and save the plot
+        plt.legend(loc='lower right', fontsize=13, frameon=False)
+        plt.ylim([-1, 180])
+
+        plt.savefig("torsion_ave_comb_std.pdf", bbox_inches='tight')
+        plt.savefig("torsion_ave_comb_std.png", bbox_inches='tight')
+        plt.close()
+
+
+    #def plot_torsion_ave(self,xms_caspt2,sa_casscf,sa_oo_vqe):
+    #    time_0, torsion_0 = self.get_torsion_ave(xms_caspt2)
+    #    time_1, torsion_1 = self.get_torsion_ave(sa_casscf)
+    #    time_2, torsion_2 = self.get_torsion_ave(sa_oo_vqe)
+    #    fig, ax = plt.subplots()
+    #    plt.plot(time_0,torsion_0, label = self.labels[0], lw=2)
+    #    plt.plot(time_1,torsion_1, label = self.labels[1], lw=2)
+    #    plt.plot(time_2,torsion_2, label = self.labels[2], lw=2)
+    #    plt.xlim([self.t_0, self.t_max])
+    #    plt.xticks(fontsize=15)
+    #    plt.yticks(fontsize=15)
+    #    plt.xlabel('Time (fs)', fontweight = 'bold', fontsize = 16)
+    #    plt.ylabel('Torsion (degrees)', fontweight = 'bold', fontsize = 16)
+    #    ax.spines['right'].set_visible(True)
+    #    plt.ylim([-1, 180])
+    #    plt.legend(loc='lower right',fontsize=13, frameon=False)
+    #    ax1 = ax.twinx()
+    #    ax1.set_ylim([-1, 180])
+    #    ax1.tick_params(labelsize=15)
+    #    ax1.set_ylabel(" ")
+    #    plt.savefig("torsion_ave_comb.pdf", bbox_inches='tight')
+    #    plt.savefig("torsion_ave_comb.png", bbox_inches='tight')
+    #    plt.close()
     
     def plot_population_adi(self,index,xms_caspt2,sa_casscf,sa_oo_vqe):
         time_0, population_0 = self.get_popu_adi(xms_caspt2,os.path.join(xms_caspt2,"pop.dat"))
@@ -577,5 +894,6 @@ if __name__=="__main__":
     #out.plot_1d_histogram_4_plots_S1_S0(xms_caspt2,sa_casscf,sa_oo_vqe)
     #out.print_stat(xms_caspt2, sa_casscf, sa_oo_vqe)
     out.plot_torsion_ave(xms_caspt2, sa_casscf, sa_oo_vqe)
+    #out.plot_torsion_ave_qy(xms_caspt2, sa_casscf, sa_oo_vqe)
     
 
