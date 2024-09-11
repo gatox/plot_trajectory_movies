@@ -23,6 +23,7 @@ class PlotComb:
         self.f_size = '11'
         self.t_0 = t_0
         self.colors = plt.rcParams['axes.prop_cycle'].by_key()['color'][:3] 
+        self.n_colors = ["purple","gold","olive"] 
         self.labels = ["XMS-CASPT2","SA-CASSCF","SA-OO-VQE"]
         self.t_max = t_max
         # Define bins
@@ -235,6 +236,35 @@ class PlotComb:
         para_std = np.nanstd(para_data, axis=1)  # Use np.nanstd to ignore NaN values
         
         return ave_time, ave_para, para_std
+
+    def get_noise_ave(self, folder, noise):
+        filename = os.path.join(folder, noise)
+        ave_time = []
+        ave_noise = []
+        noise_data = []  # Store all noise values across time steps for each trajectory
+        
+        with open(filename, 'r') as fh:
+            reader = csv.DictReader(fh)
+            for row in reader:
+                ave_time.append(float(row['time']))
+                noise_vals = []
+                for k, val in row.items():
+                    if k == 'time':
+                        continue
+                    if val != 'nan':  # Only consider valid (non-'nan') values
+                        noise_vals.append(abs(float(val)))
+                
+                if len(noise_vals) > 0:  # If we have valid noise values
+                    ave_noise.append(np.mean(noise_vals))  # Compute average
+                    noise_data.append(noise_vals)  # Store the noise values for std calculation
+        
+        # Convert noise_data into a numpy array (2D array: rows -> time steps, columns -> trajectories)
+        noise_data = np.array([np.pad(t, (0, max(len(x) for x in noise_data) - len(t)), constant_values=np.nan) for t in noise_data])
+        
+        # Compute standard deviation along axis=1 (time axis)
+        noise_std = np.nanstd(noise_data, axis=1)  # Use np.nanstd to ignore NaN values
+        
+        return ave_time, ave_noise, noise_std
 
     def get_torsion_ave(self, folder):
         filename = os.path.join(folder, "dihe_2014.dat")
@@ -518,7 +548,7 @@ class PlotComb:
     def _para(self, xms_caspt2, sa_casscf, sa_oo_vqe, data):
         time_xms, ave_xms, std_xms = self.get_parameter_ave(xms_caspt2, data)
         time_cas, ave_cas, std_cas = self.get_parameter_ave(sa_casscf, data)
-        time_vqe, ave_vqe, std_cas = self.get_parameter_ave(sa_oo_vqe, data)
+        time_vqe, ave_vqe, std_vqe = self.get_parameter_ave(sa_oo_vqe, data)
         para = namedtuple("para","t_xms av_xms std_xms t_cas av_cas std_cas t_vqe av_vqe std_vqe") 
         return para(time_xms,ave_xms,std_xms,time_cas,ave_cas,std_cas,time_vqe,ave_vqe,std_vqe)
 
@@ -540,60 +570,168 @@ class PlotComb:
         gs = gridspec.GridSpec(4, 1, height_ratios=[1,1,1,1])
         # the 1st subplot
         ax0 = plt.subplot(gs[0])
-        ax0.plot(time_0,np.array(population_0)[:,index], label = self.labels[0], lw=2)
-        ax0.plot(time_1,np.array(population_1)[:,index], label = self.labels[1], lw=2)
-        ax0.plot(time_2,np.array(population_2)[:,index], label = self.labels[2], lw=2)
-        ax0.set_xlim([self.t_0, self.t_max])
-        ax0.xaxis.set_major_locator(ticker.MultipleLocator(0.6))
-        ax0.set_ylabel('$\mathbf{S_%i\ Population}$' %index, fontsize = 16)
+        ax0.plot(time_0,np.array(population_0)[:,1], label = self.labels[0], lw=2)
+        ax0.plot(time_1,np.array(population_1)[:,1], label = self.labels[1], lw=2)
+        ax0.plot(time_2,np.array(population_2)[:,1], label = self.labels[2], lw=2)
+        ax0r = ax0.twinx()
+        ax0r.set_ylim([-0.05, 1.05])
+        ax0r.tick_params(labelsize=self.fs_rcParams)
+        ax0.set_ylabel('$\mathbf{S_1\ Population}$', fontsize =self.f_size)
+        ax0.set_xlim([0,200])
+        ax0.set_ylim([-0.06,1.05])
+        ax0.xaxis.set_major_locator(ticker.MultipleLocator(25))
             
         # the 2nd subplot
         ax1 = plt.subplot(gs[1], sharex = ax0)
-        ax01.hist(hop_d.xms, bins = self.bins.hnch, ec = self.colors[0], label="" ,fc='none', lw=2)
-        ax01.hist(hop_d.cas, bins = self.bins.hnch, ec = self.colors[1], label="" ,fc='none', lw=2)
-        ax01.hist(hop_d.vqe, bins = self.bins.hnch, ec = self.colors[2], label="" ,fc='none', lw=2)
-        ax01.set_xlim([0,180])
-        ax01.xaxis.set_major_locator(ticker.MultipleLocator(30))
-        ax01.set_xlabel('$\mathbf{\sphericalangle H_3C_1N_2H_5(degrees)}$', fontsize=self.f_size)
+        ax1.plot(dihe.t_xms,dihe.av_xms, lw=2)
+        ax1.plot(dihe.t_cas,dihe.av_cas, lw=2)
+        ax1.plot(dihe.t_vqe,dihe.av_vqe, lw=2)
+        ax1r = ax1.twinx()
+        ax1r.set_ylim([-8, 185])
+        ax1r.yaxis.set_major_locator(ticker.MultipleLocator(30))
+        ax1r.tick_params(labelsize=self.fs_rcParams)
+        # Plot the standard deviation (shaded area)
+        ax1.fill_between(dihe.t_xms, np.array(dihe.av_xms) - np.array(dihe.std_xms),
+                         np.array(dihe.av_xms) + np.array(dihe.std_xms), alpha=0.3, linestyle='-.', edgecolor=self.colors[0])
+        ax1.fill_between(dihe.t_cas, np.array(dihe.av_cas) - np.array(dihe.std_cas),
+                         np.array(dihe.av_cas) + np.array(dihe.std_cas), alpha=0.3, linestyle='--', edgecolor=self.colors[1])
+        ax1.fill_between(dihe.t_vqe, np.array(dihe.av_vqe) - np.array(dihe.std_vqe),
+                         np.array(dihe.av_vqe) + np.array(dihe.std_vqe), alpha=0.3, linestyle=':', edgecolor=self.colors[2])
+        ax1.set_ylim([-8,185])
+        ax1.yaxis.set_major_locator(ticker.MultipleLocator(30))
+        ax1.set_ylabel('$\mathbf{\sphericalangle H_3C_1N_2H_5(degrees)}$', fontsize=self.f_size)
+        plt.setp(ax0.get_xticklabels(), visible=False)
 
         # the 3rd subplot
-        ax10 = plt.subplot(gs[1,0])
-        ax10.hist(hop_a.xms, bins = self.bins.hnc, ec = self.colors[0], label="" ,fc='none', lw=2)
-        ax10.hist(hop_a.cas, bins = self.bins.hnc, ec = self.colors[1], label="" ,fc='none', lw=2)
-        ax10.hist(hop_a.vqe, bins = self.bins.hnc, ec = self.colors[2], label="" ,fc='none', lw=2)
-        ax10.set_xlim([0,180])
-        ax10.xaxis.set_major_locator(ticker.MultipleLocator(30))
-        ax10.set_xlabel('$\mathbf{\sphericalangle C_1N_2H_5(degrees)}$', fontsize=self.f_size)
+        ax2 = plt.subplot(gs[2], sharex = ax0)
+        ax2.plot(bend.t_xms,bend.av_xms, lw=2)
+        ax2.plot(bend.t_cas,bend.av_cas, lw=2)
+        ax2.plot(bend.t_vqe,bend.av_vqe, lw=2)
+        ax2r = ax2.twinx()
+        ax2r.set_ylim([53, 185])
+        ax2r.yaxis.set_major_locator(ticker.MultipleLocator(20))
+        ax2r.tick_params(labelsize=self.fs_rcParams)
+        # Plot the standard deviation (shaded area)
+        ax2.fill_between(bend.t_xms, np.array(bend.av_xms) - np.array(bend.std_xms),
+                         np.array(bend.av_xms) + np.array(bend.std_xms), alpha=0.3, linestyle='-.', edgecolor=self.colors[0])
+        ax2.fill_between(bend.t_cas, np.array(bend.av_cas) - np.array(bend.std_cas),
+                         np.array(bend.av_cas) + np.array(bend.std_cas), alpha=0.3, linestyle='--', edgecolor=self.colors[1])
+        ax2.fill_between(bend.t_vqe, np.array(bend.av_vqe) - np.array(bend.std_vqe),
+                         np.array(bend.av_vqe) + np.array(bend.std_vqe), alpha=0.3, linestyle=':', edgecolor=self.colors[2])
+        ax2.set_ylim([53,185])
+        ax2.yaxis.set_major_locator(ticker.MultipleLocator(20))
+        ax2.set_ylabel('$\mathbf{\sphericalangle C_1N_2H_5(degrees)}$', fontsize=self.f_size)
+        plt.setp(ax1.get_xticklabels(), visible=False)
 
         # the 4th subplot
-        ax11 = plt.subplot(gs[1,1])
-        ax11.hist(hop_p.xms, bins = self.bins.pyr, ec = self.colors[0], label="" ,fc='none', lw=2)
-        ax11.hist(hop_p.cas, bins = self.bins.pyr, ec = self.colors[1], label="" ,fc='none', lw=2)
-        ax11.hist(hop_p.vqe, bins = self.bins.pyr, ec = self.colors[2], label="" ,fc='none', lw=2)
-        ax11.set_xlim([0,180])
-        ax11.xaxis.set_major_locator(ticker.MultipleLocator(30))
-        ax11.set_xlabel('$\mathbf{Pyramidalization (degrees)}$', fontsize=self.f_size)
+        ax3 = plt.subplot(gs[3], sharex = ax0)
+        ax3.plot(pyr.t_xms,pyr.av_xms, lw=2)
+        ax3.plot(pyr.t_cas,pyr.av_cas, lw=2)
+        ax3.plot(pyr.t_vqe,pyr.av_vqe, lw=2)
+        ax3r = ax3.twinx()
+        ax3r.set_ylim([-8, 95])
+        ax3r.yaxis.set_major_locator(ticker.MultipleLocator(15))
+        ax3r.tick_params(labelsize=self.fs_rcParams)
+        # Plot the standard deviation (shaded area)
+        ax3.fill_between(pyr.t_xms, np.array(pyr.av_xms) - np.array(pyr.std_xms),
+                         np.array(pyr.av_xms) + np.array(pyr.std_xms), alpha=0.3, linestyle='-.', edgecolor=self.colors[0])
+        ax3.fill_between(pyr.t_cas, np.array(pyr.av_cas) - np.array(pyr.std_cas),
+                         np.array(pyr.av_cas) + np.array(pyr.std_cas), alpha=0.3, linestyle='--', edgecolor=self.colors[1])
+        ax3.fill_between(pyr.t_vqe, np.array(pyr.av_vqe) - np.array(pyr.std_vqe),
+                         np.array(pyr.av_vqe) + np.array(pyr.std_vqe), alpha=0.3, linestyle=':', edgecolor=self.colors[2])
+        ax3.set_ylim([-8,95])
+        ax3.yaxis.set_major_locator(ticker.MultipleLocator(15))
+        ax3.set_ylabel('$\mathbf{Pyramidalization (degrees)}$', fontsize=self.f_size)
+        ax3.set_xlabel('Time (fs)', fontweight = 'bold', fontsize =self.f_size)
+        plt.setp(ax2.get_xticklabels(), visible=False)
 
-        # Set a single y-axis label for both histograms
-        fig.supylabel('Number of Hops', fontweight='bold', fontsize=18)
         # Adjust space between the title and subplots
         plt.subplots_adjust(top=0.9, bottom=0.1, left=0.09, right=0.9, hspace=0.2)
         
         # Set labels and legends
-        ax00.text(0.95, 0.95, f'(a)', transform=ax00.transAxes,
+        ax0.text(0.95, 0.95, f'(a)', transform=ax0.transAxes,
              fontsize=self.f_size, fontweight='bold', va='top', ha='right')
-        ax01.text(0.95, 0.95, f'(b)', transform=ax01.transAxes,
+        ax1.text(0.95, 0.95, f'(b)', transform=ax1.transAxes,
              fontsize=self.f_size, fontweight='bold', va='top', ha='right')
-        ax10.text(0.95, 0.95, f'(c)', transform=ax10.transAxes,
+        ax2.text(0.95, 0.95, f'(c)', transform=ax2.transAxes,
              fontsize=self.f_size, fontweight='bold', va='top', ha='right')
-        ax11.text(0.95, 0.95, f'(d)', transform=ax11.transAxes,
+        ax3.text(0.95, 0.95, f'(d)', transform=ax3.transAxes,
              fontsize=self.f_size, fontweight='bold', va='top', ha='right')
 
         # put legend on first subplot
-        ax00.legend(loc='upper center', bbox_to_anchor=(1, 1.2), prop={'size': 14}, ncol=3)
+        ax0.legend(loc='upper center', bbox_to_anchor=(0.5, 1.2), prop={'size': 12}, ncol=3)
 
-        plt.savefig("number_of_hops_4.pdf", bbox_inches='tight')
-        plt.savefig("number_of_hops_4.png", bbox_inches='tight')
+        # remove vertical gap between subplots
+        plt.subplots_adjust(hspace=0.0)
+        plt.savefig("avg_popu_dihe_bend_pyr.pdf", bbox_inches='tight')
+        plt.savefig("avg_popu_dihe_bend_pyr.png", bbox_inches='tight')
+        plt.close()
+
+    def plot_av_popu_noise(self, folder):
+        #popu
+        time_0, population_0 = self.get_popu_adi(folder,os.path.join(folder,"variance_10/pop.dat"))
+        time_1, population_1 = self.get_popu_adi(folder,os.path.join(folder,"variance_08/pop.dat"))
+        time_2, population_2 = self.get_popu_adi(folder,os.path.join(folder,"variance_06/pop.dat"))
+        #noise
+        time_0, noise_0, std_0 = self.get_noise_ave(folder,'variance_10/etot.dat')
+        time_1, noise_1, std_1 = self.get_noise_ave(folder,'variance_08/etot.dat')
+        time_2, noise_2, std_2 = self.get_noise_ave(folder,'variance_06/etot.dat')
+
+        plt.rcParams['font.size'] = self.fs_rcParams
+        fig = plt.figure(figsize=(6,14))
+        # set height ratios for subplots
+        gs = gridspec.GridSpec(4, 1, height_ratios=[1,1,1,1])
+        # the 1st subplot
+        ax0 = plt.subplot(gs[0])
+        ax0.plot(time_0,np.array(population_0)[:,1], color = self.n_colors[0], label = r"$\sigma^2$=1.0e-10", lw=2)
+        ax0.plot(time_1,np.array(population_1)[:,1], color = self.n_colors[1], label = r"$\sigma^2$=1.0e-08", lw=2)
+        ax0.plot(time_2,np.array(population_2)[:,1], color = self.n_colors[2], label = r"$\sigma^2$=1.0e-06", lw=2)
+        ax0r = ax0.twinx()
+        ax0r.set_ylim([-0.05, 1.05])
+        ax0r.tick_params(labelsize=self.fs_rcParams)
+        ax0.set_ylabel('$\mathbf{S_1\ Population}$', fontsize =self.f_size)
+        ax0.set_xlim([0,200])
+        ax0.set_ylim([-0.06,1.05])
+        ax0.xaxis.set_major_locator(ticker.MultipleLocator(25))
+            
+        # the 2nd subplot
+        ax1 = plt.subplot(gs[1], sharex = ax0)
+        ax1.plot(time_0, noise_0, color = self.n_colors[0], lw=2)
+        ax1.plot(time_1, noise_1, color = self.n_colors[1], lw=2)
+        ax1.plot(time_2, noise_2, color = self.n_colors[2], lw=2)
+        ax1r = ax1.twinx()
+        ax1r.set_ylim([-0.05, 2.37])
+        ax1r.yaxis.set_major_locator(ticker.MultipleLocator(0.3))
+        ax1r.tick_params(labelsize=self.fs_rcParams)
+        # Plot the standard deviation (shaded area)
+        ax1.fill_between(time_0, np.array(noise_0) - np.array(std_0),
+                         np.array(noise_0) + np.array(std_0), alpha=0.3, color = self.n_colors[0], linestyle='-.', edgecolor=self.n_colors[0])
+        ax1.fill_between(time_1, np.array(noise_1) - np.array(std_1),
+                         np.array(noise_1) + np.array(std_1), alpha=0.3, color = self.n_colors[1], linestyle='--', edgecolor=self.n_colors[1])
+        ax1.fill_between(time_2, np.array(noise_2) - np.array(std_2),
+                         np.array(noise_2) + np.array(std_2), alpha=0.3, color = self.n_colors[2], linestyle=':', edgecolor=self.n_colors[2])
+        ax1.set_ylim([-0.05, 2.37])
+        ax1.yaxis.set_major_locator(ticker.MultipleLocator(0.3))
+        ax1.set_ylabel('$\mathbf{\Delta\ Total\ Energy\ (eV)}$', fontsize=self.f_size)
+        ax1.set_xlabel('Time (fs)', fontweight = 'bold', fontsize =self.f_size)
+        plt.setp(ax0.get_xticklabels(), visible=False)
+
+        # Adjust space between the title and subplots
+        plt.subplots_adjust(top=0.9, bottom=0.1, left=0.09, right=0.9, hspace=0.2)
+        
+        # Set labels and legends
+        ax0.text(0.95, 0.95, f'(a)', transform=ax0.transAxes,
+             fontsize=self.f_size, fontweight='bold', va='top', ha='right')
+        ax1.text(0.95, 0.95, f'(b)', transform=ax1.transAxes,
+             fontsize=self.f_size, fontweight='bold', va='top', ha='right')
+
+        # put legend on first subplot
+        ax0.legend(loc='upper center', bbox_to_anchor=(0.5, 1.2), prop={'size': 12}, ncol=3)
+
+        # remove vertical gap between subplots
+        plt.subplots_adjust(hspace=0.0)
+        plt.savefig("avg_popu_noise.pdf", bbox_inches='tight')
+        plt.savefig("avg_popu_noise.png", bbox_inches='tight')
         plt.close()
 
     def plot_1d_histogram_4_plots_S1_S0(self, xms_caspt2, sa_casscf, sa_oo_vqe):
@@ -784,6 +922,42 @@ class PlotComb:
         plt.savefig("torsion_ave_comb_qy.png", bbox_inches='tight')
         plt.close()
 
+    def plot_variance_noise(self, folder):
+        time_0, noise_0, std_0 = self.get_noise_ave(folder,'variance_10/etot.dat')
+        time_1, noise_1, std_1 = self.get_noise_ave(folder,'variance_08/etot.dat')
+        time_2, noise_2, std_2 = self.get_noise_ave(folder,'variance_06/etot.dat')
+
+        fig, ax = plt.subplots()
+
+        # Plot the lines
+        plt.plot(time_0, noise_0, label=r"$\sigma^2$=1.0e-10", lw=2)
+        plt.plot(time_1, noise_1, label=r"$\sigma^2$=1.0e-08", lw=2)
+        plt.plot(time_2, noise_2, label=r"$\sigma^2$=1.0e-06", lw=2)
+
+        # Plot the standard deviation (shaded area)
+        plt.fill_between(time_0, np.array(noise_0) - np.array(std_0),
+                         np.array(noise_0) + np.array(std_0), alpha=0.3, linestyle='-.', edgecolor=self.colors[0])
+        plt.fill_between(time_1, np.array(noise_1) - np.array(std_1),
+                         np.array(noise_1) + np.array(std_1), alpha=0.3, linestyle='--', edgecolor=self.colors[1])
+        plt.fill_between(time_2, np.array(noise_2) - np.array(std_2),
+                         np.array(noise_2) + np.array(std_2), alpha=0.3, linestyle=':', edgecolor=self.colors[2])
+
+        # Customize axis limits, labels, and formatting
+        plt.xticks(fontsize=15)
+        plt.yticks(fontsize=15)
+        plt.xlabel('Time (fs)', fontweight='bold', fontsize=16)
+        plt.ylabel(r'$\Delta$ Total Energy (eV)', fontweight='bold', fontsize=16)
+
+        # Show legend and save the plot
+        plt.legend(loc='upper left', fontsize=13, frameon=False)
+        plt.ylim([-0.05, 2.4])
+        ax.yaxis.set_major_locator(ticker.MultipleLocator(0.2))
+        plt.xlim([0, 200])
+
+        plt.savefig("total_ene_ave_comb_std.pdf", bbox_inches='tight')
+        plt.savefig("total_ene_ave_comb_std.png", bbox_inches='tight')
+        plt.close()
+
     def plot_torsion_ave(self, xms_caspt2, sa_casscf, sa_oo_vqe):
         time_0, torsion_0, std_0 = self.get_torsion_ave(xms_caspt2)
         time_1, torsion_1, std_1 = self.get_torsion_ave(sa_casscf)
@@ -881,6 +1055,7 @@ if __name__=="__main__":
     xms_caspt2 = "../xms_caspt2"
     sa_oo_vqe = "../sa_oo_vqe"
     sa_casscf = "../sa_casscf"
+    noise_sa_00_vqe = "../noise_sa_00_vqe"
     #time in fs
     t_0 = 0
     t_max = 200 
@@ -893,7 +1068,10 @@ if __name__=="__main__":
     #out.plot_1d_histogram_2_plots_energy(xms_caspt2,sa_casscf,sa_oo_vqe, 31)
     #out.plot_1d_histogram_4_plots_S1_S0(xms_caspt2,sa_casscf,sa_oo_vqe)
     #out.print_stat(xms_caspt2, sa_casscf, sa_oo_vqe)
-    out.plot_torsion_ave(xms_caspt2, sa_casscf, sa_oo_vqe)
+    #out.plot_torsion_ave(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_torsion_ave_qy(xms_caspt2, sa_casscf, sa_oo_vqe)
+    #out.plot_av_popu_torsion_bend(xms_caspt2, sa_casscf, sa_oo_vqe)
+    #out.plot_variance_noise(noise_sa_00_vqe)
+    out.plot_av_popu_noise(noise_sa_00_vqe)
     
 
