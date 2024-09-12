@@ -545,6 +545,11 @@ class PlotComb:
         hops = namedtuple("hops","xms cas vqe") 
         return hops(hop_10_xms,hop_10_cas,hop_10_vqe)
 
+    def _one_para(self, method, data):
+        time_met, ave_met, std_met = self.get_parameter_ave(method, data)
+        para = namedtuple("para","t_met av_met std_met") 
+        return para(time_met,ave_met,std_met)
+
     def _para(self, xms_caspt2, sa_casscf, sa_oo_vqe, data):
         time_xms, ave_xms, std_xms = self.get_parameter_ave(xms_caspt2, data)
         time_cas, ave_cas, std_cas = self.get_parameter_ave(sa_casscf, data)
@@ -578,7 +583,7 @@ class PlotComb:
         ax0r.tick_params(labelsize=self.fs_rcParams)
         ax0.set_ylabel('$\mathbf{S_1\ Population}$', fontsize =self.f_size)
         ax0.set_xlim([0,200])
-        ax0.set_ylim([-0.06,1.05])
+        ax0.set_ylim([-0.05,1.05])
         ax0.xaxis.set_major_locator(ticker.MultipleLocator(25))
             
         # the 2nd subplot
@@ -667,15 +672,11 @@ class PlotComb:
         plt.savefig("avg_popu_dihe_bend_pyr.png", bbox_inches='tight')
         plt.close()
 
-    def plot_av_popu_noise(self, folder):
+    def plot_one_method_av_popu_diff_ene(self,method):
         #popu
-        time_0, population_0 = self.get_popu_adi(folder,os.path.join(folder,"variance_10/pop.dat"))
-        time_1, population_1 = self.get_popu_adi(folder,os.path.join(folder,"variance_08/pop.dat"))
-        time_2, population_2 = self.get_popu_adi(folder,os.path.join(folder,"variance_06/pop.dat"))
-        #noise
-        time_0, noise_0, std_0 = self.get_noise_ave(folder,'variance_10/etot.dat')
-        time_1, noise_1, std_1 = self.get_noise_ave(folder,'variance_08/etot.dat')
-        time_2, noise_2, std_2 = self.get_noise_ave(folder,'variance_06/etot.dat')
+        time_0, population_0 = self.get_popu_adi(method,os.path.join(method,"pop.dat"))
+        #diff_ene
+        d_ene = self._one_para(method,"etot.dat")
 
         plt.rcParams['font.size'] = self.fs_rcParams
         fig = plt.figure(figsize=(6,14))
@@ -683,6 +684,133 @@ class PlotComb:
         gs = gridspec.GridSpec(4, 1, height_ratios=[1,1,1,1])
         # the 1st subplot
         ax0 = plt.subplot(gs[0])
+        ax0.plot(time_0,np.array(population_0)[:,1], label = self.labels[2], lw=2)
+        ax0r = ax0.twinx()
+        ax0r.set_ylim([-0.05, 1.05])
+        ax0r.tick_params(labelsize=self.fs_rcParams)
+        ax0.set_ylabel('$\mathbf{S_1\ Population}$', fontsize =self.f_size)
+        ax0.set_xlim([0,200])
+        ax0.set_ylim([-0.05,1.05])
+        ax0.xaxis.set_major_locator(ticker.MultipleLocator(25))
+            
+        # the 2nd subplot
+        ax1 = plt.subplot(gs[1], sharex = ax0)
+        ax1.plot(d_ene.t_met,d_ene.av_met, lw=2)
+        ax1r = ax1.twinx()
+        ax1r.set_ylim([-0.05, 1])
+        ax1r.yaxis.set_major_locator(ticker.MultipleLocator(0.3))
+        ax1r.tick_params(labelsize=self.fs_rcParams)
+        # Plot the standard deviation (shaded area)
+        ax1.fill_between(d_ene.t_met, np.array(d_ene.av_met) - np.array(d_ene.std_met),
+                         np.array(d_ene.av_met) + np.array(d_ene.std_met), alpha=0.3, linestyle='-.', edgecolor=self.colors[0])
+        ax1.set_ylim([-0.05, 1])
+        ax1.yaxis.set_major_locator(ticker.MultipleLocator(0.3))
+        ax1.set_ylabel('$\mathbf{\Delta\ Total\ Energy\ (eV)}$', fontsize=self.f_size)
+        ax1.set_xlabel('Time (fs)', fontweight = 'bold', fontsize =self.f_size)
+        plt.setp(ax0.get_xticklabels(), visible=False)
+
+        # Adjust space between the title and subplots
+        plt.subplots_adjust(top=0.9, bottom=0.1, left=0.09, right=0.9, hspace=0.2)
+        
+        # Set labels and legends
+        ax0.text(0.95, 0.95, f'(a)', transform=ax0.transAxes,
+             fontsize=self.f_size, fontweight='bold', va='top', ha='right')
+        ax1.text(0.95, 0.95, f'(b)', transform=ax1.transAxes,
+             fontsize=self.f_size, fontweight='bold', va='top', ha='right')
+
+        # put legend on first subplot
+        ax0.legend(loc='upper center', bbox_to_anchor=(0.5, 1.2), prop={'size': 12}, ncol=3)
+
+        # remove vertical gap between subplots
+        plt.subplots_adjust(hspace=0.0)
+        plt.savefig("av_one_met_popu_diff_ene.pdf", bbox_inches='tight')
+        plt.savefig("av_one_met_popu_diff_ene.png", bbox_inches='tight')
+        plt.close()
+
+    def plot_av_popu_diff_ene(self,xms_caspt2,sa_casscf,sa_oo_vqe):
+        #popu
+        time_0, population_0 = self.get_popu_adi(xms_caspt2,os.path.join(xms_caspt2,"pop.dat"))
+        time_1, population_1 = self.get_popu_adi(sa_casscf,os.path.join(sa_casscf,"pop.dat"))
+        time_2, population_2 = self.get_popu_adi(sa_oo_vqe,os.path.join(sa_oo_vqe,"pop.dat"))
+        #diff_ene
+        d_ene = self._para(xms_caspt2,sa_casscf,sa_oo_vqe,"etot.dat")
+
+        plt.rcParams['font.size'] = self.fs_rcParams
+        fig = plt.figure(figsize=(6,14))
+        # set height ratios for subplots
+        gs = gridspec.GridSpec(4, 1, height_ratios=[1,1,1,1])
+        # the 1st subplot
+        ax0 = plt.subplot(gs[0])
+        ax0.plot(time_0,np.array(population_0)[:,1], label = self.labels[0], lw=2)
+        ax0.plot(time_1,np.array(population_1)[:,1], label = self.labels[1], lw=2)
+        ax0.plot(time_2,np.array(population_2)[:,1], label = self.labels[2], lw=2)
+        ax0r = ax0.twinx()
+        ax0r.set_ylim([-0.05, 1.05])
+        ax0r.tick_params(labelsize=self.fs_rcParams)
+        ax0.set_ylabel('$\mathbf{S_1\ Population}$', fontsize =self.f_size)
+        ax0.set_xlim([0,200])
+        ax0.set_ylim([-0.05,1.05])
+        ax0.xaxis.set_major_locator(ticker.MultipleLocator(25))
+            
+        # the 2nd subplot
+        ax1 = plt.subplot(gs[1], sharex = ax0)
+        ax1.plot(d_ene.t_xms,d_ene.av_xms, lw=2)
+        ax1.plot(d_ene.t_cas,d_ene.av_cas, lw=2)
+        ax1.plot(d_ene.t_vqe,d_ene.av_vqe, lw=2)
+        ax1r = ax1.twinx()
+        ax1r.set_ylim([-0.05, 1])
+        ax1r.yaxis.set_major_locator(ticker.MultipleLocator(0.3))
+        ax1r.tick_params(labelsize=self.fs_rcParams)
+        # Plot the standard deviation (shaded area)
+        ax1.fill_between(d_ene.t_xms, np.array(d_ene.av_xms) - np.array(d_ene.std_xms),
+                         np.array(d_ene.av_xms) + np.array(d_ene.std_xms), alpha=0.3, linestyle='-.', edgecolor=self.colors[0])
+        ax1.fill_between(d_ene.t_cas, np.array(d_ene.av_cas) - np.array(d_ene.std_cas),
+                         np.array(d_ene.av_cas) + np.array(d_ene.std_cas), alpha=0.3, linestyle='--', edgecolor=self.colors[1])
+        ax1.fill_between(d_ene.t_vqe, np.array(d_ene.av_vqe) - np.array(d_ene.std_vqe),
+                         np.array(d_ene.av_vqe) + np.array(d_ene.std_vqe), alpha=0.3, linestyle=':', edgecolor=self.colors[2])
+        ax1.set_ylim([-0.05, 1])
+        ax1.yaxis.set_major_locator(ticker.MultipleLocator(0.3))
+        ax1.set_ylabel('$\mathbf{\Delta\ Total\ Energy\ (eV)}$', fontsize=self.f_size)
+        ax1.set_xlabel('Time (fs)', fontweight = 'bold', fontsize =self.f_size)
+        plt.setp(ax0.get_xticklabels(), visible=False)
+
+        # Adjust space between the title and subplots
+        plt.subplots_adjust(top=0.9, bottom=0.1, left=0.09, right=0.9, hspace=0.2)
+        
+        # Set labels and legends
+        ax0.text(0.95, 0.95, f'(a)', transform=ax0.transAxes,
+             fontsize=self.f_size, fontweight='bold', va='top', ha='right')
+        ax1.text(0.95, 0.95, f'(b)', transform=ax1.transAxes,
+             fontsize=self.f_size, fontweight='bold', va='top', ha='right')
+
+        # put legend on first subplot
+        ax0.legend(loc='upper center', bbox_to_anchor=(0.5, 1.2), prop={'size': 12}, ncol=3)
+
+        # remove vertical gap between subplots
+        plt.subplots_adjust(hspace=0.0)
+        plt.savefig("av_popu_diff_ene.pdf", bbox_inches='tight')
+        plt.savefig("av_popu_diff_ene.png", bbox_inches='tight')
+        plt.close()
+
+    def plot_av_popu_noise(self, folder):
+        #popu
+        time_0, population_0 = self.get_popu_adi(folder,os.path.join(folder,"variance_10/pop.dat"))
+        time_1, population_1 = self.get_popu_adi(folder,os.path.join(folder,"variance_08/pop.dat"))
+        time_2, population_2 = self.get_popu_adi(folder,os.path.join(folder,"variance_06/pop.dat"))
+        time_3, population_3 = self.get_popu_adi(folder,os.path.join(folder,"variance_00/pop.dat"))
+        #noise
+        time_0, noise_0, std_0 = self.get_noise_ave(folder,'variance_10/etot.dat')
+        time_1, noise_1, std_1 = self.get_noise_ave(folder,'variance_08/etot.dat')
+        time_2, noise_2, std_2 = self.get_noise_ave(folder,'variance_06/etot.dat')
+        time_3, noise_3, std_3 = self.get_noise_ave(folder,'variance_00/etot.dat')
+
+        plt.rcParams['font.size'] = self.fs_rcParams
+        fig = plt.figure(figsize=(6,14))
+        # set height ratios for subplots
+        gs = gridspec.GridSpec(4, 1, height_ratios=[1,1,1,1])
+        # the 1st subplot
+        ax0 = plt.subplot(gs[0])
+        ax0.plot(time_3,np.array(population_3)[:,1], color = "blue", label = "no noise", lw=2, alpha=0.8)
         ax0.plot(time_0,np.array(population_0)[:,1], color = self.n_colors[0], label = r"$\sigma^2$=1.0e-10", lw=2)
         ax0.plot(time_1,np.array(population_1)[:,1], color = self.n_colors[1], label = r"$\sigma^2$=1.0e-08", lw=2)
         ax0.plot(time_2,np.array(population_2)[:,1], color = self.n_colors[2], label = r"$\sigma^2$=1.0e-06", lw=2)
@@ -691,11 +819,12 @@ class PlotComb:
         ax0r.tick_params(labelsize=self.fs_rcParams)
         ax0.set_ylabel('$\mathbf{S_1\ Population}$', fontsize =self.f_size)
         ax0.set_xlim([0,200])
-        ax0.set_ylim([-0.06,1.05])
+        ax0.set_ylim([-0.05,1.05])
         ax0.xaxis.set_major_locator(ticker.MultipleLocator(25))
             
         # the 2nd subplot
         ax1 = plt.subplot(gs[1], sharex = ax0)
+        ax1.plot(time_3, noise_3, color = "blue", lw=2, alpha=0.8)
         ax1.plot(time_0, noise_0, color = self.n_colors[0], lw=2)
         ax1.plot(time_1, noise_1, color = self.n_colors[1], lw=2)
         ax1.plot(time_2, noise_2, color = self.n_colors[2], lw=2)
@@ -704,6 +833,8 @@ class PlotComb:
         ax1r.yaxis.set_major_locator(ticker.MultipleLocator(0.3))
         ax1r.tick_params(labelsize=self.fs_rcParams)
         # Plot the standard deviation (shaded area)
+        ax1.fill_between(time_3, np.array(noise_3) - np.array(std_3),
+                         np.array(noise_3) + np.array(std_3), alpha=0.3, color = "blue", linestyle=':', edgecolor="blue")
         ax1.fill_between(time_0, np.array(noise_0) - np.array(std_0),
                          np.array(noise_0) + np.array(std_0), alpha=0.3, color = self.n_colors[0], linestyle='-.', edgecolor=self.n_colors[0])
         ax1.fill_between(time_1, np.array(noise_1) - np.array(std_1),
@@ -726,12 +857,12 @@ class PlotComb:
              fontsize=self.f_size, fontweight='bold', va='top', ha='right')
 
         # put legend on first subplot
-        ax0.legend(loc='upper center', bbox_to_anchor=(0.5, 1.2), prop={'size': 12}, ncol=3)
+        ax0.legend(loc='upper center', bbox_to_anchor=(0.5, 1.25), prop={'size': 12}, ncol=2)
 
         # remove vertical gap between subplots
         plt.subplots_adjust(hspace=0.0)
-        plt.savefig("avg_popu_noise.pdf", bbox_inches='tight')
-        plt.savefig("avg_popu_noise.png", bbox_inches='tight')
+        plt.savefig("avg_popu_noise_4.pdf", bbox_inches='tight')
+        plt.savefig("avg_popu_noise_4.png", bbox_inches='tight')
         plt.close()
 
     def plot_1d_histogram_4_plots_S1_S0(self, xms_caspt2, sa_casscf, sa_oo_vqe):
@@ -1055,7 +1186,8 @@ if __name__=="__main__":
     xms_caspt2 = "../xms_caspt2"
     sa_oo_vqe = "../sa_oo_vqe"
     sa_casscf = "../sa_casscf"
-    noise_sa_00_vqe = "../noise_sa_00_vqe"
+    noise_sa_oo_vqe = "../noise_sa_oo_vqe"
+    method = os.getcwd()
     #time in fs
     t_0 = 0
     t_max = 200 
@@ -1071,7 +1203,9 @@ if __name__=="__main__":
     #out.plot_torsion_ave(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_torsion_ave_qy(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_av_popu_torsion_bend(xms_caspt2, sa_casscf, sa_oo_vqe)
-    #out.plot_variance_noise(noise_sa_00_vqe)
-    out.plot_av_popu_noise(noise_sa_00_vqe)
+    #out.plot_variance_noise(noise_sa_oo_vqe)
+    out.plot_av_popu_noise(noise_sa_oo_vqe)
+    #out.plot_av_popu_diff_ene(xms_caspt2, sa_casscf, sa_oo_vqe)
+    #out.plot_one_method_av_popu_diff_ene(method)
     
 
