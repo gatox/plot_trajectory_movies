@@ -140,16 +140,19 @@ class PlotComb:
                         ave_else.append(ref_rest/else_ang)
                     else:
                         ave_else.append(ref/int(trajs-nans))
-        print('--------------------------------------------------------------')
-        print('Folder: ', folder)
-        print(f'lower_50/{trajs-nans}: ',lower_50/int(trajs-nans))
-        print('lower_50/(lower_50+upper_125): ',lower_50/(lower_50+upper_125))
-        print(f'upper_125/{trajs-nans}: ',upper_125/int(trajs-nans))
-        print('upper_125/(lower_50+upper_125): ',upper_125/(lower_50+upper_125))
-        print('lower_S0, upper_S0, rest_S0, S1: ', lower_50, upper_125, else_ang, ref_S1)
-        print('Total: ', lower_50 + upper_125 + else_ang + ref_S1)
-        print('Trajs - Nans: ', int(trajs-nans))
-        print('--------------------------------------------------------------')
+        title = folder.replace('../', '')
+        with open(f'QY_information_{title}.out', 'w') as f3:
+            f3.write('--------------------------------------------------------------\n')
+            f3.write(f'Folder: {title}\n')
+            f3.write(f'lower_50/{trajs-nans}: {lower_50/int(trajs-nans)}\n')
+            f3.write(f'lower_50/(lower_50+upper_125): {lower_50/(lower_50+upper_125)}\n')
+            f3.write(f'upper_125/{trajs-nans}: {upper_125/int(trajs-nans)}\n')
+            f3.write(f'upper_125/(lower_50+upper_125): {upper_125/(lower_50+upper_125)}\n')
+            f3.write(f'lower_S0_50 = {lower_50}, upper_S0_125 = {upper_125}, rest_S0 = {else_ang}, S1 = {ref_S1}\n')
+            f3.write(f'Total:  {lower_50 + upper_125 + else_ang + ref_S1}\n')
+            f3.write(f'Trajs - Nans: {int(trajs-nans)}\n')
+            f3.write('--------------------------------------------------------------')
+            f3.close()
         return ave_time, ave_lower, ave_upper, ave_else
 
     def get_bend_ave(self, folder):
@@ -537,6 +540,7 @@ class PlotComb:
                     for key, value in res.items():
                         # Write key and value to the file
                         f.write(f'{key}: {value}\n')
+        f.close()
 
     def _hop_10(self, xms_caspt2, sa_casscf, sa_oo_vqe, data):
         hop_10_xms, hop_01_xms = self.get_histogram_hops_energy(xms_caspt2, data)
@@ -1204,8 +1208,11 @@ if __name__=="__main__":
     #out.plot_torsion_ave_qy(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_av_popu_torsion_bend(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_variance_noise(noise_sa_oo_vqe)
-    out.plot_av_popu_noise(noise_sa_oo_vqe)
+    #out.plot_av_popu_noise(noise_sa_oo_vqe)
     #out.plot_av_popu_diff_ene(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_one_method_av_popu_diff_ene(method)
+    out.get_torsion_qy_ave(xms_caspt2)
+    out.get_torsion_qy_ave(sa_oo_vqe)
+    out.get_torsion_qy_ave(sa_casscf)
     
 
