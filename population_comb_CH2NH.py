@@ -459,11 +459,12 @@ class PlotComb:
         plt.savefig("number_of_hops_2_energy.png", bbox_inches='tight')
         plt.close()
 
-    def plot_1d_histogram_2_plots(self, xms_caspt2,sa_casscf,sa_oo_vqe,n_bins=8):
+    def plot_1d_histogram_2_plots(self, xms_caspt2,sa_casscf,sa_oo_vqe,n_bins=16):
         hop_0_10, hop_0_01 = self.get_histogram_hops(xms_caspt2)
         hop_1_10, hop_1_01 = self.get_histogram_hops(sa_casscf)
         hop_2_10,hop_2_01 = self.get_histogram_hops(sa_oo_vqe)
-        bins = [x for x in range(self.t_0, self.t_max+1,int(self.t_max/n_bins))]
+        #bins = [x for x in range(self.t_0, self.t_max+1,int(self.t_max/n_bins))]
+        bins = np.linspace(0, 200, n_bins) 
         hops_l = [r"$S_1$ $\rightarrow$ $S_0$",r"$S_0$ $\rightarrow$ $S_1$"]
         plt.rcParams['font.size'] = self.fs_rcParams
         fig = plt.figure(figsize=(8,8))
@@ -1198,7 +1199,7 @@ if __name__=="__main__":
     out = PlotComb(t_0, t_max)
     #out.plot_population_adi(index,xms_caspt2,sa_casscf,sa_oo_vqe)
     #out.plot_1d_histogram(xms_caspt2,sa_casscf,sa_oo_vqe, 8)
-    #out.plot_1d_histogram_2_plots(xms_caspt2,sa_casscf,sa_oo_vqe, 8)
+    out.plot_1d_histogram_2_plots(xms_caspt2,sa_casscf,sa_oo_vqe, 17)
     #out.plot_1d_histogram_2_plots_samen(xms_caspt2,sa_casscf,sa_oo_vqe, 8)
     #out.plot_1d_histogram_2_plots_samen_energy(xms_caspt2,sa_casscf,sa_oo_vqe, 20)
     #out.plot_1d_histogram_2_plots_energy(xms_caspt2,sa_casscf,sa_oo_vqe, 31)
@@ -1211,8 +1212,8 @@ if __name__=="__main__":
     #out.plot_av_popu_noise(noise_sa_oo_vqe)
     #out.plot_av_popu_diff_ene(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_one_method_av_popu_diff_ene(method)
-    out.get_torsion_qy_ave(xms_caspt2)
-    out.get_torsion_qy_ave(sa_oo_vqe)
-    out.get_torsion_qy_ave(sa_casscf)
+    #out.get_torsion_qy_ave(xms_caspt2)
+    #out.get_torsion_qy_ave(sa_oo_vqe)
+    #out.get_torsion_qy_ave(sa_casscf)
     
 
