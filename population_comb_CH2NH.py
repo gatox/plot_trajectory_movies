@@ -77,10 +77,13 @@ class PlotComb:
                     properties = namedtuple("properties", "dt mdsteps nstates states")
                     return properties(timestep/self.fs, int(time_final/timestep), nstates, [i for i in range(nstates)])
 
+    def get_torsion_qy_ave_noise(self, folder):
+        time_0, lower_0, upper_0, else_0 = self.get_torsion_qy_ave(os.path.join(folder,"variance_10"))
+        time_1, lower_1, upper_1, else_1 = self.get_torsion_qy_ave(os.path.join(folder,"variance_08"))
+        #time_2, lower_2, upper_2, else_2 = self.get_torsion_qy_ave(os.path.join(folder,"variance_06"))
+        time_3, lower_3, upper_3, else_3 = self.get_torsion_qy_ave(os.path.join(folder,"variance_00"))
+
     def get_torsion_qy_ave(self, folder):
-        prop = self.read_prop(folder)
-        states = prop.states
-        nstates = prop.nstates
         filename = os.path.join(folder,"dihe_2014.dat")
         popu = os.path.join(folder,"pop.dat")
         ave_torsion = []
@@ -133,6 +136,7 @@ class PlotComb:
                     else:
                         ave_upper.append(ref/int(trajs-nans))
                     if lower_50 != 0:
+                        print(lower_50, nans)
                         ave_lower.append(ref_non_r/int(lower_50-nans))
                     else:
                         ave_lower.append(ref/int(trajs-nans))
@@ -140,7 +144,10 @@ class PlotComb:
                         ave_else.append(ref_rest/else_ang)
                     else:
                         ave_else.append(ref/int(trajs-nans))
-        title = folder.replace('../', '')
+        if "noise_sa_oo_vqe" in folder:
+            title = folder.replace('../noise_sa_oo_vqe/', '')  
+        else:
+            title = folder.replace('../', '')
         with open(f'QY_information_{title}.out', 'w') as f3:
             f3.write('--------------------------------------------------------------\n')
             f3.write(f'Folder: {title}\n')
@@ -1211,8 +1218,9 @@ if __name__=="__main__":
     #out.plot_av_popu_noise(noise_sa_oo_vqe)
     #out.plot_av_popu_diff_ene(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_one_method_av_popu_diff_ene(method)
-    out.get_torsion_qy_ave(xms_caspt2)
-    out.get_torsion_qy_ave(sa_oo_vqe)
-    out.get_torsion_qy_ave(sa_casscf)
+    #out.get_torsion_qy_ave(xms_caspt2)
+    #out.get_torsion_qy_ave(sa_oo_vqe)
+    #out.get_torsion_qy_ave(sa_casscf)
+    out.get_torsion_qy_ave_noise(noise_sa_oo_vqe)
     
 

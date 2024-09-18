@@ -1641,7 +1641,7 @@ if __name__=="__main__":
     popu = Population(skip)
     popu.write_csvs()
     #popu.plot_population_pop_c()
-    popu.plot_population_adi()
+    #popu.plot_population_adi()
     #popu.plot_dihedral_hops_time()
     #popu.plot_ene_angle_hops()
     #popu.plot_ene_dihedral_hops()
