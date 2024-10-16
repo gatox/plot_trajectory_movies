@@ -804,6 +804,111 @@ class PlotComb:
         plt.savefig("av_popu_diff_ene.png", bbox_inches='tight')
         plt.close()
 
+    def plot_av_popu_torsion_noise(self, folder):
+        #popu
+        time_0, population_0 = self.get_popu_adi(folder,os.path.join(folder,"variance_10/pop.dat"))
+        time_1, population_1 = self.get_popu_adi(folder,os.path.join(folder,"variance_08/pop.dat"))
+        time_2, population_2 = self.get_popu_adi(folder,os.path.join(folder,"variance_06/pop.dat"))
+        time_3, population_3 = self.get_popu_adi(folder,os.path.join(folder,"variance_00/pop.dat"))
+        #torsion
+        time_0, t_noise_0, t_std_0 = self.get_noise_ave(folder,'variance_10/dihe_2014.dat')
+        time_1, t_noise_1, t_std_1 = self.get_noise_ave(folder,'variance_08/dihe_2014.dat')
+        time_2, t_noise_2, t_std_2 = self.get_noise_ave(folder,'variance_06/dihe_2014.dat')
+        time_3, t_noise_3, t_std_3 = self.get_noise_ave(folder,'variance_00/dihe_2014.dat')
+        #noise
+        time_0, noise_0, std_0 = self.get_noise_ave(folder,'variance_10/etot.dat')
+        time_1, noise_1, std_1 = self.get_noise_ave(folder,'variance_08/etot.dat')
+        time_2, noise_2, std_2 = self.get_noise_ave(folder,'variance_06/etot.dat')
+        time_3, noise_3, std_3 = self.get_noise_ave(folder,'variance_00/etot.dat')
+
+        plt.rcParams['font.size'] = self.fs_rcParams
+        fig = plt.figure(figsize=(6,14))
+        # set height ratios for subplots
+        gs = gridspec.GridSpec(4, 1, height_ratios=[1,1,1,1])
+        # the 1st subplot
+        ax0 = plt.subplot(gs[0])
+        ax0.plot(time_3,np.array(population_3)[:,1], color = "blue", label = "no noise", lw=2, alpha=0.8)
+        ax0.plot(time_0,np.array(population_0)[:,1], color = self.n_colors[0], label = r"$\sigma^2$=1.0e-10", lw=2)
+        ax0.plot(time_1,np.array(population_1)[:,1], color = self.n_colors[1], label = r"$\sigma^2$=1.0e-08", lw=2)
+        ax0.plot(time_2,np.array(population_2)[:,1], color = self.n_colors[2], label = r"$\sigma^2$=1.0e-06", lw=2)
+        ax0r = ax0.twinx()
+        ax0r.set_ylim([-0.05, 1.05])
+        ax0r.tick_params(labelsize=self.fs_rcParams)
+        ax0.set_ylabel('$\mathbf{S_1\ Population}$', fontsize =self.f_size)
+        ax0.set_xlim([0,200])
+        ax0.set_ylim([-0.05,1.05])
+        ax0.xaxis.set_major_locator(ticker.MultipleLocator(25))
+
+        # the 2nd subplot
+        ax1 = plt.subplot(gs[1], sharex = ax0)
+        ax1.plot(time_3, t_noise_3, color = "blue", lw=2, alpha=0.8)
+        ax1.plot(time_0, t_noise_0, color = self.n_colors[0], lw=2)
+        ax1.plot(time_1, t_noise_1, color = self.n_colors[1], lw=2)
+        ax1.plot(time_2, t_noise_2, color = self.n_colors[2], lw=2)
+        ax1r = ax1.twinx()
+        ax1r.set_ylim([-8, 185])
+        ax1r.yaxis.set_major_locator(ticker.MultipleLocator(30))
+        ax1r.tick_params(labelsize=self.fs_rcParams)
+        # Plot the standard deviation (shaded area)
+        ax1.fill_between(time_3, np.array(t_noise_3) - np.array(t_std_3),
+                         np.array(t_noise_3) + np.array(t_std_3), alpha=0.3, color = "blue", linestyle=':', edgecolor="blue")
+        ax1.fill_between(time_0, np.array(t_noise_0) - np.array(t_std_0),
+                         np.array(t_noise_0) + np.array(t_std_0), alpha=0.3, color = self.n_colors[0], linestyle='-.', edgecolor=self.n_colors[0])
+        ax1.fill_between(time_1, np.array(t_noise_1) - np.array(t_std_1),
+                         np.array(t_noise_1) + np.array(t_std_1), alpha=0.3, color = self.n_colors[1], linestyle='--', edgecolor=self.n_colors[1])
+        ax1.fill_between(time_2, np.array(t_noise_2) - np.array(t_std_2),
+                         np.array(t_noise_2) + np.array(t_std_2), alpha=0.3, color = self.n_colors[2], linestyle=':', edgecolor=self.n_colors[2])
+        ax1.set_ylim([-8,185])
+        ax1.yaxis.set_major_locator(ticker.MultipleLocator(30))
+        ax1.set_ylabel('$\mathbf{\sphericalangle H_3C_1N_2H_5(degrees)}$', fontsize=self.f_size)
+        plt.setp(ax0.get_xticklabels(), visible=False)
+            
+        # the 3rd subplot
+        ax2 = plt.subplot(gs[2], sharex = ax0)
+        ax2.plot(time_3, noise_3, color = "blue", lw=2, alpha=0.8)
+        ax2.plot(time_0, noise_0, color = self.n_colors[0], lw=2)
+        ax2.plot(time_1, noise_1, color = self.n_colors[1], lw=2)
+        ax2.plot(time_2, noise_2, color = self.n_colors[2], lw=2)
+        ax2r = ax2.twinx()
+        ax2r.set_ylim([-0.05, 2.37])
+        ax2r.yaxis.set_major_locator(ticker.MultipleLocator(0.3))
+        ax2r.tick_params(labelsize=self.fs_rcParams)
+        # Plot the standard deviation (shaded area)
+        ax2.fill_between(time_3, np.array(noise_3) - np.array(std_3),
+                         np.array(noise_3) + np.array(std_3), alpha=0.3, color = "blue", linestyle=':', edgecolor="blue")
+        ax2.fill_between(time_0, np.array(noise_0) - np.array(std_0),
+                         np.array(noise_0) + np.array(std_0), alpha=0.3, color = self.n_colors[0], linestyle='-.', edgecolor=self.n_colors[0])
+        ax2.fill_between(time_1, np.array(noise_1) - np.array(std_1),
+                         np.array(noise_1) + np.array(std_1), alpha=0.3, color = self.n_colors[1], linestyle='--', edgecolor=self.n_colors[1])
+        ax2.fill_between(time_2, np.array(noise_2) - np.array(std_2),
+                         np.array(noise_2) + np.array(std_2), alpha=0.3, color = self.n_colors[2], linestyle=':', edgecolor=self.n_colors[2])
+        ax2.set_ylim([-0.05, 2.37])
+        ax2.yaxis.set_major_locator(ticker.MultipleLocator(0.3))
+        ax2.set_ylabel('$\mathbf{\Delta\ Total\ Energy\ (eV)}$', fontsize=self.f_size)
+        ax2.set_xlabel('Time (fs)', fontweight = 'bold', fontsize =self.f_size)
+        plt.setp(ax0.get_xticklabels(), visible=False)
+
+        # Adjust space between the title and subplots
+        plt.subplots_adjust(top=0.9, bottom=0.1, left=0.09, right=0.9, hspace=0.2)
+        
+        # Set labels and legends
+        ax0.text(0.95, 0.95, f'(a)', transform=ax0.transAxes,
+             fontsize=self.f_size, fontweight='bold', va='top', ha='right')
+        ax1.text(0.95, 0.95, f'(b)', transform=ax1.transAxes,
+             fontsize=self.f_size, fontweight='bold', va='top', ha='right')
+        ax2.text(0.95, 0.95, f'(c)', transform=ax1.transAxes,
+             fontsize=self.f_size, fontweight='bold', va='top', ha='right')
+
+
+        # put legend on first subplot
+        ax0.legend(loc='upper center', bbox_to_anchor=(0.5, 1.25), prop={'size': 12}, ncol=2)
+
+        # remove vertical gap between subplots
+        plt.subplots_adjust(hspace=0.0)
+        plt.savefig("avg_popu_torsion_noise.pdf", bbox_inches='tight')
+        plt.savefig("avg_popu_torsion_noise.png", bbox_inches='tight')
+        plt.close()
+
     def plot_av_popu_noise(self, folder):
         #popu
         time_0, population_0 = self.get_popu_adi(folder,os.path.join(folder,"variance_10/pop.dat"))
@@ -1217,6 +1322,7 @@ if __name__=="__main__":
     #out.plot_av_popu_torsion_bend(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_variance_noise(noise_sa_oo_vqe)
     #out.plot_av_popu_noise(noise_sa_oo_vqe)
+    out.plot_av_popu_torsion_noise(noise_sa_oo_vqe)
     #out.plot_av_popu_diff_ene(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_one_method_av_popu_diff_ene(method)
     #out.get_torsion_qy_ave(xms_caspt2)
