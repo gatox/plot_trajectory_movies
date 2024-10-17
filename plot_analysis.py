@@ -1639,7 +1639,7 @@ class Population:
 if __name__=="__main__":
     skip = sys.argv[1]
     popu = Population(skip)
-    popu.write_csvs()
+    #popu.write_csvs()
     #popu.plot_population_pop_c()
     #popu.plot_population_adi()
     #popu.plot_dihedral_hops_time()
@@ -1651,7 +1651,7 @@ if __name__=="__main__":
     #popu.plot_histogram_hops(8)
     #popu.plot_dihedral_angle_map_hops()
     #popu.plot_energies_diff_time()
-    #popu.plot_population_adi_fitted()
+    popu.plot_population_adi_fitted()
     #popu.get_qy_popu()
     #popu.plot_angle_dihedral_hops()
     #print(popu.get_all_var())
