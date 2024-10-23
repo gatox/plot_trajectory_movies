@@ -118,10 +118,10 @@ class PlotComb:
                         tor_f = float(val_1)
                         dis = abs(tor_f-tor_i)
                         if val_2 == 0:
-                            if dis <= 50:
+                            if dis <= 30:
                                 ref_non_r += abs(tor_f) 
                                 lower_50 += 1
-                            elif dis >= 125:
+                            elif dis >= 150:
                                 ref_rac += abs(tor_f) 
                                 upper_125 += 1
                             else:
@@ -185,8 +185,8 @@ class PlotComb:
                 ref_rac = 0 
                 ref_rest = 0 
                 ref_S1 = 0
-                lower_50 = 0
-                upper_125 = 0
+                lower_30 = 0
+                upper_150 = 0
                 else_ang = 0
                 for k_1, val_1 in row_1.items():
                     if k_1 == 'time':
@@ -197,12 +197,12 @@ class PlotComb:
                         val_2 = float(row_2.get(k_1))
                         ref_abs = abs(float(val_1))
                         if val_2 == 0:
-                            if ref_abs <= 50:
+                            if ref_abs <= 30:
                                 ref_non_r += ref_abs 
-                                lower_50 += 1
+                                lower_30 += 1
                             elif ref_abs >= 150:
                                 ref_rac += ref_abs 
-                                upper_125 += 1
+                                upper_150 += 1
                             else:
                                 ref_rest += ref_abs
                                 else_ang += 1
@@ -213,13 +213,13 @@ class PlotComb:
                 if int(trajs-nans) == 0:
                     break
                 else:
-                    if upper_125 != 0:
-                        ave_upper.append(ref_rac/int(upper_125-nans))
+                    if upper_150 != 0:
+                        ave_upper.append(ref_rac/int(upper_150-nans))
                     else:
                         ave_upper.append(ref/int(trajs-nans))
-                    if lower_50 != 0:
-                        print(lower_50, nans)
-                        ave_lower.append(ref_non_r/int(lower_50-nans))
+                    if lower_30 != 0:
+                        print(lower_30, nans)
+                        ave_lower.append(ref_non_r/int(lower_30-nans))
                     else:
                         ave_lower.append(ref/int(trajs-nans))
                     if else_ang != 0:
@@ -233,12 +233,12 @@ class PlotComb:
         with open(f'QY_information_50_150_{title}.out', 'w') as f3:
             f3.write('--------------------------------------------------------------\n')
             f3.write(f'Folder: {title}\n')
-            f3.write(f'lower_50/{trajs-nans}: {lower_50/int(trajs-nans)}\n')
-            f3.write(f'lower_50/(lower_50+upper_150): {lower_50/(lower_50+upper_150)}\n')
-            f3.write(f'upper_125/{trajs-nans}: {upper_125/int(trajs-nans)}\n')
-            f3.write(f'upper_125/(lower_50+upper_150): {upper_150/(lower_50+upper_150)}\n')
-            f3.write(f'lower_S0_50 = {lower_50}, upper_S0_150 = {upper_125}, rest_S0 = {else_ang}, S1 = {ref_S1}\n')
-            f3.write(f'Total:  {lower_50 + upper_150 + else_ang + ref_S1}\n')
+            f3.write(f'lower_30/{trajs-nans}: {lower_30/int(trajs-nans)}\n')
+            f3.write(f'lower_30/(lower_30+upper_150): {lower_30/(lower_30+upper_150)}\n')
+            f3.write(f'upper_150/{trajs-nans}: {upper_150/int(trajs-nans)}\n')
+            f3.write(f'upper_150/(lower_30+upper_150): {upper_150/(lower_30+upper_150)}\n')
+            f3.write(f'lower_S0_50 = {lower_30}, upper_S0_150 = {upper_150}, rest_S0 = {else_ang}, S1 = {ref_S1}\n')
+            f3.write(f'Total:  {lower_30 + upper_150 + else_ang + ref_S1}\n')
             f3.write(f'Trajs - Nans: {int(trajs-nans)}\n')
             f3.write('--------------------------------------------------------------')
             f3.close()
@@ -1509,5 +1509,8 @@ if __name__=="__main__":
     out.get_torsion_qy_ave(xms_caspt2)
     out.get_torsion_qy_ave(sa_oo_vqe)
     out.get_torsion_qy_ave(sa_casscf)
+    out.get_torsion_qy_ave_2(xms_caspt2)
+    #out.get_torsion_qy_ave_2(sa_oo_vqe)
+    #out.get_torsion_qy_ave_2(sa_casscf)
     #out.get_torsion_qy_ave_noise(noise_sa_oo_vqe)
     #out.plot_1d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 20)
