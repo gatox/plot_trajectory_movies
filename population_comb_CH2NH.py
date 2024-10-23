@@ -186,7 +186,7 @@ class PlotComb:
                 ref_rest = 0 
                 ref_S1 = 0
                 lower_50 = 0
-                upper_125 = 0
+                upper_150 = 0
                 else_ang = 0
                 for k_1, val_1 in row_1.items():
                     if k_1 == 'time':
@@ -202,7 +202,7 @@ class PlotComb:
                                 lower_50 += 1
                             elif ref_abs >= 150:
                                 ref_rac += ref_abs 
-                                upper_125 += 1
+                                upper_150 += 1
                             else:
                                 ref_rest += ref_abs
                                 else_ang += 1
@@ -213,8 +213,8 @@ class PlotComb:
                 if int(trajs-nans) == 0:
                     break
                 else:
-                    if upper_125 != 0:
-                        ave_upper.append(ref_rac/int(upper_125-nans))
+                    if upper_150 != 0:
+                        ave_upper.append(ref_rac/int(upper_150-nans))
                     else:
                         ave_upper.append(ref/int(trajs-nans))
                     if lower_50 != 0:
