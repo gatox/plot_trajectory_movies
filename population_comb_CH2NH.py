@@ -118,7 +118,7 @@ class PlotComb:
                         tor_f = float(val_1)
                         dis = abs(tor_f-tor_i)
                         if val_2 == 0:
-                            if dis <= 50:
+                            if abs(tor_f) <= 50:
                                 ref_non_r += abs(tor_f) 
                                 lower_50 += 1
                             elif dis >= 125:
