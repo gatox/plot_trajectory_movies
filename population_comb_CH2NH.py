@@ -235,7 +235,7 @@ class PlotComb:
             f3.write(f'Folder: {title}\n')
             f3.write(f'lower_50/{trajs-nans}: {lower_50/int(trajs-nans)}\n')
             f3.write(f'lower_50/(lower_50+upper_150): {lower_50/(lower_50+upper_150)}\n')
-            f3.write(f'upper_150/{trajs-nans}: {upper_125/int(trajs-nans)}\n')
+            f3.write(f'upper_150/{trajs-nans}: {upper_150/int(trajs-nans)}\n')
             f3.write(f'upper_150/(lower_50+upper_150): {upper_150/(lower_50+upper_150)}\n')
             f3.write(f'lower_S0_50 = {lower_50}, upper_S0_150 = {upper_150}, rest_S0 = {else_ang}, S1 = {ref_S1}\n')
             f3.write(f'Total:  {lower_50 + upper_150 + else_ang + ref_S1}\n')
