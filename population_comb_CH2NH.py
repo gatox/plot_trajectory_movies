@@ -83,6 +83,88 @@ class PlotComb:
         #time_2, lower_2, upper_2, else_2 = self.get_torsion_qy_ave(os.path.join(folder,"variance_06"))
         time_3, lower_3, upper_3, else_3 = self.get_torsion_qy_ave(os.path.join(folder,"variance_00"))
 
+    def get_torsion_qy_ave_2(self, folder):
+        filename = os.path.join(folder,"dihe_2014.dat")
+        popu = os.path.join(folder,"pop.dat")
+        ave_torsion = []
+        ave_time = []
+        ave_lower = []
+        ave_upper = []
+        ave_else = []
+        with open(filename, 'r') as f1, open(popu, 'r') as f2:
+            r_torsion = csv.DictReader(f1)
+            r_popu = csv.DictReader(f2)
+            for row_1, row_2 in zip(r_torsion, r_popu):
+                ave_time.append(float(row_1['time']))
+                nans = 0
+                trajs = 0
+                ref = 0 
+                ref_non_r = 0 
+                ref_rac = 0 
+                ref_rest = 0 
+                ref_S1 = 0
+                lower_50 = 0
+                upper_125 = 0
+                else_ang = 0
+                for k_1, val_1 in row_1.items():
+                    if k_1 == 'time':
+                        continue
+                    if k_1 == '0':
+                        tor_i = float(val_1)
+                    if val_1 == 'nan':
+                        nans += 1
+                    else:
+                        val_2 = float(row_2.get(k_1))
+                        tor_f = float(val_1)
+                        dis = abs(tor_f-tor_i)
+                        if val_2 == 0:
+                            if dis <= 50:
+                                ref_non_r += abs(tor_f) 
+                                lower_50 += 1
+                            elif dis >= 125:
+                                ref_rac += abs(tor_f) 
+                                upper_125 += 1
+                            else:
+                                ref_rest += abs(tor_f)
+                                else_ang += 1
+                        else:
+                            ref += abs(tor_f) 
+                            ref_S1 += 1
+                    trajs +=1
+                if int(trajs-nans) == 0:
+                    break
+                else:
+                    if upper_125 != 0:
+                        ave_upper.append(ref_rac/int(upper_125-nans))
+                    else:
+                        ave_upper.append(ref/int(trajs-nans))
+                    if lower_50 != 0:
+                        print(lower_50, nans)
+                        ave_lower.append(ref_non_r/int(lower_50-nans))
+                    else:
+                        ave_lower.append(ref/int(trajs-nans))
+                    if else_ang != 0:
+                        ave_else.append(ref_rest/else_ang)
+                    else:
+                        ave_else.append(ref/int(trajs-nans))
+        if "noise_sa_oo_vqe" in folder:
+            title = folder.replace('../noise_sa_oo_vqe/', '')  
+        else:
+            title = folder.replace('../', '')
+        with open(f'QY_information_{title}_2.out', 'w') as f3:
+            f3.write('--------------------------------------------------------------\n')
+            f3.write(f'Folder: {title}\n')
+            f3.write(f'lower_50/{trajs-nans}: {lower_50/int(trajs-nans)}\n')
+            f3.write(f'lower_50/(lower_50+upper_125): {lower_50/(lower_50+upper_125)}\n')
+            f3.write(f'upper_125/{trajs-nans}: {upper_125/int(trajs-nans)}\n')
+            f3.write(f'upper_125/(lower_50+upper_125): {upper_125/(lower_50+upper_125)}\n')
+            f3.write(f'lower_S0_50 = {lower_50}, upper_S0_125 = {upper_125}, rest_S0 = {else_ang}, S1 = {ref_S1}\n')
+            f3.write(f'Total:  {lower_50 + upper_125 + else_ang + ref_S1}\n')
+            f3.write(f'Trajs - Nans: {int(trajs-nans)}\n')
+            f3.write('--------------------------------------------------------------')
+            f3.close()
+        return ave_time, ave_lower, ave_upper, ave_else
+
     def get_torsion_qy_ave(self, folder):
         filename = os.path.join(folder,"dihe_2014.dat")
         popu = os.path.join(folder,"pop.dat")
@@ -118,7 +200,7 @@ class PlotComb:
                             if ref_abs <= 50:
                                 ref_non_r += ref_abs 
                                 lower_50 += 1
-                            elif ref_abs >= 125:
+                            elif ref_abs >= 150:
                                 ref_rac += ref_abs 
                                 upper_125 += 1
                             else:
@@ -148,15 +230,15 @@ class PlotComb:
             title = folder.replace('../noise_sa_oo_vqe/', '')  
         else:
             title = folder.replace('../', '')
-        with open(f'QY_information_{title}.out', 'w') as f3:
+        with open(f'QY_information_50_150_{title}.out', 'w') as f3:
             f3.write('--------------------------------------------------------------\n')
             f3.write(f'Folder: {title}\n')
             f3.write(f'lower_50/{trajs-nans}: {lower_50/int(trajs-nans)}\n')
-            f3.write(f'lower_50/(lower_50+upper_125): {lower_50/(lower_50+upper_125)}\n')
+            f3.write(f'lower_50/(lower_50+upper_150): {lower_50/(lower_50+upper_150)}\n')
             f3.write(f'upper_125/{trajs-nans}: {upper_125/int(trajs-nans)}\n')
-            f3.write(f'upper_125/(lower_50+upper_125): {upper_125/(lower_50+upper_125)}\n')
-            f3.write(f'lower_S0_50 = {lower_50}, upper_S0_125 = {upper_125}, rest_S0 = {else_ang}, S1 = {ref_S1}\n')
-            f3.write(f'Total:  {lower_50 + upper_125 + else_ang + ref_S1}\n')
+            f3.write(f'upper_125/(lower_50+upper_150): {upper_150/(lower_50+upper_150)}\n')
+            f3.write(f'lower_S0_50 = {lower_50}, upper_S0_150 = {upper_125}, rest_S0 = {else_ang}, S1 = {ref_S1}\n')
+            f3.write(f'Total:  {lower_50 + upper_150 + else_ang + ref_S1}\n')
             f3.write(f'Trajs - Nans: {int(trajs-nans)}\n')
             f3.write('--------------------------------------------------------------')
             f3.close()
@@ -464,6 +546,52 @@ class PlotComb:
         plt.xlabel('Energy Gap (eV)', fontweight = 'bold', fontsize = 16)
         plt.savefig("number_of_hops_2_energy.pdf", bbox_inches='tight')
         plt.savefig("number_of_hops_2_energy.png", bbox_inches='tight')
+        plt.close()
+
+    def plot_1d_histogram_QY_time(self, xms_caspt2,sa_casscf,sa_oo_vqe,n_bins=16):
+        hop_0_10, hop_0_01 = self.get_histogram_hops(xms_caspt2)
+        hop_1_10, hop_1_01 = self.get_histogram_hops(sa_casscf)
+        hop_2_10,hop_2_01 = self.get_histogram_hops(sa_oo_vqe)
+        #bins = [x for x in range(self.t_0, self.t_max+1,int(self.t_max/n_bins))]
+        bins = np.linspace(0, 200, n_bins) 
+        hops_l = [r"$S_1$ $\rightarrow$ $S_0$",r"$S_0$ $\rightarrow$ $S_1$"]
+        plt.rcParams['font.size'] = self.fs_rcParams
+        fig = plt.figure(figsize=(8,8))
+        # set height ratios for subplots
+        gs = gridspec.GridSpec(2, 1, height_ratios=[1, 1])
+        # the first subplot
+        ax0 = plt.subplot(gs[0])
+        ax0.hist(hop_0_10, bins = bins, ec = self.colors[0], label=self.labels[0] ,fc='none', lw=2)
+        ax0.hist(hop_1_10, bins = bins, ec = self.colors[1], label=self.labels[1] ,fc='none', lw=2)
+        ax0.hist(hop_2_10, bins = bins, ec = self.colors[2], label=self.labels[2] ,fc='none', lw=2)
+            
+        # the second subplot
+        # shared axis X
+        ax1 = plt.subplot(gs[1], sharex = ax0)
+        ax1.hist(hop_0_01, bins = bins, ec = self.colors[0], label="" ,fc='none', lw=2)
+        ax1.hist(hop_1_01, bins = bins, ec = self.colors[1], label="" ,fc='none', lw=2)
+        ax1.hist(hop_2_01, bins = bins, ec = self.colors[2], label="" ,fc='none', lw=2)
+
+        # Set a single y-axis label for both histograms
+        fig.supylabel('Number of Hops', fontweight='bold', fontsize=16)
+        
+        # Set labels and legends
+        ax0.text(0.95, 0.9, f'(a) {hops_l[0]}', transform=ax0.transAxes,
+             fontsize=16, fontweight='bold', va='top', ha='right')
+        ax1.text(0.95, 0.9, f'(b) {hops_l[1]}', transform=ax1.transAxes,
+             fontsize=16, fontweight='bold', va='top', ha='right')
+
+        plt.setp(ax0.get_xticklabels(), visible=False)
+
+        # put legend on first subplot
+        ax0.legend(loc='upper center', bbox_to_anchor=(0.5, 1.2), prop={'size': 14}, ncol=3)
+
+        # remove vertical gap between subplots
+        plt.subplots_adjust(hspace=.0)
+        plt.xlim([0, 200])
+        plt.xlabel('Time (fs)', fontweight = 'bold', fontsize = 16)
+        plt.savefig("number_of_qy_time.pdf", bbox_inches='tight')
+        plt.savefig("number_of_qy_time.png", bbox_inches='tight')
         plt.close()
 
     def plot_1d_histogram_2_plots(self, xms_caspt2,sa_casscf,sa_oo_vqe,n_bins=16):
@@ -1090,6 +1218,59 @@ class PlotComb:
                     hop_01.append(x)
         return hop_10, hop_01
 
+    def get_histogram_qy(self, folder, parameter):
+        if "xms_caspt2" in folder:
+            print("Average values for xms_caspt2")
+        if "sa_casscf" in folder:
+            print("Average values for sa_casscf")
+        if "sa_oo_vqe" in folder:
+            print("Average values for sa_oo_vqe")
+        e_gap_name = os.path.join(folder,parameter)
+        pop_name = os.path.join(folder,"pop.dat")
+        e_gap = read_csv(e_gap_name)
+        pop = read_csv(pop_name)
+        hop = pop.to_numpy()[:,1:] # removing time column
+        ene_d = e_gap.to_numpy()[:,1:] # removing time column
+        mdsteps,trajs = hop.shape 
+        hop_10 = []
+        hop_01 = []
+        hop_10_hnch_lower = []
+        hop_10_hnch_upper = []
+        hop_10_hnc = []
+        hop_10_pyr = []
+        for j in range(1,mdsteps):   #time_steps 
+            for i in range(trajs):          #trajectories
+                ene = ene_d[j,i] 
+                if hop[j-1,i]==1 and hop[j,i]==0:
+                    hop_10.append(abs(ene))
+                    if parameter == "dihe_2014.dat" and ene < 0:
+                        hop_10_hnch_lower.append(ene)
+                    elif parameter == "dihe_2014.dat" and ene > 0:
+                        hop_10_hnch_upper.append(ene)
+                    elif parameter == "angle_014.dat":
+                        hop_10_hnc.append(ene)
+                    elif parameter == "pyr_3210.dat":
+                        hop_10_pyr.append(ene)
+                elif hop[j-1,i]==0 and hop[j,i]==1:
+                    hop_01.append(ene)
+                    #if parameter == "angle_014.dat":
+                    #    hop_10_hnc.append(ene)
+                    #elif parameter == "pyr_3210.dat":
+                    #    hop_10_pyr.append(abs(ene))
+        if parameter in ["dihe_2014.dat"]:
+            print(f"Average hnch < 0:", sum(hop_10_hnch_lower)/len(hop_10_hnch_lower))
+            print(f"Average hnch > 0:", sum(hop_10_hnch_upper)/len(hop_10_hnch_upper))
+            print(f"Average abs(hnch):", sum(hop_10)/len(hop_10))
+        elif parameter in ["angle_014.dat"]:
+            print(f"Average hnc:", sum(hop_10_hnc)/len(hop_10_hnc))
+            print(f"Average abc(hnc):", sum(hop_10)/len(hop_10))
+        elif parameter in ["pyr_3210.dat"]:
+            print(f"Average pyr:", sum(hop_10_pyr)/len(hop_10_pyr))
+            print(f"Average abs(pyr):", sum(hop_10)/len(hop_10))
+        elif parameter in ["e_gap.dat"]:
+            print(f"Average e_gap:", sum(hop_10)/len(hop_10))
+        return hop_10, hop_01
+
     def get_histogram_hops_energy(self, folder, parameter):
         if "xms_caspt2" in folder:
             print("Average values for xms_caspt2")
@@ -1311,7 +1492,7 @@ if __name__=="__main__":
     out = PlotComb(t_0, t_max)
     #out.plot_population_adi(index,xms_caspt2,sa_casscf,sa_oo_vqe)
     #out.plot_1d_histogram(xms_caspt2,sa_casscf,sa_oo_vqe, 8)
-    out.plot_1d_histogram_2_plots(xms_caspt2,sa_casscf,sa_oo_vqe, 17)
+    #out.plot_1d_histogram_2_plots(xms_caspt2,sa_casscf,sa_oo_vqe, 17)
     #out.plot_1d_histogram_2_plots_samen(xms_caspt2,sa_casscf,sa_oo_vqe, 8)
     #out.plot_1d_histogram_2_plots_samen_energy(xms_caspt2,sa_casscf,sa_oo_vqe, 20)
     #out.plot_1d_histogram_2_plots_energy(xms_caspt2,sa_casscf,sa_oo_vqe, 31)
@@ -1322,10 +1503,11 @@ if __name__=="__main__":
     #out.plot_av_popu_torsion_bend(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_variance_noise(noise_sa_oo_vqe)
     #out.plot_av_popu_noise(noise_sa_oo_vqe)
-    out.plot_av_popu_torsion_noise(noise_sa_oo_vqe)
+    #out.plot_av_popu_torsion_noise(noise_sa_oo_vqe)
     #out.plot_av_popu_diff_ene(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_one_method_av_popu_diff_ene(method)
-    #out.get_torsion_qy_ave(xms_caspt2)
-    #out.get_torsion_qy_ave(sa_oo_vqe)
-    #out.get_torsion_qy_ave(sa_casscf)
-    out.get_torsion_qy_ave_noise(noise_sa_oo_vqe)
+    out.get_torsion_qy_ave(xms_caspt2)
+    out.get_torsion_qy_ave(sa_oo_vqe)
+    out.get_torsion_qy_ave(sa_casscf)
+    #out.get_torsion_qy_ave_noise(noise_sa_oo_vqe)
+    #out.plot_1d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 20)
