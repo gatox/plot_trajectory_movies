@@ -1195,10 +1195,12 @@ class PlotComb:
         cur = pop.to_numpy()[:,1:] # removing time column
         tor = torsion.to_numpy()[:,1:] # removing time column
         mdsteps,trajs = cur.shape 
+        print(mdsteps,trajs)
         torsion_0 = []
         for i in range(trajs):          #trajectories
-            dihe = tor[mdsteps,i] 
-            if cur[mdsteps,i]==0:
+            print(mdsteps,i)
+            dihe = tor[mdsteps-1,i] 
+            if cur[mdsteps-1,i]==0:
                 torsion_0.append(abs(dihe))
         return torsion_0 
 
@@ -1444,4 +1446,4 @@ if __name__=="__main__":
     #out.get_torsion_qy_ave_2(sa_oo_vqe)
     #out.get_torsion_qy_ave_2(sa_casscf)
     #out.get_torsion_qy_ave_noise(noise_sa_oo_vqe)
-    out.plot_1d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 20)
+    out.plot_1d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 7)
