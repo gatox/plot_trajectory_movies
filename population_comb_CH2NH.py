@@ -230,7 +230,7 @@ class PlotComb:
             title = folder.replace('../noise_sa_oo_vqe/', '')  
         else:
             title = folder.replace('../', '')
-        with open(f'QY_information_50_150_{title}.out', 'w') as f3:
+        with open(f'QY_information_30_150_{title}.out', 'w') as f3:
             f3.write('--------------------------------------------------------------\n')
             f3.write(f'Folder: {title}\n')
             f3.write(f'lower_30/{trajs-nans}: {lower_30/int(trajs-nans)}\n')
@@ -549,49 +549,18 @@ class PlotComb:
         plt.close()
 
     def plot_1d_histogram_QY_time(self, xms_caspt2,sa_casscf,sa_oo_vqe,n_bins=16):
-        hop_0_10, hop_0_01 = self.get_histogram_hops(xms_caspt2)
-        hop_1_10, hop_1_01 = self.get_histogram_hops(sa_casscf)
-        hop_2_10,hop_2_01 = self.get_histogram_hops(sa_oo_vqe)
-        #bins = [x for x in range(self.t_0, self.t_max+1,int(self.t_max/n_bins))]
-        bins = np.linspace(0, 200, n_bins) 
-        hops_l = [r"$S_1$ $\rightarrow$ $S_0$",r"$S_0$ $\rightarrow$ $S_1$"]
+        tor_0_0 = self.get_histogram_qy(xms_caspt2)
+        tor_1_0 = self.get_histogram_qy(sa_casscf)
+        tor_2_0 = self.get_histogram_qy(sa_oo_vqe)
+        bins = np.linspace(0, 180, n_bins) 
         plt.rcParams['font.size'] = self.fs_rcParams
-        fig = plt.figure(figsize=(8,8))
-        # set height ratios for subplots
-        gs = gridspec.GridSpec(2, 1, height_ratios=[1, 1])
-        # the first subplot
-        ax0 = plt.subplot(gs[0])
-        ax0.hist(hop_0_10, bins = bins, ec = self.colors[0], label=self.labels[0] ,fc='none', lw=2)
-        ax0.hist(hop_1_10, bins = bins, ec = self.colors[1], label=self.labels[1] ,fc='none', lw=2)
-        ax0.hist(hop_2_10, bins = bins, ec = self.colors[2], label=self.labels[2] ,fc='none', lw=2)
-            
-        # the second subplot
-        # shared axis X
-        ax1 = plt.subplot(gs[1], sharex = ax0)
-        ax1.hist(hop_0_01, bins = bins, ec = self.colors[0], label="" ,fc='none', lw=2)
-        ax1.hist(hop_1_01, bins = bins, ec = self.colors[1], label="" ,fc='none', lw=2)
-        ax1.hist(hop_2_01, bins = bins, ec = self.colors[2], label="" ,fc='none', lw=2)
-
-        # Set a single y-axis label for both histograms
-        fig.supylabel('Number of Hops', fontweight='bold', fontsize=16)
-        
-        # Set labels and legends
-        ax0.text(0.95, 0.9, f'(a) {hops_l[0]}', transform=ax0.transAxes,
-             fontsize=16, fontweight='bold', va='top', ha='right')
-        ax1.text(0.95, 0.9, f'(b) {hops_l[1]}', transform=ax1.transAxes,
-             fontsize=16, fontweight='bold', va='top', ha='right')
-
-        plt.setp(ax0.get_xticklabels(), visible=False)
-
-        # put legend on first subplot
-        ax0.legend(loc='upper center', bbox_to_anchor=(0.5, 1.2), prop={'size': 14}, ncol=3)
-
-        # remove vertical gap between subplots
-        plt.subplots_adjust(hspace=.0)
-        plt.xlim([0, 200])
-        plt.xlabel('Time (fs)', fontweight = 'bold', fontsize = 16)
-        plt.savefig("number_of_qy_time.pdf", bbox_inches='tight')
-        plt.savefig("number_of_qy_time.png", bbox_inches='tight')
+        plt.hist(tor_0_0, bins = bins, ec = self.colors[0], label=self.labels[0] ,fc='none', lw=2)
+        plt.hist(tor_1_0, bins = bins, ec = self.colors[1], label=self.labels[1] ,fc='none', lw=2)
+        plt.hist(tor_2_0, bins = bins, ec = self.colors[2], label=self.labels[2] ,fc='none', lw=2)
+        plt.xlim([0, 180])
+        plt.xlabel('$\mathbf{\sphericalangle H_3C_1N_2H_5(degrees)}$', fontsize=self.f_size)
+        plt.savefig("number_of_dihe_qy.pdf", bbox_inches='tight')
+        plt.savefig("number_of_dihe_qy.png", bbox_inches='tight')
         plt.close()
 
     def plot_1d_histogram_2_plots(self, xms_caspt2,sa_casscf,sa_oo_vqe,n_bins=16):
@@ -1218,58 +1187,20 @@ class PlotComb:
                     hop_01.append(x)
         return hop_10, hop_01
 
-    def get_histogram_qy(self, folder, parameter):
-        if "xms_caspt2" in folder:
-            print("Average values for xms_caspt2")
-        if "sa_casscf" in folder:
-            print("Average values for sa_casscf")
-        if "sa_oo_vqe" in folder:
-            print("Average values for sa_oo_vqe")
-        e_gap_name = os.path.join(folder,parameter)
+    def get_histogram_qy(self, folder):
         pop_name = os.path.join(folder,"pop.dat")
-        e_gap = read_csv(e_gap_name)
+        torsion_name = os.path.join(folder,"dihe_2014.dat")
         pop = read_csv(pop_name)
-        hop = pop.to_numpy()[:,1:] # removing time column
-        ene_d = e_gap.to_numpy()[:,1:] # removing time column
+        torsion = read_csv(torsion_name)
+        cur = pop.to_numpy()[:,1:] # removing time column
+        tor = torsion.to_numpy()[:,1:] # removing time column
         mdsteps,trajs = hop.shape 
-        hop_10 = []
-        hop_01 = []
-        hop_10_hnch_lower = []
-        hop_10_hnch_upper = []
-        hop_10_hnc = []
-        hop_10_pyr = []
-        for j in range(1,mdsteps):   #time_steps 
-            for i in range(trajs):          #trajectories
-                ene = ene_d[j,i] 
-                if hop[j-1,i]==1 and hop[j,i]==0:
-                    hop_10.append(abs(ene))
-                    if parameter == "dihe_2014.dat" and ene < 0:
-                        hop_10_hnch_lower.append(ene)
-                    elif parameter == "dihe_2014.dat" and ene > 0:
-                        hop_10_hnch_upper.append(ene)
-                    elif parameter == "angle_014.dat":
-                        hop_10_hnc.append(ene)
-                    elif parameter == "pyr_3210.dat":
-                        hop_10_pyr.append(ene)
-                elif hop[j-1,i]==0 and hop[j,i]==1:
-                    hop_01.append(ene)
-                    #if parameter == "angle_014.dat":
-                    #    hop_10_hnc.append(ene)
-                    #elif parameter == "pyr_3210.dat":
-                    #    hop_10_pyr.append(abs(ene))
-        if parameter in ["dihe_2014.dat"]:
-            print(f"Average hnch < 0:", sum(hop_10_hnch_lower)/len(hop_10_hnch_lower))
-            print(f"Average hnch > 0:", sum(hop_10_hnch_upper)/len(hop_10_hnch_upper))
-            print(f"Average abs(hnch):", sum(hop_10)/len(hop_10))
-        elif parameter in ["angle_014.dat"]:
-            print(f"Average hnc:", sum(hop_10_hnc)/len(hop_10_hnc))
-            print(f"Average abc(hnc):", sum(hop_10)/len(hop_10))
-        elif parameter in ["pyr_3210.dat"]:
-            print(f"Average pyr:", sum(hop_10_pyr)/len(hop_10_pyr))
-            print(f"Average abs(pyr):", sum(hop_10)/len(hop_10))
-        elif parameter in ["e_gap.dat"]:
-            print(f"Average e_gap:", sum(hop_10)/len(hop_10))
-        return hop_10, hop_01
+        torsion_0 = []
+        for i in range(trajs):          #trajectories
+            dihe = tor[mdsteps,i] 
+            if cur[mdsteps,i]==0:
+                torsion_0.append(abs(dihe))
+        return torsion_0 
 
     def get_histogram_hops_energy(self, folder, parameter):
         if "xms_caspt2" in folder:
@@ -1506,11 +1437,11 @@ if __name__=="__main__":
     #out.plot_av_popu_torsion_noise(noise_sa_oo_vqe)
     #out.plot_av_popu_diff_ene(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_one_method_av_popu_diff_ene(method)
-    out.get_torsion_qy_ave(xms_caspt2)
-    out.get_torsion_qy_ave(sa_oo_vqe)
-    out.get_torsion_qy_ave(sa_casscf)
-    out.get_torsion_qy_ave_2(xms_caspt2)
+    #out.get_torsion_qy_ave(xms_caspt2)
+    #out.get_torsion_qy_ave(sa_oo_vqe)
+    #out.get_torsion_qy_ave(sa_casscf)
+    #out.get_torsion_qy_ave_2(xms_caspt2)
     #out.get_torsion_qy_ave_2(sa_oo_vqe)
     #out.get_torsion_qy_ave_2(sa_casscf)
     #out.get_torsion_qy_ave_noise(noise_sa_oo_vqe)
-    #out.plot_1d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 20)
+    out.plot_1d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 20)
