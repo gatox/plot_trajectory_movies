@@ -1194,7 +1194,7 @@ class PlotComb:
         torsion = read_csv(torsion_name)
         cur = pop.to_numpy()[:,1:] # removing time column
         tor = torsion.to_numpy()[:,1:] # removing time column
-        mdsteps,trajs = hop.shape 
+        mdsteps,trajs = cur.shape 
         torsion_0 = []
         for i in range(trajs):          #trajectories
             dihe = tor[mdsteps,i] 
