@@ -548,10 +548,71 @@ class PlotComb:
         plt.savefig("number_of_hops_2_energy.png", bbox_inches='tight')
         plt.close()
 
+    def plot_2d_histogram_QY_time(self, xms_caspt2,sa_casscf,sa_oo_vqe,n_bins=16):
+        #Grond state
+        tor_0_0 = self.get_histogram_qy(xms_caspt2,0)
+        tor_1_0 = self.get_histogram_qy(sa_casscf,0)
+        tor_2_0 = self.get_histogram_qy(sa_oo_vqe,0)
+        #First state
+        tor_0_1 = self.get_histogram_qy(xms_caspt2,1)
+        tor_1_1 = self.get_histogram_qy(sa_casscf,1)
+        tor_2_1 = self.get_histogram_qy(sa_oo_vqe,1)
+        bins = np.linspace(0, 180, n_bins) 
+        plt.rcParams['font.size'] = self.fs_rcParams
+        fig = plt.figure(figsize=(6,8))
+        # set height ratios for subplots
+        gs = gridspec.GridSpec(2, 1, height_ratios=[1, 1])
+        # the first subplot
+        ax0 = plt.subplot(gs[0])
+        ax0.hist(tor_0_1, bins=bins, ec=self.colors[0], label=self.labels[0], fc='none', lw=2)
+        ax0.hist(tor_1_1, bins=bins, ec=self.colors[1], label=self.labels[1], fc='none', lw=2)
+        ax0.hist(tor_2_1, bins=bins, ec=self.colors[2], label=self.labels[2], fc='none', lw=2)
+        
+        # Set limits and labels
+        ax0.set_xlim([0, 180])
+        ax0.set_ylim([0, 200])
+        ax0.set_ylabel('Number of Initial Torsion Angles', fontweight='bold', fontsize=self.f_size)
+        
+        # Set major locator for x-axis
+        ax0.xaxis.set_major_locator(ticker.MultipleLocator(30))
+
+        # the second subplot
+        # shared axis X
+        ax1 = plt.subplot(gs[1], sharex = ax0)
+        ax1.hist(tor_0_0, bins=bins, ec=self.colors[0], label=self.labels[0], fc='none', lw=2)
+        ax1.hist(tor_1_0, bins=bins, ec=self.colors[1], label=self.labels[1], fc='none', lw=2)
+        ax1.hist(tor_2_0, bins=bins, ec=self.colors[2], label=self.labels[2], fc='none', lw=2)
+
+        # Set limits and labels
+        ax1.set_xlim([0, 180])
+        ax1.set_ylim([0, 58])
+        ax1.set_ylabel('Number of Final Torsion Angles', fontweight='bold', fontsize=self.f_size)
+        ax1.set_xlabel('$\mathbf{\sphericalangle H_3C_1N_2H_5(degrees)}$', fontsize=self.f_size)
+        
+        # Set major locator for x-axis
+        ax1.xaxis.set_major_locator(ticker.MultipleLocator(30))
+
+        # Set labels and legends
+        ax0.text(0.95, 0.95, f'(a)', transform=ax0.transAxes,
+             fontsize=16, fontweight='bold', va='top', ha='right')
+        ax1.text(0.95, 0.95, f'(b)', transform=ax1.transAxes,
+             fontsize=16, fontweight='bold', va='top', ha='right')
+
+        plt.setp(ax0.get_xticklabels(), visible=False)
+
+        # put legend on first subplot
+        ax0.legend(loc='upper center', bbox_to_anchor=(0.48, 1.2), prop={'size': 12}, ncol=3)
+        
+        # remove vertical gap between subplots
+        plt.subplots_adjust(hspace=.0)
+        plt.savefig("number_of_dihe_qy.pdf", bbox_inches='tight')
+        plt.savefig("number_of_dihe_qy.png", bbox_inches='tight')
+        plt.close()
+
     def plot_1d_histogram_QY_time(self, xms_caspt2,sa_casscf,sa_oo_vqe,n_bins=16):
-        tor_0_0 = self.get_histogram_qy(xms_caspt2)
-        tor_1_0 = self.get_histogram_qy(sa_casscf)
-        tor_2_0 = self.get_histogram_qy(sa_oo_vqe)
+        tor_0_0 = self.get_histogram_qy(xms_caspt2,0)
+        tor_1_0 = self.get_histogram_qy(sa_casscf,0)
+        tor_2_0 = self.get_histogram_qy(sa_oo_vqe,0)
         bins = np.linspace(0, 180, n_bins) 
 
         # Create figure and axis
@@ -1203,7 +1264,7 @@ class PlotComb:
                     hop_01.append(x)
         return hop_10, hop_01
 
-    def get_histogram_qy(self, folder):
+    def get_histogram_qy(self, folder, state):
         pop_name = os.path.join(folder,"pop.dat")
         torsion_name = os.path.join(folder,"dihe_2014.dat")
         pop = read_csv(pop_name)
@@ -1213,9 +1274,14 @@ class PlotComb:
         mdsteps,trajs = cur.shape 
         torsion_0 = []
         for i in range(trajs):          #trajectories
-            dihe = tor[mdsteps-1,i] 
-            if cur[mdsteps-1,i]==0:
-                torsion_0.append(abs(dihe))
+            if state == 0:
+                dihe = tor[mdsteps-1,i] 
+                if cur[mdsteps-1,i]==0:
+                    torsion_0.append(abs(dihe))
+            elif state == 1:
+                dihe = tor[0,i] 
+                if cur[0,i]==1:
+                    torsion_0.append(abs(dihe))
         return torsion_0 
 
     def get_histogram_hops_energy(self, folder, parameter):
@@ -1460,4 +1526,5 @@ if __name__=="__main__":
     #out.get_torsion_qy_ave_2(sa_oo_vqe)
     #out.get_torsion_qy_ave_2(sa_casscf)
     #out.get_torsion_qy_ave_noise(noise_sa_oo_vqe)
-    out.plot_1d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 7)
+    #out.plot_1d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 7)
+    out.plot_2d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 7)
