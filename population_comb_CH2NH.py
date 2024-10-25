@@ -553,12 +553,28 @@ class PlotComb:
         tor_1_0 = self.get_histogram_qy(sa_casscf)
         tor_2_0 = self.get_histogram_qy(sa_oo_vqe)
         bins = np.linspace(0, 180, n_bins) 
+
+        # Create figure and axis
+        fig, ax = plt.subplots()
         plt.rcParams['font.size'] = self.fs_rcParams
-        plt.hist(tor_0_0, bins = bins, ec = self.colors[0], label=self.labels[0] ,fc='none', lw=2)
-        plt.hist(tor_1_0, bins = bins, ec = self.colors[1], label=self.labels[1] ,fc='none', lw=2)
-        plt.hist(tor_2_0, bins = bins, ec = self.colors[2], label=self.labels[2] ,fc='none', lw=2)
-        plt.xlim([0, 180])
-        plt.xlabel('$\mathbf{\sphericalangle H_3C_1N_2H_5(degrees)}$', fontsize=self.f_size)
+        
+        # Plot histograms on the axis
+        ax.hist(tor_0_0, bins=bins, ec=self.colors[0], label=self.labels[0], fc='none', lw=2)
+        ax.hist(tor_1_0, bins=bins, ec=self.colors[1], label=self.labels[1], fc='none', lw=2)
+        ax.hist(tor_2_0, bins=bins, ec=self.colors[2], label=self.labels[2], fc='none', lw=2)
+        
+        # Set limits and labels
+        ax.set_xlim([0, 180])
+        ax.set_xlabel('$\mathbf{\sphericalangle H_3C_1N_2H_5(degrees)}$', fontsize=self.f_size)
+        ax.set_ylabel('Number of Final Torsion Angles', fontweight='bold', fontsize=self.f_size)
+        
+        # Set major locator for x-axis
+        ax.xaxis.set_major_locator(ticker.MultipleLocator(30))
+
+        # put legend on first subplot
+        ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.15), prop={'size': 12}, ncol=3)
+        
+        # Save and close the plot
         plt.savefig("number_of_dihe_qy.pdf", bbox_inches='tight')
         plt.savefig("number_of_dihe_qy.png", bbox_inches='tight')
         plt.close()
@@ -1195,10 +1211,8 @@ class PlotComb:
         cur = pop.to_numpy()[:,1:] # removing time column
         tor = torsion.to_numpy()[:,1:] # removing time column
         mdsteps,trajs = cur.shape 
-        print(mdsteps,trajs)
         torsion_0 = []
         for i in range(trajs):          #trajectories
-            print(mdsteps,i)
             dihe = tor[mdsteps-1,i] 
             if cur[mdsteps-1,i]==0:
                 torsion_0.append(abs(dihe))
