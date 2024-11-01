@@ -167,7 +167,6 @@ class PlotComb:
 
     def margin_95_confidence(self, n_traj, qy):
         return 1.96*np.sqrt((qy*(1-qy))/n_traj)
-        
 
     def get_torsion_qy_ave(self, folder):
         filename = os.path.join(folder,"dihe_2014.dat")
@@ -1194,6 +1193,7 @@ class PlotComb:
         ax01.hist(hop_d.cas, bins = self.bins.hnch, ec = self.colors[1], label="" ,fc='none', lw=2)
         ax01.hist(hop_d.vqe, bins = self.bins.hnch, ec = self.colors[2], label="" ,fc='none', lw=2)
         ax01.set_xlim([0,180])
+        ax01.axvline(109,label="MECI",linestyle='--', c = 'purple')
         ax01.xaxis.set_major_locator(ticker.MultipleLocator(30))
         ax01.set_xlabel('$\mathbf{\sphericalangle H_3C_1N_2H_5(degrees)}$', fontsize=self.f_size)
 
@@ -1202,6 +1202,7 @@ class PlotComb:
         ax10.hist(hop_a.xms, bins = self.bins.hnc, ec = self.colors[0], label="" ,fc='none', lw=2)
         ax10.hist(hop_a.cas, bins = self.bins.hnc, ec = self.colors[1], label="" ,fc='none', lw=2)
         ax10.hist(hop_a.vqe, bins = self.bins.hnc, ec = self.colors[2], label="" ,fc='none', lw=2)
+        ax10.axvline(111,label="MECI",linestyle='--', c = 'purple')
         ax10.set_xlim([0,180])
         ax10.xaxis.set_major_locator(ticker.MultipleLocator(30))
         ax10.set_xlabel('$\mathbf{\sphericalangle C_1N_2H_5(degrees)}$', fontsize=self.f_size)
@@ -1211,9 +1212,11 @@ class PlotComb:
         ax11.hist(hop_p.xms, bins = self.bins.pyr, ec = self.colors[0], label="" ,fc='none', lw=2)
         ax11.hist(hop_p.cas, bins = self.bins.pyr, ec = self.colors[1], label="" ,fc='none', lw=2)
         ax11.hist(hop_p.vqe, bins = self.bins.pyr, ec = self.colors[2], label="" ,fc='none', lw=2)
+        ax11.axvline(34,label="MECI",linestyle='--', c = 'purple')
         ax11.set_xlim([0,180])
         ax11.xaxis.set_major_locator(ticker.MultipleLocator(30))
         ax11.set_xlabel('$\mathbf{Pyramidalization (degrees)}$', fontsize=self.f_size)
+        
 
         # Set a single y-axis label for both histograms
         fig.supylabel('Number of Hops', fontweight='bold', fontsize=18)
@@ -1232,6 +1235,9 @@ class PlotComb:
 
         # put legend on first subplot
         ax00.legend(loc='upper center', bbox_to_anchor=(1, 1.2), prop={'size': 14}, ncol=3)
+        #ax01.legend(bbox_to_anchor=(0.98, 0.9), frameon=False)
+        #ax10.legend(bbox_to_anchor=(0.98, 0.9), frameon=False)
+        #ax11.legend(bbox_to_anchor=(0.98, 0.9), frameon=False)
 
         plt.savefig("number_of_hops_4.pdf", bbox_inches='tight')
         plt.savefig("number_of_hops_4.png", bbox_inches='tight')
@@ -1519,7 +1525,7 @@ if __name__=="__main__":
     #out.plot_1d_histogram_2_plots_samen(xms_caspt2,sa_casscf,sa_oo_vqe, 8)
     #out.plot_1d_histogram_2_plots_samen_energy(xms_caspt2,sa_casscf,sa_oo_vqe, 20)
     #out.plot_1d_histogram_2_plots_energy(xms_caspt2,sa_casscf,sa_oo_vqe, 31)
-    #out.plot_1d_histogram_4_plots_S1_S0(xms_caspt2,sa_casscf,sa_oo_vqe)
+    out.plot_1d_histogram_4_plots_S1_S0(xms_caspt2,sa_casscf,sa_oo_vqe)
     #out.print_stat(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_torsion_ave(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_torsion_ave_qy(xms_caspt2, sa_casscf, sa_oo_vqe)
@@ -1535,6 +1541,6 @@ if __name__=="__main__":
     #out.get_torsion_qy_ave_2(xms_caspt2)
     #out.get_torsion_qy_ave_2(sa_oo_vqe)
     #out.get_torsion_qy_ave_2(sa_casscf)
-    out.get_torsion_qy_ave_noise(noise_sa_oo_vqe)
+    #out.get_torsion_qy_ave_noise(noise_sa_oo_vqe)
     #out.plot_1d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 7)
     ##out.plot_2d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 7)
