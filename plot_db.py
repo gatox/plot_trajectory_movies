@@ -1,4 +1,5 @@
 import sys
+import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 from jinja2 import Template #build templates
@@ -232,17 +233,6 @@ class PlotResults:
         for i,m in enumerate(crd):
             dimer.append((np.sqrt(np.sum((np.array(m[atom_1])-np.array(m[atom_2]))**2)))*self.aa)
         return dimer
-
-    def dihedral(self, a, b, c, d):
-        crd = self.output["crd"]
-        torsion = []
-        for i,m in enumerate(crd):
-            vec_a = np.array(m[int(a)])
-            vec_b = np.array(m[int(b)])
-            vec_c = np.array(m[int(c)])
-            vec_d = np.array(m[int(d)])
-            torsion.append(calc_dihedral(Vector(vec_a),Vector(vec_b),Vector(vec_c),Vector(vec_d))* 180 / np.pi)
-        return torsion
 
     def plot_dihedral_vs_time(self, atom_1, atom_2, atom_3, atom_4):
         dihedral = self.dihedral(atom_1, atom_2, atom_3, atom_4)
@@ -501,6 +491,7 @@ if __name__=="__main__":
     #picture.plot_population()
     #picture.plot_dihedral_vs_time(atom_1, atom_2, atom_3, atom_4)
     #picture.plot_energy_angles_vs_time(atom_1, atom_2, atom_3, atom_4, atom_5)
-    picture.plot_energy_angles_popu_vs_time(atom_1, atom_2, atom_3, atom_4, atom_5)
+    #picture.plot_energy_angles_popu_vs_time(atom_1, atom_2, atom_3, atom_4, atom_5)
+    picture.geom_dihe_angle_pyr("ci_vqe_emiel_74.xyz")
     #picture.plot_dist_vs_time(atom_1,atom_2)
     #picture.plot_ene_vs_dis(atom_1,atom_2)

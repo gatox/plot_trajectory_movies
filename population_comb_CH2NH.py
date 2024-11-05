@@ -80,7 +80,7 @@ class PlotComb:
     def get_torsion_qy_ave_noise(self, folder):
         time_0, lower_0, upper_0, else_0 = self.get_torsion_qy_ave(os.path.join(folder,"variance_10"))
         time_1, lower_1, upper_1, else_1 = self.get_torsion_qy_ave(os.path.join(folder,"variance_08"))
-        #time_2, lower_2, upper_2, else_2 = self.get_torsion_qy_ave(os.path.join(folder,"variance_06"))
+        time_2, lower_2, upper_2, else_2 = self.get_torsion_qy_ave(os.path.join(folder,"variance_06"))
         time_3, lower_3, upper_3, else_3 = self.get_torsion_qy_ave(os.path.join(folder,"variance_00"))
 
     def get_torsion_qy_ave_2(self, folder):
@@ -165,6 +165,9 @@ class PlotComb:
             f3.close()
         return ave_time, ave_lower, ave_upper, ave_else
 
+    def margin_95_confidence(self, n_traj, qy):
+        return 1.96*np.sqrt((qy*(1-qy))/n_traj)
+
     def get_torsion_qy_ave(self, folder):
         filename = os.path.join(folder,"dihe_2014.dat")
         popu = os.path.join(folder,"pop.dat")
@@ -218,7 +221,6 @@ class PlotComb:
                     else:
                         ave_upper.append(ref/int(trajs-nans))
                     if lower_30 != 0:
-                        print(lower_30, nans)
                         ave_lower.append(ref_non_r/int(lower_30-nans))
                     else:
                         ave_lower.append(ref/int(trajs-nans))
@@ -230,15 +232,21 @@ class PlotComb:
             title = folder.replace('../noise_sa_oo_vqe/', '')  
         else:
             title = folder.replace('../', '')
+        l_30_u_150 = lower_30+upper_150
+        traj_nans = int(trajs-nans)
+        err_95_l_30 = self.margin_95_confidence(l_30_u_150,lower_30/l_30_u_150)
+        err_95_u_150 = self.margin_95_confidence(l_30_u_150,upper_150/l_30_u_150)
         with open(f'QY_information_30_150_{title}.out', 'w') as f3:
             f3.write('--------------------------------------------------------------\n')
             f3.write(f'Folder: {title}\n')
-            f3.write(f'lower_30/{trajs-nans}: {lower_30/int(trajs-nans)}\n')
-            f3.write(f'lower_30/(lower_30+upper_150): {lower_30/(lower_30+upper_150)}\n')
-            f3.write(f'upper_150/{trajs-nans}: {upper_150/int(trajs-nans)}\n')
-            f3.write(f'upper_150/(lower_30+upper_150): {upper_150/(lower_30+upper_150)}\n')
-            f3.write(f'lower_S0_50 = {lower_30}, upper_S0_150 = {upper_150}, rest_S0 = {else_ang}, S1 = {ref_S1}\n')
-            f3.write(f'Total:  {lower_30 + upper_150 + else_ang + ref_S1}\n')
+            #f3.write(f'lower_30/{traj_nans}: {round(lower_30/traj_nans,2)}\n')
+            f3.write(f'lower_30/(lower_30+upper_150): {round(100*(lower_30/l_30_u_150),0)}\n')
+            #f3.write(f'upper_150/{traj_nans}: {round(upper_150/traj_nans,2)}\n')
+            f3.write(f'upper_150/(lower_30+upper_150): {round(100*(upper_150/l_30_u_150),0)}\n')
+            f3.write(f'lower_S0_30 = {lower_30}, upper_S0_150 = {upper_150}, rest_S0 = {else_ang}, S1 = {ref_S1}\n')
+            #f3.write(f'Total:  {round(l_30_u_150 + else_ang + ref_S1,2)}\n')
+            f3.write(f'error 95% confident interval lower_30: {round(100*(err_95_l_30),0)}\n')
+            f3.write(f'error 95% confident interval upper_150: {round(100*(err_95_u_150),0)}\n')
             f3.write(f'Trajs - Nans: {int(trajs-nans)}\n')
             f3.write('--------------------------------------------------------------')
             f3.close()
@@ -1185,6 +1193,7 @@ class PlotComb:
         ax01.hist(hop_d.cas, bins = self.bins.hnch, ec = self.colors[1], label="" ,fc='none', lw=2)
         ax01.hist(hop_d.vqe, bins = self.bins.hnch, ec = self.colors[2], label="" ,fc='none', lw=2)
         ax01.set_xlim([0,180])
+        ax01.axvline(109,label="MECI",linestyle='--', c = 'purple')
         ax01.xaxis.set_major_locator(ticker.MultipleLocator(30))
         ax01.set_xlabel('$\mathbf{\sphericalangle H_3C_1N_2H_5(degrees)}$', fontsize=self.f_size)
 
@@ -1193,6 +1202,7 @@ class PlotComb:
         ax10.hist(hop_a.xms, bins = self.bins.hnc, ec = self.colors[0], label="" ,fc='none', lw=2)
         ax10.hist(hop_a.cas, bins = self.bins.hnc, ec = self.colors[1], label="" ,fc='none', lw=2)
         ax10.hist(hop_a.vqe, bins = self.bins.hnc, ec = self.colors[2], label="" ,fc='none', lw=2)
+        ax10.axvline(111,label="MECI",linestyle='--', c = 'purple')
         ax10.set_xlim([0,180])
         ax10.xaxis.set_major_locator(ticker.MultipleLocator(30))
         ax10.set_xlabel('$\mathbf{\sphericalangle C_1N_2H_5(degrees)}$', fontsize=self.f_size)
@@ -1202,9 +1212,11 @@ class PlotComb:
         ax11.hist(hop_p.xms, bins = self.bins.pyr, ec = self.colors[0], label="" ,fc='none', lw=2)
         ax11.hist(hop_p.cas, bins = self.bins.pyr, ec = self.colors[1], label="" ,fc='none', lw=2)
         ax11.hist(hop_p.vqe, bins = self.bins.pyr, ec = self.colors[2], label="" ,fc='none', lw=2)
+        ax11.axvline(34,label="MECI",linestyle='--', c = 'purple')
         ax11.set_xlim([0,180])
         ax11.xaxis.set_major_locator(ticker.MultipleLocator(30))
         ax11.set_xlabel('$\mathbf{Pyramidalization (degrees)}$', fontsize=self.f_size)
+        
 
         # Set a single y-axis label for both histograms
         fig.supylabel('Number of Hops', fontweight='bold', fontsize=18)
@@ -1223,6 +1235,9 @@ class PlotComb:
 
         # put legend on first subplot
         ax00.legend(loc='upper center', bbox_to_anchor=(1, 1.2), prop={'size': 14}, ncol=3)
+        #ax01.legend(bbox_to_anchor=(0.98, 0.9), frameon=False)
+        #ax10.legend(bbox_to_anchor=(0.98, 0.9), frameon=False)
+        #ax11.legend(bbox_to_anchor=(0.98, 0.9), frameon=False)
 
         plt.savefig("number_of_hops_4.pdf", bbox_inches='tight')
         plt.savefig("number_of_hops_4.png", bbox_inches='tight')
@@ -1336,6 +1351,7 @@ class PlotComb:
         elif parameter in ["e_gap.dat"]:
             print(f"Average e_gap:", sum(hop_10)/len(hop_10))
         return hop_10, hop_01
+
 
     def plot_torsion_ave_qy(self,xms_caspt2,sa_casscf,sa_oo_vqe):
         time_0, lower_0, upper_0, else_0 = self.get_torsion_qy_ave(xms_caspt2)
@@ -1509,7 +1525,7 @@ if __name__=="__main__":
     #out.plot_1d_histogram_2_plots_samen(xms_caspt2,sa_casscf,sa_oo_vqe, 8)
     #out.plot_1d_histogram_2_plots_samen_energy(xms_caspt2,sa_casscf,sa_oo_vqe, 20)
     #out.plot_1d_histogram_2_plots_energy(xms_caspt2,sa_casscf,sa_oo_vqe, 31)
-    #out.plot_1d_histogram_4_plots_S1_S0(xms_caspt2,sa_casscf,sa_oo_vqe)
+    out.plot_1d_histogram_4_plots_S1_S0(xms_caspt2,sa_casscf,sa_oo_vqe)
     #out.print_stat(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_torsion_ave(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_torsion_ave_qy(xms_caspt2, sa_casscf, sa_oo_vqe)
@@ -1527,4 +1543,4 @@ if __name__=="__main__":
     #out.get_torsion_qy_ave_2(sa_casscf)
     #out.get_torsion_qy_ave_noise(noise_sa_oo_vqe)
     #out.plot_1d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 7)
-    out.plot_2d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 7)
+    ##out.plot_2d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 7)
