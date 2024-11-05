@@ -1,3 +1,5 @@
+#Script for checking missing computed trajectories
+
 def all_traj():
     total_traj = []
     for i in range(200):
