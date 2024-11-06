@@ -38,7 +38,6 @@ class Population:
 
     def skip_traj(self):
         if self.skip == "yes":
-            trajs = []
             read = open("trajectories_ok_list", 'r+') 
             return [line.strip().split("/")[2] for line in read]
         return None
