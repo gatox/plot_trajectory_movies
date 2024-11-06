@@ -1,4 +1,7 @@
 #Script for checking missing computed trajectories
+#And submitting the missed trajectories 
+import os
+from subprocess import run, CalledProcessError
 
 def all_traj():
     total_traj = []
@@ -19,16 +22,34 @@ def read_files():
 def compare():
     no_comp = read_files()
     total_traj = all_traj()
-    with open(f'Trajs_info.out', 'w') as f:
+    with open(f'trajectories_submitted.out', 'w') as f:
         f.write('--------------------------------------------------------\n')
         f.write(f'Information of Trajectories:\n')
-        f.write(f'All trajectories with a len of {len(total_traj)}:\n')
+        f.write(f'The number of the total trajectories is {len(total_traj)}:\n')
         f.write(f'{total_traj}\n')
-        f.write(f'All trajectories submitted an started with a len of {len(no_comp)}:\n')
+        f.write(f'The number of trajectories submitted is {len(no_comp)}:\n')
         f.write(f'{no_comp}\n')
-        f.write(f'All trajectories no submitted  with a len of {len(set(total_traj) - set(no_comp))}:\n')
+        f.write(f' The number of trajectories no submitted is {len(set(total_traj) - set(no_comp))}:\n')
         f.write(f'{sorted(set(total_traj) - set(no_comp))}\n')
         f.write('--------------------------------------------------------')
         f.close()
+    return sorted(set(total_traj) - set(no_comp))
+
+def missing_traj():
+    read = compare()
+    return [f"traj_{i:08d}" for i in read]
+
+def submit_traj_missed():
+    allowed = missing_traj()
+    for traj in os.listdir("prop"):
+        if traj in allowed: 
+            subfolder = os.path.join("prop",traj)
+            try:
+                run(['sbatch cpu_long_saoovqe.sh'], cwd=subfolder, check=True, shell=True)
+            except KeyboardInterrupt or CalledProcessError:
+                break
+            print("Submitting", subfolder)
+
 # Example usage
 compare()
+#submit_traj_missed()
