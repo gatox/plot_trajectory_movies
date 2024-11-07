@@ -365,7 +365,11 @@ class PlotComb:
         # Compute standard deviation along axis=1 (time axis)
         noise_std = np.nanstd(noise_data, axis=1)  # Use np.nanstd to ignore NaN values
         
-        return ave_time, ave_noise, noise_std
+        #title = filename.replace('../noise_sa_oo_vqe/', '')
+        #title = title.replace('/etot.dat', '')
+        #df = DataFrame({"ave_time" : np.array(ave_time), "ave_noise" : np.array(ave_noise)})
+        #df.to_csv(f"data_ave_time_noise_{title}.csv", index=False)
+        return np.array(ave_time), np.array(ave_noise), noise_std
 
     def get_torsion_ave(self, folder):
         filename = os.path.join(folder, "dihe_2014.dat")
@@ -1517,6 +1521,15 @@ class PlotComb:
         params_0, cv_noise_0 = curve_fit(self.linear_total_energy, time_0, noise_0)
         a_0 = params_0[0]
         b_0 = params_0[1]
+        params_1, cv_noise_1 = curve_fit(self.linear_total_energy, time_1, noise_1)
+        a_1 = params_1[0]
+        b_1 = params_1[1]
+        params_2, cv_noise_2 = curve_fit(self.linear_total_energy, time_2, noise_2)
+        a_2 = params_2[0]
+        b_2 = params_2[1]
+        params_3, cv_noise_3 = curve_fit(self.linear_total_energy, time_3, noise_3)
+        a_3 = params_3[0]
+        b_3 = params_3[1]
 
         fig, ax = plt.subplots()
         #noise
@@ -1525,8 +1538,10 @@ class PlotComb:
         plt.plot(time_1, noise_1, color = self.n_colors[1], label = r"$\sigma^2$=1.0e-08", lw=2)
         plt.plot(time_2, noise_2, color = self.n_colors[2], label = r"$\sigma^2$=1.0e-06", lw=2)
         #fitted
-        print(time_0, self.linear_total_energy(time_0, a_0, b_0))
-        plt.plot(time_0, self.linear_total_energy(time_0, a_0, b_0), '--', label="fitted S0")
+        plt.plot(time_3, self.linear_total_energy(time_3, a_3, b_3), '--', label=f"$y = {a_3:.8f}x {b_3:+.8f}$")
+        plt.plot(time_0, self.linear_total_energy(time_0, a_0, b_0), '--', label=f"$y = {a_0:.8f}x {b_0:+.8f}$")
+        plt.plot(time_1, self.linear_total_energy(time_1, a_1, b_1), '--', label=f"$y = {a_1:.8f}x {b_1:+.8f}$")
+        plt.plot(time_2, self.linear_total_energy(time_2, a_2, b_2), '--', label=f"$y = {a_2:.8f}x {b_2:+.8f}$")
 
         plt.xlim([self.t_0, self.t_max])
         plt.xticks(fontsize=15)
@@ -1535,7 +1550,7 @@ class PlotComb:
         plt.ylabel('$\mathbf{\Delta\ Total\ Energy\ (eV)}$', fontsize = 16)
         ax.spines['right'].set_visible(True)
         plt.ylim([-0.05, 2.37])
-        plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.25), prop={'size': 12}, ncol=2, frameon=False)
+        plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.31), prop={'size': 12}, ncol=2, frameon=False)
         ax1 = ax.twinx()
         ax1.set_ylim([-0.05, 2.37])
         ax1.tick_params(labelsize=15)
