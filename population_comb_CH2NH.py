@@ -1513,18 +1513,26 @@ class PlotComb:
         time_1, noise_1, std_1 = self.get_noise_ave(folder,'variance_08/etot.dat')
         time_2, noise_2, std_2 = self.get_noise_ave(folder,'variance_06/etot.dat')
         time_3, noise_3, std_3 = self.get_noise_ave(folder,'variance_00/etot.dat')
+        #fitted
+        params_0, cv_noise_0 = curve_fit(self.linear_total_energy, time_0, noise_0)
+        a_0 = params_0[0]
+        b_0 = params_0[1]
 
         fig, ax = plt.subplots()
-        plt.plot(time_3, t_noise_3, color = "blue"i, label = "no noise", lw=2, alpha=0.8)
-        plt.plot(time_0, t_noise_0, color = self.n_colors[0], label = r"$\sigma^2$=1.0e-10", lw=2)
-        plt.plot(time_1, t_noise_1, color = self.n_colors[1], label = r"$\sigma^2$=1.0e-08", lw=2)
-        plt.plot(time_2, t_noise_2, color = self.n_colors[2], label = r"$\sigma^2$=1.0e-06", lw=2)
+        #noise
+        plt.plot(time_3, noise_3, color = "blue", label = "no noise", lw=2, alpha=0.8)
+        plt.plot(time_0, noise_0, color = self.n_colors[0], label = r"$\sigma^2$=1.0e-10", lw=2)
+        plt.plot(time_1, noise_1, color = self.n_colors[1], label = r"$\sigma^2$=1.0e-08", lw=2)
+        plt.plot(time_2, noise_2, color = self.n_colors[2], label = r"$\sigma^2$=1.0e-06", lw=2)
+        #fitted
+        print(time_0, self.linear_total_energy(time_0, a_0, b_0))
+        plt.plot(time_0, self.linear_total_energy(time_0, a_0, b_0), '--', label="fitted S0")
 
         plt.xlim([self.t_0, self.t_max])
         plt.xticks(fontsize=15)
         plt.yticks(fontsize=15)
         plt.xlabel('Time (fs)', fontweight = 'bold', fontsize = 16)
-        plt.ylabel('$\mathbf{\Delta\ Total\ Energy\ (eV)}$' %index, fontsize = 16)
+        plt.ylabel('$\mathbf{\Delta\ Total\ Energy\ (eV)}$', fontsize = 16)
         ax.spines['right'].set_visible(True)
         plt.ylim([-0.05, 2.37])
         plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.25), prop={'size': 12}, ncol=2, frameon=False)
@@ -1532,8 +1540,8 @@ class PlotComb:
         ax1.set_ylim([-0.05, 2.37])
         ax1.tick_params(labelsize=15)
         ax1.set_ylabel(" ")
-        plt.savefig("population_total_energy_fitted.pdf" %index, bbox_inches='tight')
-        plt.savefig("population_total_energy_fitted.png" %index, bbox_inches='tight')
+        plt.savefig("total_energy_fitted.pdf", bbox_inches='tight')
+        plt.savefig("total_energy_fitted.png", bbox_inches='tight')
         plt.close()
     
     def plot_population_adi(self,index,xms_caspt2,sa_casscf,sa_oo_vqe):
