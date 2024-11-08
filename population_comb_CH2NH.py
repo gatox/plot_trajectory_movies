@@ -1596,7 +1596,7 @@ if __name__=="__main__":
     xms_caspt2 = "../xms_caspt2"
     sa_oo_vqe = "../sa_oo_vqe"
     sa_casscf = "../sa_casscf"
-    noise_sa_oo_vqe = "../noise_sa_oo_vqe"
+    noise_sa_oo_vqe = "../noise_sa_oo_vqe_025"
     method = os.getcwd()
     #time in fs
     t_0 = 0
