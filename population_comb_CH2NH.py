@@ -1513,17 +1513,17 @@ class PlotComb:
 
     def plot_total_energy_fitted(self, folder): 
         #noise
-        time_0, noise_0, std_0 = self.get_noise_ave(folder,'variance_10/etot.dat')
-        time_1, noise_1, std_1 = self.get_noise_ave(folder,'variance_08/etot.dat')
+        #time_0, noise_0, std_0 = self.get_noise_ave(folder,'variance_10/etot.dat')
+        #time_1, noise_1, std_1 = self.get_noise_ave(folder,'variance_08/etot.dat')
         time_2, noise_2, std_2 = self.get_noise_ave(folder,'variance_06/etot.dat')
         time_3, noise_3, std_3 = self.get_noise_ave(folder,'variance_00/etot.dat')
         #fitted
-        params_0, cv_noise_0 = curve_fit(self.linear_total_energy, time_0, noise_0)
-        a_0 = params_0[0]
-        b_0 = params_0[1]
-        params_1, cv_noise_1 = curve_fit(self.linear_total_energy, time_1, noise_1)
-        a_1 = params_1[0]
-        b_1 = params_1[1]
+        #params_0, cv_noise_0 = curve_fit(self.linear_total_energy, time_0, noise_0)
+        #a_0 = params_0[0]
+        #b_0 = params_0[1]
+        #params_1, cv_noise_1 = curve_fit(self.linear_total_energy, time_1, noise_1)
+        #a_1 = params_1[0]
+        #b_1 = params_1[1]
         params_2, cv_noise_2 = curve_fit(self.linear_total_energy, time_2, noise_2)
         a_2 = params_2[0]
         b_2 = params_2[1]
@@ -1534,13 +1534,13 @@ class PlotComb:
         fig, ax = plt.subplots()
         #noise
         plt.plot(time_3, noise_3, color = "blue", label = "no noise", lw=2, alpha=0.8)
-        plt.plot(time_0, noise_0, color = self.n_colors[0], label = r"$\sigma^2$=1.0e-10", lw=2)
-        plt.plot(time_1, noise_1, color = self.n_colors[1], label = r"$\sigma^2$=1.0e-08", lw=2)
+        #plt.plot(time_0, noise_0, color = self.n_colors[0], label = r"$\sigma^2$=1.0e-10", lw=2)
+        #plt.plot(time_1, noise_1, color = self.n_colors[1], label = r"$\sigma^2$=1.0e-08", lw=2)
         plt.plot(time_2, noise_2, color = self.n_colors[2], label = r"$\sigma^2$=1.0e-06", lw=2)
         #fitted
         plt.plot(time_3, self.linear_total_energy(time_3, a_3, b_3), '--', label=f"$y = {a_3:.8f}x {b_3:+.8f}$")
-        plt.plot(time_0, self.linear_total_energy(time_0, a_0, b_0), '--', label=f"$y = {a_0:.8f}x {b_0:+.8f}$")
-        plt.plot(time_1, self.linear_total_energy(time_1, a_1, b_1), '--', label=f"$y = {a_1:.8f}x {b_1:+.8f}$")
+        #plt.plot(time_0, self.linear_total_energy(time_0, a_0, b_0), '--', label=f"$y = {a_0:.8f}x {b_0:+.8f}$")
+        #plt.plot(time_1, self.linear_total_energy(time_1, a_1, b_1), '--', label=f"$y = {a_1:.8f}x {b_1:+.8f}$")
         plt.plot(time_2, self.linear_total_energy(time_2, a_2, b_2), '--', label=f"$y = {a_2:.8f}x {b_2:+.8f}$")
 
         plt.xlim([self.t_0, self.t_max])
@@ -1555,8 +1555,9 @@ class PlotComb:
         ax1.set_ylim([-0.05, 2.37])
         ax1.tick_params(labelsize=15)
         ax1.set_ylabel(" ")
-        plt.savefig("total_energy_fitted.pdf", bbox_inches='tight')
-        plt.savefig("total_energy_fitted.png", bbox_inches='tight')
+        title = folder.replace('../','')
+        plt.savefig(f"total_energy_fitted_{title}.pdf", bbox_inches='tight')
+        plt.savefig(f"total_energy_fitted_{title}.png", bbox_inches='tight')
         plt.close()
     
     def plot_population_adi(self,index,xms_caspt2,sa_casscf,sa_oo_vqe):
@@ -1596,7 +1597,9 @@ if __name__=="__main__":
     xms_caspt2 = "../xms_caspt2"
     sa_oo_vqe = "../sa_oo_vqe"
     sa_casscf = "../sa_casscf"
-    noise_sa_oo_vqe = "../noise_sa_oo_vqe_025"
+    #noise_sa_oo_vqe = "../noise_sa_oo_vqe_025"
+    noise_sa_oo_vqe = "../noise_sa_oo_vqe_012"
+    #noise_sa_oo_vqe = "../noise_sa_oo_vqe_007"
     method = os.getcwd()
     #time in fs
     t_0 = 0
