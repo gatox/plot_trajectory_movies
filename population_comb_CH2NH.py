@@ -1513,20 +1513,20 @@ class PlotComb:
 
     def plot_total_energy_fitted(self, folder): 
         #noise
-        #time_0, noise_0, std_0 = self.get_noise_ave(folder,'variance_10/etot.dat')
-        #time_1, noise_1, std_1 = self.get_noise_ave(folder,'variance_08/etot.dat')
-        time_2, noise_2, std_2 = self.get_noise_ave(folder,'variance_06/etot.dat')
+        time_0, noise_0, std_0 = self.get_noise_ave(folder,'variance_10/etot.dat')
+        time_1, noise_1, std_1 = self.get_noise_ave(folder,'variance_08/etot.dat')
+        #time_2, noise_2, std_2 = self.get_noise_ave(folder,'variance_06/etot.dat')
         time_3, noise_3, std_3 = self.get_noise_ave(folder,'variance_00/etot.dat')
         #fitted
-        #params_0, cv_noise_0 = curve_fit(self.linear_total_energy, time_0, noise_0)
-        #a_0 = params_0[0]
-        #b_0 = params_0[1]
-        #params_1, cv_noise_1 = curve_fit(self.linear_total_energy, time_1, noise_1)
-        #a_1 = params_1[0]
-        #b_1 = params_1[1]
-        params_2, cv_noise_2 = curve_fit(self.linear_total_energy, time_2, noise_2)
-        a_2 = params_2[0]
-        b_2 = params_2[1]
+        params_0, cv_noise_0 = curve_fit(self.linear_total_energy, time_0, noise_0)
+        a_0 = params_0[0]
+        b_0 = params_0[1]
+        params_1, cv_noise_1 = curve_fit(self.linear_total_energy, time_1, noise_1)
+        a_1 = params_1[0]
+        b_1 = params_1[1]
+        #params_2, cv_noise_2 = curve_fit(self.linear_total_energy, time_2, noise_2)
+        #a_2 = params_2[0]
+        #b_2 = params_2[1]
         params_3, cv_noise_3 = curve_fit(self.linear_total_energy, time_3, noise_3)
         a_3 = params_3[0]
         b_3 = params_3[1]
@@ -1534,14 +1534,14 @@ class PlotComb:
         fig, ax = plt.subplots()
         #noise
         plt.plot(time_3, noise_3, color = "blue", label = "no noise", lw=2, alpha=0.8)
-        #plt.plot(time_0, noise_0, color = self.n_colors[0], label = r"$\sigma^2$=1.0e-10", lw=2)
-        #plt.plot(time_1, noise_1, color = self.n_colors[1], label = r"$\sigma^2$=1.0e-08", lw=2)
-        plt.plot(time_2, noise_2, color = self.n_colors[2], label = r"$\sigma^2$=1.0e-06", lw=2)
+        plt.plot(time_0, noise_0, color = self.n_colors[0], label = r"$\sigma^2$=1.0e-10", lw=2)
+        plt.plot(time_1, noise_1, color = self.n_colors[1], label = r"$\sigma^2$=1.0e-08", lw=2)
+        #plt.plot(time_2, noise_2, color = self.n_colors[2], label = r"$\sigma^2$=1.0e-06", lw=2)
         #fitted
         plt.plot(time_3, self.linear_total_energy(time_3, a_3, b_3), '--', label=f"$y = {a_3:.8f}x {b_3:+.8f}$")
-        #plt.plot(time_0, self.linear_total_energy(time_0, a_0, b_0), '--', label=f"$y = {a_0:.8f}x {b_0:+.8f}$")
-        #plt.plot(time_1, self.linear_total_energy(time_1, a_1, b_1), '--', label=f"$y = {a_1:.8f}x {b_1:+.8f}$")
-        plt.plot(time_2, self.linear_total_energy(time_2, a_2, b_2), '--', label=f"$y = {a_2:.8f}x {b_2:+.8f}$")
+        plt.plot(time_0, self.linear_total_energy(time_0, a_0, b_0), '--', label=f"$y = {a_0:.8f}x {b_0:+.8f}$")
+        plt.plot(time_1, self.linear_total_energy(time_1, a_1, b_1), '--', label=f"$y = {a_1:.8f}x {b_1:+.8f}$")
+        #plt.plot(time_2, self.linear_total_energy(time_2, a_2, b_2), '--', label=f"$y = {a_2:.8f}x {b_2:+.8f}$")
 
         plt.xlim([self.t_0, self.t_max])
         plt.xticks(fontsize=15)
@@ -1559,6 +1559,40 @@ class PlotComb:
         plt.savefig(f"total_energy_fitted_{title}.pdf", bbox_inches='tight')
         plt.savefig(f"total_energy_fitted_{title}.png", bbox_inches='tight')
         plt.close()
+
+    def energy_diff_slope_vs_dt(self):
+        sl_025 = [0.00073282,0.00072604,0.00085325,0.00541594]
+        sl_012 = [0.00043314,0.00050068,0.0,0.00366067]
+        sl_007 = [0.00050215,0.00030768,0.00093111,0.0]
+        dt = [0.07,0.12,0.25]
+
+        # Width of bars
+        bar_width = 0.02
+
+        # Plot histograms for dt = 007
+        plt.bar(dt[0], sl_007[0], width=bar_width, edgecolor='blue', fill=False, label="")
+        plt.bar(dt[0], sl_007[1], width=bar_width, edgecolor=self.n_colors[0], fill=False, label="")
+        plt.bar(dt[0], sl_007[2], width=bar_width, edgecolor=self.n_colors[1], fill=False, label="")
+        plt.bar(dt[0], sl_007[3], width=bar_width, edgecolor=self.n_colors[2], fill=False, label="")
+        # Plot histograms for dt = 0.12
+        plt.bar(dt[1], sl_012[0], width=bar_width, edgecolor='blue', fill=False, label="")
+        plt.bar(dt[1], sl_012[1], width=bar_width, edgecolor=self.n_colors[0], fill=False, label="")
+        plt.bar(dt[1], sl_012[2], width=bar_width, edgecolor=self.n_colors[1], fill=False, label="")
+        plt.bar(dt[1], sl_012[3], width=bar_width, edgecolor=self.n_colors[2], fill=False, label="")
+        # Plot histograms for dt = 0.25
+        plt.bar(dt[2], sl_025[0], width=bar_width, edgecolor='blue', fill=False, label='no noise')
+        plt.bar(dt[2], sl_025[1], width=bar_width, edgecolor=self.n_colors[0], fill=False, label=r"$\sigma^2$=1.0e-10")
+        plt.bar(dt[2], sl_025[2], width=bar_width, edgecolor=self.n_colors[1], fill=False, label=r"$\sigma^2$=1.0e-08")
+        plt.bar(dt[2], sl_025[3], width=bar_width, edgecolor=self.n_colors[2], fill=False, label=r"$\sigma^2$=1.0e-06")
+        
+        # Labels and title
+        plt.xlabel('dt')
+        plt.ylabel('slope values')
+        plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.25), prop={'size': 14}, ncol=2)
+        plt.savefig("energy_diff_slope_vs_dt.pdf", bbox_inches='tight')
+        plt.savefig("energy_diff_slope_vs_dt.png", bbox_inches='tight')
+        plt.close()
+        
     
     def plot_population_adi(self,index,xms_caspt2,sa_casscf,sa_oo_vqe):
         time_0, population_0 = self.get_popu_adi(xms_caspt2,os.path.join(xms_caspt2,"pop.dat"))
@@ -1598,8 +1632,8 @@ if __name__=="__main__":
     sa_oo_vqe = "../sa_oo_vqe"
     sa_casscf = "../sa_casscf"
     #noise_sa_oo_vqe = "../noise_sa_oo_vqe_025"
-    noise_sa_oo_vqe = "../noise_sa_oo_vqe_012"
-    #noise_sa_oo_vqe = "../noise_sa_oo_vqe_007"
+    #noise_sa_oo_vqe = "../noise_sa_oo_vqe_012"
+    noise_sa_oo_vqe = "../noise_sa_oo_vqe_007"
     method = os.getcwd()
     #time in fs
     t_0 = 0
@@ -1628,6 +1662,7 @@ if __name__=="__main__":
     #out.get_torsion_qy_ave_2(sa_oo_vqe)
     #out.get_torsion_qy_ave_2(sa_casscf)
     #out.get_torsion_qy_ave_noise(noise_sa_oo_vqe)
-    out.plot_total_energy_fitted(noise_sa_oo_vqe)
+    #out.plot_total_energy_fitted(noise_sa_oo_vqe)
+    out.energy_diff_slope_vs_dt()
     #out.plot_1d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 7)
     ##out.plot_2d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 7)
