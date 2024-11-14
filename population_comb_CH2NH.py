@@ -1564,30 +1564,33 @@ class PlotComb:
         sl_025 = [0.00073282,0.00072604,0.00085325,0.00541594]
         sl_012 = [0.00043314,0.00050068,0.0,0.00366067]
         sl_007 = [0.00050215,0.00030768,0.00093111,0.0]
-        dt = [0.07,0.12,0.25]
+        dt = [1,2,3]
+        dt_labels = ["0.07","0.12","0.25"]
 
         # Width of bars
         bar_width = 0.02
 
+        plt.rcParams['font.size'] = self.fs_rcParams
         # Plot histograms for dt = 007
-        plt.bar(dt[0], sl_007[0], width=bar_width, edgecolor='blue', fill=False, label="")
-        plt.bar(dt[0], sl_007[1], width=bar_width, edgecolor=self.n_colors[0], fill=False, label="")
-        plt.bar(dt[0], sl_007[2], width=bar_width, edgecolor=self.n_colors[1], fill=False, label="")
-        plt.bar(dt[0], sl_007[3], width=bar_width, edgecolor=self.n_colors[2], fill=False, label="")
+        plt.bar(dt[0], sl_007[0], align='center', edgecolor='blue', fill=False, label="", lw=2)
+        plt.bar(dt[0], sl_007[1], align='center', edgecolor=self.n_colors[0], fill=False, label="", lw=2)
+        plt.bar(dt[0], sl_007[2], align='center', edgecolor=self.n_colors[1], fill=False, label="", lw=2)
+        plt.bar(dt[0], sl_007[3], align='center', edgecolor=self.n_colors[2], fill=False, label="", lw=2)
         # Plot histograms for dt = 0.12
-        plt.bar(dt[1], sl_012[0], width=bar_width, edgecolor='blue', fill=False, label="")
-        plt.bar(dt[1], sl_012[1], width=bar_width, edgecolor=self.n_colors[0], fill=False, label="")
-        plt.bar(dt[1], sl_012[2], width=bar_width, edgecolor=self.n_colors[1], fill=False, label="")
-        plt.bar(dt[1], sl_012[3], width=bar_width, edgecolor=self.n_colors[2], fill=False, label="")
+        plt.bar(dt[1], sl_012[0], align='center', edgecolor='blue', fill=False, label="", lw=2)
+        plt.bar(dt[1], sl_012[1], align='center', edgecolor=self.n_colors[0], fill=False, label="", lw=2)
+        plt.bar(dt[1], sl_012[2], align='center', edgecolor=self.n_colors[1], fill=False, label="", lw=2)
+        plt.bar(dt[1], sl_012[3], align='center', edgecolor=self.n_colors[2], fill=False, label="", lw=2)
         # Plot histograms for dt = 0.25
-        plt.bar(dt[2], sl_025[0], width=bar_width, edgecolor='blue', fill=False, label='no noise')
-        plt.bar(dt[2], sl_025[1], width=bar_width, edgecolor=self.n_colors[0], fill=False, label=r"$\sigma^2$=1.0e-10")
-        plt.bar(dt[2], sl_025[2], width=bar_width, edgecolor=self.n_colors[1], fill=False, label=r"$\sigma^2$=1.0e-08")
-        plt.bar(dt[2], sl_025[3], width=bar_width, edgecolor=self.n_colors[2], fill=False, label=r"$\sigma^2$=1.0e-06")
+        plt.bar(dt[2], sl_025[0], align='center', edgecolor='blue', fill=False, label='no noise', lw=2)
+        plt.bar(dt[2], sl_025[1], align='center', edgecolor=self.n_colors[0], fill=False, label=r"$\sigma^2$=1.0e-10", lw=2)
+        plt.bar(dt[2], sl_025[2], align='center', edgecolor=self.n_colors[1], fill=False, label=r"$\sigma^2$=1.0e-08", lw=2)
+        plt.bar(dt[2], sl_025[3], align='center', edgecolor=self.n_colors[2], fill=False, label=r"$\sigma^2$=1.0e-06", lw=2)
         
         # Labels and title
-        plt.xlabel('dt')
-        plt.ylabel('slope values')
+        plt.xticks(dt, dt_labels)
+        plt.xlabel('dt (fs)', fontweight = 'bold', fontsize =self.f_size)
+        plt.ylabel('Slope', fontweight = 'bold', fontsize =self.f_size)
         plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.25), prop={'size': 14}, ncol=2)
         plt.savefig("energy_diff_slope_vs_dt.pdf", bbox_inches='tight')
         plt.savefig("energy_diff_slope_vs_dt.png", bbox_inches='tight')
