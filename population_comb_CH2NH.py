@@ -1007,6 +1007,19 @@ class PlotComb:
         time_1, noise_1, std_1 = self.get_noise_ave(folder,'variance_08/etot.dat')
         time_2, noise_2, std_2 = self.get_noise_ave(folder,'variance_06/etot.dat')
         time_3, noise_3, std_3 = self.get_noise_ave(folder,'variance_00/etot.dat')
+        #fitted
+        params_0, cv_noise_0 = curve_fit(self.linear_total_energy, time_0, noise_0)
+        a_0 = params_0[0]
+        b_0 = params_0[1]
+        params_1, cv_noise_1 = curve_fit(self.linear_total_energy, time_1, noise_1)
+        a_1 = params_1[0]
+        b_1 = params_1[1]
+        params_2, cv_noise_2 = curve_fit(self.linear_total_energy, time_2, noise_2)
+        a_2 = params_2[0]
+        b_2 = params_2[1]
+        params_3, cv_noise_3 = curve_fit(self.linear_total_energy, time_3, noise_3)
+        a_3 = params_3[0]
+        b_3 = params_3[1]
 
         plt.rcParams['font.size'] = self.fs_rcParams
         fig = plt.figure(figsize=(6,14))
@@ -1052,10 +1065,10 @@ class PlotComb:
             
         # the 3rd subplot
         ax2 = plt.subplot(gs[2], sharex = ax0)
-        ax2.plot(time_3, noise_3, color = "blue", lw=2, alpha=0.8)
-        ax2.plot(time_0, noise_0, color = self.n_colors[0], lw=2)
-        ax2.plot(time_1, noise_1, color = self.n_colors[1], lw=2)
-        ax2.plot(time_2, noise_2, color = self.n_colors[2], lw=2)
+        ax2.plot(time_3, noise_3, color = "blue", label = "no noise", lw=2, alpha=0.8)
+        ax2.plot(time_0, noise_0, color = self.n_colors[0], label = r"$\sigma^2$=1.0e-10", lw=2)
+        ax2.plot(time_1, noise_1, color = self.n_colors[1], label = r"$\sigma^2$=1.0e-10", lw=2)
+        ax2.plot(time_2, noise_2, color = self.n_colors[2], label = r"$\sigma^2$=1.0e-10", lw=2)
         ax2r = ax2.twinx()
         ax2r.set_ylim([-0.05, 2.37])
         ax2r.yaxis.set_major_locator(ticker.MultipleLocator(0.3))
@@ -1069,11 +1082,16 @@ class PlotComb:
                          np.array(noise_1) + np.array(std_1), alpha=0.3, color = self.n_colors[1], linestyle='--', edgecolor=self.n_colors[1])
         ax2.fill_between(time_2, np.array(noise_2) - np.array(std_2),
                          np.array(noise_2) + np.array(std_2), alpha=0.3, color = self.n_colors[2], linestyle=':', edgecolor=self.n_colors[2])
+        # Plot linear equation with fitted data
+        ax2.plot(time_3, self.linear_total_energy(time_3, a_3, b_3), '--', color = "brown", label=f"$\Delta T.E. = {a_3:.5f}t {b_3:+.5f}$")
+        ax2.plot(time_0, self.linear_total_energy(time_0, a_0, b_0), '--', color = "orange", label=f"$\Delta T.E. = {a_0:.5f}t {b_0:+.5f}$")
+        ax2.plot(time_1, self.linear_total_energy(time_1, a_1, b_1), '--', color = "green", label=f"$\Delta T.E. = {a_1:.5f}t {b_1:+.5f}$")
+        ax2.plot(time_2, self.linear_total_energy(time_2, a_2, b_2), '--', color = "red", label=f"$\Delta T.E. = {a_2:.5f}t {b_2:+.5f}$")
         ax2.set_ylim([-0.05, 2.37])
         ax2.yaxis.set_major_locator(ticker.MultipleLocator(0.3))
         ax2.set_ylabel('$\mathbf{\Delta\ Total\ Energy\ (eV)}$', fontsize=self.f_size)
         ax2.set_xlabel('Time (fs)', fontweight = 'bold', fontsize =self.f_size)
-        plt.setp(ax0.get_xticklabels(), visible=False)
+        plt.setp(ax1.get_xticklabels(), visible=False)
 
         # Adjust space between the title and subplots
         plt.subplots_adjust(top=0.9, bottom=0.1, left=0.09, right=0.9, hspace=0.2)
@@ -1083,17 +1101,18 @@ class PlotComb:
              fontsize=self.f_size, fontweight='bold', va='top', ha='right')
         ax1.text(0.95, 0.95, f'(b)', transform=ax1.transAxes,
              fontsize=self.f_size, fontweight='bold', va='top', ha='right')
-        ax2.text(0.95, 0.95, f'(c)', transform=ax1.transAxes,
+        ax2.text(0.95, 0.95, f'(c)', transform=ax2.transAxes,
              fontsize=self.f_size, fontweight='bold', va='top', ha='right')
 
 
         # put legend on first subplot
-        ax0.legend(loc='upper center', bbox_to_anchor=(0.5, 1.25), prop={'size': 12}, ncol=2)
+        ax2.legend(loc='upper center', bbox_to_anchor=(0.5, 3.42), prop={'size': 12}, ncol=2)
 
         # remove vertical gap between subplots
         plt.subplots_adjust(hspace=0.0)
-        plt.savefig("avg_popu_torsion_noise.pdf", bbox_inches='tight')
-        plt.savefig("avg_popu_torsion_noise.png", bbox_inches='tight')
+        title = folder.replace('../','')
+        plt.savefig(f"avg_popu_torsion_noise_{title}.pdf", bbox_inches='tight')
+        plt.savefig(f"avg_popu_torsion_noise_{title}.png", bbox_inches='tight')
         plt.close()
 
     def plot_av_popu_noise(self, folder):
@@ -1634,9 +1653,9 @@ if __name__=="__main__":
     xms_caspt2 = "../xms_caspt2"
     sa_oo_vqe = "../sa_oo_vqe"
     sa_casscf = "../sa_casscf"
-    #noise_sa_oo_vqe = "../noise_sa_oo_vqe_025"
+    noise_sa_oo_vqe = "../noise_sa_oo_vqe_025"
     #noise_sa_oo_vqe = "../noise_sa_oo_vqe_012"
-    noise_sa_oo_vqe = "../noise_sa_oo_vqe_007"
+    #noise_sa_oo_vqe = "../noise_sa_oo_vqe_007"
     method = os.getcwd()
     #time in fs
     t_0 = 0
@@ -1655,7 +1674,7 @@ if __name__=="__main__":
     #out.plot_av_popu_torsion_bend(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_variance_noise(noise_sa_oo_vqe)
     #out.plot_av_popu_noise(noise_sa_oo_vqe)
-    #out.plot_av_popu_torsion_noise(noise_sa_oo_vqe)
+    out.plot_av_popu_torsion_noise(noise_sa_oo_vqe)
     #out.plot_av_popu_diff_ene(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_one_method_av_popu_diff_ene(method)
     #out.get_torsion_qy_ave(xms_caspt2)
@@ -1666,6 +1685,6 @@ if __name__=="__main__":
     #out.get_torsion_qy_ave_2(sa_casscf)
     #out.get_torsion_qy_ave_noise(noise_sa_oo_vqe)
     #out.plot_total_energy_fitted(noise_sa_oo_vqe)
-    out.energy_diff_slope_vs_dt()
+    #out.energy_diff_slope_vs_dt()
     #out.plot_1d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 7)
     ##out.plot_2d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 7)
