@@ -1067,8 +1067,8 @@ class PlotComb:
         ax2 = plt.subplot(gs[2], sharex = ax0)
         ax2.plot(time_3, noise_3, color = "blue", label = "no noise", lw=2, alpha=0.8)
         ax2.plot(time_0, noise_0, color = self.n_colors[0], label = r"$\sigma^2$=1.0e-10", lw=2)
-        ax2.plot(time_1, noise_1, color = self.n_colors[1], label = r"$\sigma^2$=1.0e-10", lw=2)
-        ax2.plot(time_2, noise_2, color = self.n_colors[2], label = r"$\sigma^2$=1.0e-10", lw=2)
+        ax2.plot(time_1, noise_1, color = self.n_colors[1], label = r"$\sigma^2$=1.0e-08", lw=2)
+        ax2.plot(time_2, noise_2, color = self.n_colors[2], label = r"$\sigma^2$=1.0e-06", lw=2)
         ax2r = ax2.twinx()
         ax2r.set_ylim([-0.05, 2.37])
         ax2r.yaxis.set_major_locator(ticker.MultipleLocator(0.3))
@@ -1653,9 +1653,9 @@ if __name__=="__main__":
     xms_caspt2 = "../xms_caspt2"
     sa_oo_vqe = "../sa_oo_vqe"
     sa_casscf = "../sa_casscf"
-    noise_sa_oo_vqe = "../noise_sa_oo_vqe_025"
+    #noise_sa_oo_vqe = "../noise_sa_oo_vqe_025"
     #noise_sa_oo_vqe = "../noise_sa_oo_vqe_012"
-    #noise_sa_oo_vqe = "../noise_sa_oo_vqe_007"
+    noise_sa_oo_vqe = "../noise_sa_oo_vqe_007"
     method = os.getcwd()
     #time in fs
     t_0 = 0
