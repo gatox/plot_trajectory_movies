@@ -1627,39 +1627,51 @@ class PlotComb:
         #    params_3, bs_error_95_3 = self.confidence_interval_95_bootstrap(time_3, noise_3)
         #    a_3 = params_3[0]
         #    b_3 = params_3[1]
-        sl_025 = [0.00073282,0.00072604,0.00085325,0.00541594]
-        sl_012 = [0.00043314,0.00050068,0.0,0.00366067]
-        sl_007 = [0.00050,0.00031,0.00073,0.00310]
+        sl_025 = [0.0007329738307754767,0.0007255966508638325,0.000853636977203613,0.005424441916756572]
+        sl_012 = [0.00043295168761318714,0.0005008339963588384,0.0,0.0036646894254784776]
+        sl_007 = [0.000501993347644126,0.0003075635065117048,0.0007321623116374798,0.003097630738128245]
         err_025 = [1.6306112513965758e-05,1.6548679769461388e-05,1.8380585871653624e-05,0.00012069119156790089]
-        err_012 = [5.649392540810552e-06,6.013448430348327e-06,8.156184883128408e-05]
+        err_012 = [5.649392540810552e-06,6.013448430348327e-06,0.0,8.156184883128408e-05]
         err_007 = [4.751646555039267e-06,3.3010062331441695e-06,6.720950734316459e-06,6.980455796699024e-05]
         dt = [1,2,3]
         dt_labels = ["0.07","0.12","0.25"]
 
-        # Width of bars
-        bar_width = 0.02
-
         plt.rcParams['font.size'] = self.fs_rcParams
-        # Plot histograms for dt = 007
+        # Plot histograms for dt = 0.07
         plt.bar(dt[0], sl_007[0], align='center', edgecolor='blue', fill=False, label="", lw=2)
         plt.bar(dt[0], sl_007[1], align='center', edgecolor=self.n_colors[0], fill=False, label="", lw=2)
         plt.bar(dt[0], sl_007[2], align='center', edgecolor=self.n_colors[1], fill=False, label="", lw=2)
         plt.bar(dt[0], sl_007[3], align='center', edgecolor=self.n_colors[2], fill=False, label="", lw=2)
+        ## Error Bar for dt = 0.07
+        #plt.errorbar(dt[0], sl_007[0], yerr=err_007[0], fmt="D", color="blue")
+        #plt.errorbar(dt[0], sl_007[1], yerr=err_007[1], fmt="D", color=self.n_colors[0])
+        #plt.errorbar(dt[0], sl_007[2], yerr=err_007[2], fmt="D", color=self.n_colors[1])
+        #plt.errorbar(dt[0], sl_007[3], yerr=err_007[3], fmt="D", color=self.n_colors[2])
         # Plot histograms for dt = 0.12
         plt.bar(dt[1], sl_012[0], align='center', edgecolor='blue', fill=False, label="", lw=2)
         plt.bar(dt[1], sl_012[1], align='center', edgecolor=self.n_colors[0], fill=False, label="", lw=2)
         plt.bar(dt[1], sl_012[2], align='center', edgecolor=self.n_colors[1], fill=False, label="", lw=2)
         plt.bar(dt[1], sl_012[3], align='center', edgecolor=self.n_colors[2], fill=False, label="", lw=2)
+        ## Error Bar for dt = 0.12
+        #plt.errorbar(dt[1], sl_012[0], yerr=err_012[0], fmt="D", color="blue")
+        #plt.errorbar(dt[1], sl_012[1], yerr=err_012[1], fmt="D", color=self.n_colors[0])
+        #plt.errorbar(dt[1], sl_012[2], yerr=err_012[2], fmt="D", color=self.n_colors[1])
+        #plt.errorbar(dt[1], sl_012[3], yerr=err_012[3], fmt="D", color=self.n_colors[2])
         # Plot histograms for dt = 0.25
         plt.bar(dt[2], sl_025[0], align='center', edgecolor='blue', fill=False, label='no noise', lw=2)
         plt.bar(dt[2], sl_025[1], align='center', edgecolor=self.n_colors[0], fill=False, label=r"$\sigma^2$=1.0e-10", lw=2)
         plt.bar(dt[2], sl_025[2], align='center', edgecolor=self.n_colors[1], fill=False, label=r"$\sigma^2$=1.0e-08", lw=2)
         plt.bar(dt[2], sl_025[3], align='center', edgecolor=self.n_colors[2], fill=False, label=r"$\sigma^2$=1.0e-06", lw=2)
+        ## Error Bar for dt = 0.25
+        #plt.errorbar(dt[2], sl_025[0], yerr=err_025[0], fmt="D", color="blue")
+        #plt.errorbar(dt[2], sl_025[1], yerr=err_025[1], fmt="D", color=self.n_colors[0])
+        #plt.errorbar(dt[2], sl_025[2], yerr=err_025[2], fmt="D", color=self.n_colors[1])
+        #plt.errorbar(dt[2], sl_025[3], yerr=err_025[3], fmt="D", color=self.n_colors[2])
         
         # Labels and title
         plt.xticks(dt, dt_labels)
         plt.xlabel('dt (fs)', fontweight = 'bold', fontsize =self.f_size)
-        plt.ylabel('Slope', fontweight = 'bold', fontsize =self.f_size)
+        plt.ylabel('Slope (eV/fs)', fontweight = 'bold', fontsize =self.f_size)
         plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.25), prop={'size': 14}, ncol=2)
         plt.savefig("energy_diff_slope_vs_dt.pdf", bbox_inches='tight')
         plt.savefig("energy_diff_slope_vs_dt.png", bbox_inches='tight')
@@ -1724,7 +1736,7 @@ if __name__=="__main__":
     #out.plot_av_popu_torsion_bend(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_variance_noise(noise_sa_oo_vqe)
     #out.plot_av_popu_noise(noise_sa_oo_vqe)
-    out.plot_av_popu_torsion_noise(noise_sa_oo_vqe)
+    #out.plot_av_popu_torsion_noise(noise_sa_oo_vqe)
     #out.plot_av_popu_diff_ene(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_one_method_av_popu_diff_ene(method)
     #out.get_torsion_qy_ave(xms_caspt2)
@@ -1735,6 +1747,6 @@ if __name__=="__main__":
     #out.get_torsion_qy_ave_2(sa_casscf)
     #out.get_torsion_qy_ave_noise(noise_sa_oo_vqe)
     #out.plot_total_energy_fitted(noise_sa_oo_vqe)
-    #out.energy_diff_slope_vs_dt()
+    out.energy_diff_slope_vs_dt()
     #out.plot_1d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 7)
     ##out.plot_2d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 7)
