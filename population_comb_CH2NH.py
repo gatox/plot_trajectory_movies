@@ -994,26 +994,26 @@ class PlotComb:
     def plot_av_popu_torsion_noise(self, folder):
         #popu
         time_0, population_0 = self.get_popu_adi(folder,os.path.join(folder,"variance_10/pop.dat"))
-        #time_1, population_1 = self.get_popu_adi(folder,os.path.join(folder,"variance_08/pop.dat"))
+        time_1, population_1 = self.get_popu_adi(folder,os.path.join(folder,"variance_08/pop.dat"))
         time_2, population_2 = self.get_popu_adi(folder,os.path.join(folder,"variance_06/pop.dat"))
         time_3, population_3 = self.get_popu_adi(folder,os.path.join(folder,"variance_00/pop.dat"))
         #torsion
         time_0, t_noise_0, t_std_0 = self.get_noise_ave(folder,'variance_10/dihe_2014.dat')
-        #time_1, t_noise_1, t_std_1 = self.get_noise_ave(folder,'variance_08/dihe_2014.dat')
+        time_1, t_noise_1, t_std_1 = self.get_noise_ave(folder,'variance_08/dihe_2014.dat')
         time_2, t_noise_2, t_std_2 = self.get_noise_ave(folder,'variance_06/dihe_2014.dat')
         time_3, t_noise_3, t_std_3 = self.get_noise_ave(folder,'variance_00/dihe_2014.dat')
         #noise
         time_0, noise_0, std_0 = self.get_noise_ave(folder,'variance_10/etot.dat')
-        #time_1, noise_1, std_1 = self.get_noise_ave(folder,'variance_08/etot.dat')
+        time_1, noise_1, std_1 = self.get_noise_ave(folder,'variance_08/etot.dat')
         time_2, noise_2, std_2 = self.get_noise_ave(folder,'variance_06/etot.dat')
         time_3, noise_3, std_3 = self.get_noise_ave(folder,'variance_00/etot.dat')
         #fitted
         params_0, bs_error_95_0 = self.confidence_interval_95_bootstrap(time_0, noise_0)
         a_0 = params_0[0]
         b_0 = params_0[1]
-        #params_1, bs_error_95_1 = self.confidence_interval_95_bootstrap(time_1, noise_1)
-        #a_1 = params_1[0]
-        #b_1 = params_1[1]
+        params_1, bs_error_95_1 = self.confidence_interval_95_bootstrap(time_1, noise_1)
+        a_1 = params_1[0]
+        b_1 = params_1[1]
         params_2, bs_error_95_2 = self.confidence_interval_95_bootstrap(time_2, noise_2)
         a_2 = params_2[0]
         b_2 = params_2[1]
@@ -1029,7 +1029,7 @@ class PlotComb:
         ax0 = plt.subplot(gs[0])
         ax0.plot(time_3,np.array(population_3)[:,1], color = "blue", label = "no noise", lw=2, alpha=0.8)
         ax0.plot(time_0,np.array(population_0)[:,1], color = self.n_colors[0], label = r"$\sigma^2$=1.0e-10", lw=2)
-        #ax0.plot(time_1,np.array(population_1)[:,1], color = self.n_colors[1], label = r"$\sigma^2$=1.0e-08", lw=2)
+        ax0.plot(time_1,np.array(population_1)[:,1], color = self.n_colors[1], label = r"$\sigma^2$=1.0e-08", lw=2)
         ax0.plot(time_2,np.array(population_2)[:,1], color = self.n_colors[2], label = r"$\sigma^2$=1.0e-06", lw=2)
         ax0r = ax0.twinx()
         ax0r.set_ylim([-0.05, 1.05])
@@ -1043,7 +1043,7 @@ class PlotComb:
         ax1 = plt.subplot(gs[1], sharex = ax0)
         ax1.plot(time_3, t_noise_3, color = "blue", lw=2, alpha=0.8)
         ax1.plot(time_0, t_noise_0, color = self.n_colors[0], lw=2)
-        #ax1.plot(time_1, t_noise_1, color = self.n_colors[1], lw=2)
+        ax1.plot(time_1, t_noise_1, color = self.n_colors[1], lw=2)
         ax1.plot(time_2, t_noise_2, color = self.n_colors[2], lw=2)
         ax1r = ax1.twinx()
         ax1r.set_ylim([-8, 185])
@@ -1054,8 +1054,8 @@ class PlotComb:
                          np.array(t_noise_3) + np.array(t_std_3), alpha=0.3, color = "blue", linestyle=':', edgecolor="blue")
         ax1.fill_between(time_0, np.array(t_noise_0) - np.array(t_std_0),
                          np.array(t_noise_0) + np.array(t_std_0), alpha=0.3, color = self.n_colors[0], linestyle='-.', edgecolor=self.n_colors[0])
-        #ax1.fill_between(time_1, np.array(t_noise_1) - np.array(t_std_1),
-        #                 np.array(t_noise_1) + np.array(t_std_1), alpha=0.3, color = self.n_colors[1], linestyle='--', edgecolor=self.n_colors[1])
+        ax1.fill_between(time_1, np.array(t_noise_1) - np.array(t_std_1),
+                         np.array(t_noise_1) + np.array(t_std_1), alpha=0.3, color = self.n_colors[1], linestyle='--', edgecolor=self.n_colors[1])
         ax1.fill_between(time_2, np.array(t_noise_2) - np.array(t_std_2),
                          np.array(t_noise_2) + np.array(t_std_2), alpha=0.3, color = self.n_colors[2], linestyle=':', edgecolor=self.n_colors[2])
         ax1.set_ylim([-8,185])
@@ -1067,7 +1067,7 @@ class PlotComb:
         ax2 = plt.subplot(gs[2], sharex = ax0)
         ax2.plot(time_3, noise_3, color = "blue", label = "no noise", lw=2, alpha=0.8)
         ax2.plot(time_0, noise_0, color = self.n_colors[0], label = r"$\sigma^2$=1.0e-10", lw=2)
-        #ax2.plot(time_1, noise_1, color = self.n_colors[1], label = r"$\sigma^2$=1.0e-08", lw=2)
+        ax2.plot(time_1, noise_1, color = self.n_colors[1], label = r"$\sigma^2$=1.0e-08", lw=2)
         ax2.plot(time_2, noise_2, color = self.n_colors[2], label = r"$\sigma^2$=1.0e-06", lw=2)
         ax2r = ax2.twinx()
         ax2r.set_ylim([-0.05, 2.37])
@@ -1078,14 +1078,14 @@ class PlotComb:
                          np.array(noise_3) + np.array(std_3), alpha=0.3, color = "blue", linestyle=':', edgecolor="blue")
         ax2.fill_between(time_0, np.array(noise_0) - np.array(std_0),
                          np.array(noise_0) + np.array(std_0), alpha=0.3, color = self.n_colors[0], linestyle='-.', edgecolor=self.n_colors[0])
-        #ax2.fill_between(time_1, np.array(noise_1) - np.array(std_1),
-        #                 np.array(noise_1) + np.array(std_1), alpha=0.3, color = self.n_colors[1], linestyle='--', edgecolor=self.n_colors[1])
+        ax2.fill_between(time_1, np.array(noise_1) - np.array(std_1),
+                         np.array(noise_1) + np.array(std_1), alpha=0.3, color = self.n_colors[1], linestyle='--', edgecolor=self.n_colors[1])
         ax2.fill_between(time_2, np.array(noise_2) - np.array(std_2),
                          np.array(noise_2) + np.array(std_2), alpha=0.3, color = self.n_colors[2], linestyle=':', edgecolor=self.n_colors[2])
         # Plot linear equation with fitted data
         ax2.plot(time_3, self.linear_total_energy(time_3, a_3, b_3), '--', color = "brown", label=f"$\Delta T.E. = {a_3:.5f}t + {b_3:.5f}$")
         ax2.plot(time_0, self.linear_total_energy(time_0, a_0, b_0), '--', color = "orange", label=f"$\Delta T.E. = {a_0:.5f}t + {b_0:.5f}$")
-        #ax2.plot(time_1, self.linear_total_energy(time_1, a_1, b_1), '--', color = "green", label=f"$\Delta T.E. = {a_1:.5f}t +{b_1:.5f}$")
+        ax2.plot(time_1, self.linear_total_energy(time_1, a_1, b_1), '--', color = "green", label=f"$\Delta T.E. = {a_1:.5f}t +{b_1:.5f}$")
         ax2.plot(time_2, self.linear_total_energy(time_2, a_2, b_2), '--', color = "red", label=f"$\Delta T.E. = {a_2:.5f}t + {b_2:.5f}$")
         ax2.set_ylim([-0.05, 2.37])
         ax2.yaxis.set_major_locator(ticker.MultipleLocator(0.3))
@@ -1125,10 +1125,10 @@ class PlotComb:
             f3.write(f'b_10_mean: {b_0}\n')
             f3.write(f'a_10_error: {bs_error_95_0[0]}\n')
             f3.write(f'b_10_error: {bs_error_95_0[1]}\n')
-            #f3.write(f'a_08_mean: {a_1}\n')
-            #f3.write(f'b_08_mean: {b_1}\n')
-            #f3.write(f'a_08_error: {bs_error_95_1[0]}\n')
-            #f3.write(f'b_08_error: {bs_error_95_1[1]}\n')
+            f3.write(f'a_08_mean: {a_1}\n')
+            f3.write(f'b_08_mean: {b_1}\n')
+            f3.write(f'a_08_error: {bs_error_95_1[0]}\n')
+            f3.write(f'b_08_error: {bs_error_95_1[1]}\n')
             f3.write(f'a_06_mean: {a_2}\n')
             f3.write(f'b_06_mean: {b_2}\n')
             f3.write(f'a_06_error: {bs_error_95_2[0]}\n')
@@ -1606,6 +1606,60 @@ class PlotComb:
         plt.savefig(f"total_energy_fitted_{title}.png", bbox_inches='tight')
         plt.close()
 
+    def energy_diff_slope_vs_dt_curve(self):
+        #folders = ["../noise_sa_oo_vqe_007","../noise_sa_oo_vqe_012","../noise_sa_oo_vqe_025"]
+        #for folder in folders:
+        #    #noise
+        #    time_0, noise_0, std_0 = self.get_noise_ave(folder,'variance_10/etot.dat')
+        #    time_1, noise_1, std_1 = self.get_noise_ave(folder,'variance_08/etot.dat')
+        #    time_2, noise_2, std_2 = self.get_noise_ave(folder,'variance_06/etot.dat')
+        #    time_3, noise_3, std_3 = self.get_noise_ave(folder,'variance_00/etot.dat')
+        #    #fitted
+        #    params_0, bs_error_95_0 = self.confidence_interval_95_bootstrap(time_0, noise_0)
+        #    a_0 = params_0[0]
+        #    b_0 = params_0[1]
+        #    params_1, bs_error_95_1 = self.confidence_interval_95_bootstrap(time_1, noise_1)
+        #    a_1 = params_1[0]
+        #    b_1 = params_1[1]
+        #    params_2, bs_error_95_2 = self.confidence_interval_95_bootstrap(time_2, noise_2)
+        #    a_2 = params_2[0]
+        #    b_2 = params_2[1]
+        #    params_3, bs_error_95_3 = self.confidence_interval_95_bootstrap(time_3, noise_3)
+        #    a_3 = params_3[0]
+        #    b_3 = params_3[1]
+        var_00 = [0.000501993347644126, 0.00043295168761318714, 0.0007329738307754767]
+        var_10 = [0.0003075635065117048, 0.0005008339963588384, 0.0007255966508638325]
+        var_08 = [0.0007321623116374798,0.000764635574536672,0.000853636977203613]
+        var_06 = [0.003097630738128245, 0.0036646894254784776, 0.005424441916756572]
+        err_00 = [4.751646555039267e-06,5.649392540810552e-06,1.6306112513965758e-05]
+        err_10 = [3.3010062331441695e-06,6.013448430348327e-06,1.6548679769461388e-05]
+        err_08 = [6.720950734316459e-06,2.2486488627261158e-05,1.8380585871653624e-05]
+        err_06 = [6.980455796699024e-05,8.156184883128408e-05,0.00012069119156790089]
+        dt = [0.07,0.12,0.25]
+
+
+        plt.rcParams['font.size'] = self.fs_rcParams
+        # Plot data points and connect them for each noise level
+        plt.plot(dt, var_00, color='blue', label='no noise', lw=2, marker='D')
+        plt.errorbar(dt, var_00, yerr=err_00, fmt="D", color='blue')  # Add error bars
+        
+        plt.plot(dt, var_10, color=self.n_colors[0], label=r"$\sigma^2$=1.0e-10", lw=2, marker='D')
+        plt.errorbar(dt, var_10, yerr=err_10, fmt="D", color=self.n_colors[0])
+        
+        plt.plot(dt, var_08, color=self.n_colors[1], label=r"$\sigma^2$=1.0e-08", lw=2, marker='D')
+        plt.errorbar(dt, var_08, yerr=err_08, fmt="D", color=self.n_colors[1])
+
+        plt.plot(dt, var_06, color=self.n_colors[2], label=r"$\sigma^2$=1.0e-06", lw=2, marker='D')
+        plt.errorbar(dt, var_06, yerr=err_06, fmt="D", color=self.n_colors[2])
+
+        # Labels and title
+        plt.xlabel('dt (fs)', fontweight = 'bold', fontsize =self.f_size)
+        plt.ylabel('Slope (eV/fs)', fontweight = 'bold', fontsize =self.f_size)
+        plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.25), prop={'size': 14}, ncol=2)
+        plt.savefig("energy_diff_slope_vs_dt_curve.pdf", bbox_inches='tight')
+        plt.savefig("energy_diff_slope_vs_dt_curve.png", bbox_inches='tight')
+        plt.close()
+
     def energy_diff_slope_vs_dt(self):
         #folders = ["../noise_sa_oo_vqe_007","../noise_sa_oo_vqe_012","../noise_sa_oo_vqe_025"]
         #for folder in folders:
@@ -1747,6 +1801,7 @@ if __name__=="__main__":
     #out.get_torsion_qy_ave_2(sa_casscf)
     #out.get_torsion_qy_ave_noise(noise_sa_oo_vqe)
     #out.plot_total_energy_fitted(noise_sa_oo_vqe)
-    out.energy_diff_slope_vs_dt()
+    #out.energy_diff_slope_vs_dt()
+    out.energy_diff_slope_vs_dt_curve()
     #out.plot_1d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 7)
     ##out.plot_2d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 7)
