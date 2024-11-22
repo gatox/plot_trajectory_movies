@@ -30,6 +30,8 @@ def compare():
         f.write(f'{total_traj}\n')
         f.write(f'The number of trajectories submitted is {len(comp)}:\n')
         f.write(f'{comp}\n')
+        f.write(f'The number of trajectories running is {len(set(comp)-set(no_sub))}:\n')
+        f.write(f'{sorted(set(comp)-set(no_sub))}\n')
         f.write(f' The number of trajectories no submitted is {len(no_sub)}:\n')
         f.write(f'{sorted(set(no_sub))}\n')
         f.write('--------------------------------------------------------')
