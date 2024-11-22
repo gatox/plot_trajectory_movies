@@ -1607,34 +1607,34 @@ class PlotComb:
         plt.close()
 
     def energy_diff_slope_vs_dt_curve(self):
-        #folders = ["../noise_sa_oo_vqe_007","../noise_sa_oo_vqe_012","../noise_sa_oo_vqe_025"]
-        #for folder in folders:
-        #    #noise
-        #    time_0, noise_0, std_0 = self.get_noise_ave(folder,'variance_10/etot.dat')
-        #    time_1, noise_1, std_1 = self.get_noise_ave(folder,'variance_08/etot.dat')
-        #    time_2, noise_2, std_2 = self.get_noise_ave(folder,'variance_06/etot.dat')
-        #    time_3, noise_3, std_3 = self.get_noise_ave(folder,'variance_00/etot.dat')
-        #    #fitted
-        #    params_0, bs_error_95_0 = self.confidence_interval_95_bootstrap(time_0, noise_0)
-        #    a_0 = params_0[0]
-        #    b_0 = params_0[1]
-        #    params_1, bs_error_95_1 = self.confidence_interval_95_bootstrap(time_1, noise_1)
-        #    a_1 = params_1[0]
-        #    b_1 = params_1[1]
-        #    params_2, bs_error_95_2 = self.confidence_interval_95_bootstrap(time_2, noise_2)
-        #    a_2 = params_2[0]
-        #    b_2 = params_2[1]
-        #    params_3, bs_error_95_3 = self.confidence_interval_95_bootstrap(time_3, noise_3)
-        #    a_3 = params_3[0]
-        #    b_3 = params_3[1]
-        var_00 = [0.000501993347644126, 0.00043295168761318714, 0.0007329738307754767]
-        var_10 = [0.0003075635065117048, 0.0005008339963588384, 0.0007255966508638325]
-        var_08 = [0.0007321623116374798,0.000764635574536672,0.000853636977203613]
-        var_06 = [0.003097630738128245, 0.0036646894254784776, 0.005424441916756572]
-        err_00 = [4.751646555039267e-06,5.649392540810552e-06,1.6306112513965758e-05]
-        err_10 = [3.3010062331441695e-06,6.013448430348327e-06,1.6548679769461388e-05]
-        err_08 = [6.720950734316459e-06,2.2486488627261158e-05,1.8380585871653624e-05]
-        err_06 = [6.980455796699024e-05,8.156184883128408e-05,0.00012069119156790089]
+        dt = [7,12,25]
+        var_00 = []
+        var_10 = []
+        var_08 = []
+        var_06 = []
+        err_00 = []
+        err_10 = []
+        err_08 = []
+        err_06 = []
+        for i in dt:
+            field = open(f"ci_noise_linear_regression_noise_sa_oo_vqe_{i:03d}.out", 'r+')
+            for line in field:
+                if "a_00_mean:" in line:
+                    var_00.append(float(line.split()[1]))
+                elif "a_10_mean" in line:
+                    var_10.append(float(line.split()[1]))
+                elif "a_08_mean" in line:
+                    var_08.append(float(line.split()[1]))
+                elif "a_06_mean" in line:
+                    var_06.append(float(line.split()[1]))
+                elif "a_00_error:" in line:
+                    err_00.append(float(line.split()[1]))
+                elif "a_10_error:" in line:
+                    err_10.append(float(line.split()[1]))
+                elif "a_08_error:" in line:
+                    err_08.append(float(line.split()[1]))
+                elif "a_06_error:" in line:
+                    err_06.append(float(line.split()[1]))
         dt = [0.07,0.12,0.25]
 
 
@@ -1790,7 +1790,7 @@ if __name__=="__main__":
     #out.plot_av_popu_torsion_bend(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_variance_noise(noise_sa_oo_vqe)
     #out.plot_av_popu_noise(noise_sa_oo_vqe)
-    #out.plot_av_popu_torsion_noise(noise_sa_oo_vqe)
+    ##out.plot_av_popu_torsion_noise(noise_sa_oo_vqe)
     #out.plot_av_popu_diff_ene(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_one_method_av_popu_diff_ene(method)
     #out.get_torsion_qy_ave(xms_caspt2)
