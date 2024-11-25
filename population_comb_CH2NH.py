@@ -1766,8 +1766,8 @@ if __name__=="__main__":
     xms_caspt2 = "../xms_caspt2"
     sa_oo_vqe = "../sa_oo_vqe"
     sa_casscf = "../sa_casscf"
-    noise_sa_oo_vqe = "../noise_sa_oo_vqe_025"
-    #noise_sa_oo_vqe = "../noise_sa_oo_vqe_012"
+    #noise_sa_oo_vqe = "../noise_sa_oo_vqe_025"
+    noise_sa_oo_vqe = "../noise_sa_oo_vqe_012"
     #noise_sa_oo_vqe = "../noise_sa_oo_vqe_007"
     method = os.getcwd()
     #time in fs
@@ -1787,7 +1787,7 @@ if __name__=="__main__":
     #out.plot_av_popu_torsion_bend(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_variance_noise(noise_sa_oo_vqe)
     #out.plot_av_popu_noise(noise_sa_oo_vqe)
-    ##out.plot_av_popu_torsion_noise(noise_sa_oo_vqe)
+    #out.plot_av_popu_torsion_noise(noise_sa_oo_vqe)
     #out.plot_av_popu_diff_ene(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_one_method_av_popu_diff_ene(method)
     #out.get_torsion_qy_ave(xms_caspt2)
@@ -1796,9 +1796,9 @@ if __name__=="__main__":
     #out.get_torsion_qy_ave_2(xms_caspt2)
     #out.get_torsion_qy_ave_2(sa_oo_vqe)
     #out.get_torsion_qy_ave_2(sa_casscf)
-    out.get_torsion_qy_ave_noise(noise_sa_oo_vqe)
+    #out.get_torsion_qy_ave_noise(noise_sa_oo_vqe)
     #out.plot_total_energy_fitted(noise_sa_oo_vqe)
     #out.energy_diff_slope_vs_dt()
-    ##out.energy_diff_slope_vs_dt_curve()
+    out.energy_diff_slope_vs_dt_curve()
     #out.plot_1d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 7)
     ##out.plot_2d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 7)
