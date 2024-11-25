@@ -229,10 +229,7 @@ class PlotComb:
                         ave_else.append(ref_rest/else_ang)
                     else:
                         ave_else.append(ref/int(trajs-nans))
-        if "noise_sa_oo_vqe" in folder:
-            title = folder.replace('../noise_sa_oo_vqe/', '')  
-        else:
-            title = folder.replace('../', '')
+        title = folder.replace("../", "").replace("/", "_")
         l_30_u_150 = lower_30+upper_150
         traj_nans = int(trajs-nans)
         err_95_l_30 = self.margin_95_confidence(l_30_u_150,lower_30/l_30_u_150)
@@ -1790,7 +1787,7 @@ if __name__=="__main__":
     #out.plot_av_popu_torsion_bend(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_variance_noise(noise_sa_oo_vqe)
     #out.plot_av_popu_noise(noise_sa_oo_vqe)
-    ##out.plot_av_popu_torsion_noise(noise_sa_oo_vqe)
+    #out.plot_av_popu_torsion_noise(noise_sa_oo_vqe)
     #out.plot_av_popu_diff_ene(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_one_method_av_popu_diff_ene(method)
     #out.get_torsion_qy_ave(xms_caspt2)

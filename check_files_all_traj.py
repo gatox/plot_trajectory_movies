@@ -20,25 +20,39 @@ def read_files():
     return sorted(add_traj)
 
 def compare():
-    no_comp = read_files()
+    comp = read_files()
     total_traj = all_traj()
+    no_sub = no_submitted_traj()
     with open(f'trajectories_submitted.out', 'w') as f:
         f.write('--------------------------------------------------------\n')
         f.write(f'Information of Trajectories:\n')
-        f.write(f'The number of the total trajectories is {len(total_traj)}:\n')
+        f.write(f'The number of trajectories submitted: {len(total_traj)}\n')
         f.write(f'{total_traj}\n')
-        f.write(f'The number of trajectories submitted is {len(no_comp)}:\n')
-        f.write(f'{no_comp}\n')
-        f.write(f' The number of trajectories no submitted is {len(set(total_traj) - set(no_comp))}:\n')
-        f.write(f'{sorted(set(total_traj) - set(no_comp))}\n')
+        f.write(f'The number of trajectories executed: {len(comp)}\n')
+        f.write(f'{comp}\n')
+        f.write(f'The number of trajectories running: {len((set(total_traj)-set(comp))-set(no_sub))}\n')
+        f.write(f'{sorted(set(total_traj)-set(comp)-set(no_sub))}\n')
+        f.write(f' The number of trajectories cancelled: {len(no_sub)}\n')
+        f.write(f'{sorted(set(no_sub))}\n')
         f.write('--------------------------------------------------------')
         f.close()
-    return sorted(set(total_traj) - set(no_comp))
+    return sorted(set(comp))
 
 def missing_traj():
     read = compare()
     return [f"traj_{i:08d}" for i in read]
 
+def no_submitted_traj():
+    no_sub = []
+    for traj in os.listdir("prop"):
+        subfolder = os.path.join("prop",traj)
+        if os.path.isfile(os.path.join(subfolder,"saoovqe.in.out")):
+            continue
+        else:
+            numb = int(traj.split('traj_')[1])
+            no_sub.append(int(numb))
+    return no_sub 
+            
 def submit_traj_missed():
     allowed = missing_traj()
     for traj in os.listdir("prop"):
