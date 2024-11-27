@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from pysurf.database import PySurfDB
+from pysurf.system import Molecule
 from Bio.PDB.vectors import (Vector, calc_dihedral, calc_angle)
 from moviepy.editor import VideoFileClip, clips_array
 
@@ -82,6 +83,20 @@ class PlotDB:
             elif y[i-1]<0 and y[i]>0:
                 y_nan[i] = y[i]*np.nan
         return y_nan
+
+    def write_traj_movie_xyz(self):
+        db_file = "sampling.db"
+        db = PySurfDB.load_database(db_file, read_only=True)
+        atomids = copy(db['atomids'])
+        crd = self.output["crd"]
+        natoms = len(atomids)
+        molecule = Molecule(atomids, None) 
+        filename = 'traj.xyz'
+        traj_xyz = open(filename, 'w')
+        for i in range(self.dim):
+            molecule.crd = np.array(crd[i])*self.aa  # coordinates must be in Angstrom units 
+            traj_xyz.write(self.tpl.render(natoms=natoms,mol=molecule))
+        traj_xyz.close()
 
     def plot_energy_angles_vs_time(self):
         # Positions of atoms defined only for the CH2NH molecule 
