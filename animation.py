@@ -222,7 +222,7 @@ class PlotDB:
 
         self.ax0.legend(handles1,labels1,loc='upper center', bbox_to_anchor=(0.5, 1.15), prop={'size': 16}, ncol=len(labels1))
         self.ax1.legend(handles2,labels2,loc='upper center', bbox_to_anchor=(0.5, 2.3), prop={'size': 16}, ncol=len(labels2))
-        self.ax2.legend(handles3,labels3,loc='upper center', bbox_to_anchor=(0.5, 3.35), prop={'size': 16}, ncol=len(labels3))
+        self.ax2.legend(handles3,labels3,loc='upper center', bbox_to_anchor=(0.5, 3.45), prop={'size': 16}, ncol=len(labels3))
         return self.transition_point,
 
     def plot_energy_angles_vs_time(self):
