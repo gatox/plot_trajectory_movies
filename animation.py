@@ -370,6 +370,5 @@ if __name__ == '__main__':
     # Calling the class PlotDB
     plot_db = PlotDB(db,type_movie)
     # Function to create an animation 
-    #plot_db.create_animation_combined()
-    plot_db.create_ene_ang_animation()
+    plot_db.create_animation_combined()
 
