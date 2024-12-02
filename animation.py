@@ -45,7 +45,7 @@ class PlotDB:
             self.transition_point, = self.ax0.plot([], [], 'o', color='black', markersize=10, zorder=5)
         elif self.plot_e == "ene_ang_ene_diff":
             plt.rcParams['font.size'] = '18' 
-            self.fig = plt.figure(figsize=(7, 11))
+            self.fig = plt.figure(figsize=(7, 12))
             gs = self.fig.add_gridspec(3, 1, hspace=0)
             self.ax0 = self.fig.add_subplot(gs[0])
             self.ax1 = self.fig.add_subplot(gs[1])
@@ -206,7 +206,7 @@ class PlotDB:
         ekin = np.array(self.output["ekin"])
         line1_3, = self.ax2.plot(self.times, (etot-etot[0])*self.ev, color='orange')
         line2_3, = self.ax2.plot(self.times, (epot-epot[0])*self.ev, color='purple',linestyle='-.')
-        line3_3, = self.ax2.plot(self.times, (ekin-ekin[0])*self.ev, color='yellow',linestyle='--')
+        line3_3, = self.ax2.plot(self.times, (ekin-ekin[0])*self.ev, color='black',linestyle='--')
         handles3 = [line1_3,line2_3,line3_3]
         labels3 = ['$\Delta E_{tot}$','$\Delta E_{pot}$', '$\Delta E_{kin}$']
         for i in range(1, self.dim):
@@ -220,9 +220,9 @@ class PlotDB:
         plt.tight_layout()
         plt.subplots_adjust(top=0.9)  # Adjust the top padding as needed
 
-        self.ax0.legend(handles1,labels1,loc='upper center', bbox_to_anchor=(0.5, 1.2), prop={'size': 16}, ncol=len(labels1))
-        self.ax1.legend(handles2,labels2,loc='upper center', bbox_to_anchor=(0.5, 2.35), prop={'size': 16}, ncol=len(labels2))
-        self.ax2.legend(handles3,labels3,loc='upper center', bbox_to_anchor=(0.5, 3.5), prop={'size': 16}, ncol=len(labels3))
+        self.ax0.legend(handles1,labels1,loc='upper center', bbox_to_anchor=(0.5, 1.2), prop={'size': 14}, ncol=len(labels1))
+        self.ax1.legend(handles2,labels2,loc='upper center', bbox_to_anchor=(0.5, 2.35), prop={'size': 14}, ncol=len(labels2))
+        self.ax2.legend(handles3,labels3,loc='lower center', bbox_to_anchor=(0.5, -0.4), prop={'size': 14}, ncol=len(labels3))
         return self.transition_point,
 
     def plot_energy_angles_vs_time(self):
@@ -370,5 +370,6 @@ if __name__ == '__main__':
     # Calling the class PlotDB
     plot_db = PlotDB(db,type_movie)
     # Function to create an animation 
-    plot_db.create_animation_combined()
+    #plot_db.create_animation_combined()
+    plot_db.create_ene_ang_animation()
 
