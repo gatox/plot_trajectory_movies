@@ -177,7 +177,6 @@ class PlotDB:
 
         # the second subplot
         self.ax1.set_ylabel("Angle (degrees)", fontweight = 'bold', fontsize = 16)
-        self.ax1.set_xlabel("Time (fs)", fontweight = 'bold', fontsize = 16)
         self.ax1.set_xlim(self.times.min(), self.times.max())
         dihedral = self.dihedral(atom_3, atom_1, atom_2, atom_5)
         dihedral_nan = self.high_180(dihedral)
