@@ -340,7 +340,6 @@ class PlotComb:
         ave_time = []
         ave_noise = []
         noise_data = []  # Store all noise values across time steps for each trajectory
-        
         with open(filename, 'r') as fh:
             reader = csv.DictReader(fh)
             for row in reader:
@@ -349,9 +348,11 @@ class PlotComb:
                 for k, val in row.items():
                     if k == 'time':
                         continue
-                    if val != 'nan':  # Only consider valid (non-'nan') values
+                    if val != 'nan' and not "etot" in noise:  # Only consider valid (non-'nan') values
                         noise_vals.append(abs(float(val)))
-                
+                    else:
+                        noise_vals.append(float(val))
+
                 if len(noise_vals) > 0:  # If we have valid noise values
                     ave_noise.append(np.mean(noise_vals))  # Compute average
                     noise_data.append(noise_vals)  # Store the noise values for std calculation
@@ -1067,7 +1068,7 @@ class PlotComb:
         ax2.plot(time_1, noise_1, color = self.n_colors[1], label = r"$\sigma^2$=1.0e-08", lw=2)
         ax2.plot(time_2, noise_2, color = self.n_colors[2], label = r"$\sigma^2$=1.0e-06", lw=2)
         ax2r = ax2.twinx()
-        ax2r.set_ylim([-0.05, 2.37])
+        ax2r.set_ylim([-2.37, 2.37])
         ax2r.yaxis.set_major_locator(ticker.MultipleLocator(0.3))
         ax2r.tick_params(labelsize=self.fs_rcParams)
         # Plot the standard deviation (shaded area)
@@ -1084,7 +1085,7 @@ class PlotComb:
         ax2.plot(time_0, self.linear_total_energy(time_0, a_0, b_0), '--', color = "orange", label=f"$\Delta T.E. = {a_0:.5f}t + {b_0:.5f}$")
         ax2.plot(time_1, self.linear_total_energy(time_1, a_1, b_1), '--', color = "green", label=f"$\Delta T.E. = {a_1:.5f}t +{b_1:.5f}$")
         ax2.plot(time_2, self.linear_total_energy(time_2, a_2, b_2), '--', color = "red", label=f"$\Delta T.E. = {a_2:.5f}t + {b_2:.5f}$")
-        ax2.set_ylim([-0.05, 2.37])
+        ax2.set_ylim([-2.37, 2.37])
         ax2.yaxis.set_major_locator(ticker.MultipleLocator(0.3))
         ax2.set_ylabel('$\mathbf{\Delta\ Total\ Energy\ (eV)}$', fontsize=self.f_size)
         ax2.set_xlabel('Time (fs)', fontweight = 'bold', fontsize =self.f_size)
@@ -1767,8 +1768,8 @@ if __name__=="__main__":
     sa_oo_vqe = "../sa_oo_vqe"
     sa_casscf = "../sa_casscf"
     #noise_sa_oo_vqe = "../noise_sa_oo_vqe_025"
-    noise_sa_oo_vqe = "../noise_sa_oo_vqe_012"
-    #noise_sa_oo_vqe = "../noise_sa_oo_vqe_007"
+    #noise_sa_oo_vqe = "../noise_sa_oo_vqe_012"
+    noise_sa_oo_vqe = "../noise_sa_oo_vqe_007"
     method = os.getcwd()
     #time in fs
     t_0 = 0
