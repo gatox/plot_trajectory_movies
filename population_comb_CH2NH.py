@@ -16,7 +16,8 @@ from pysurf.database import PySurfDB
 
 class PlotComb:
 
-    def __init__(self, t_0, t_max):
+    def __init__(self, t_0, t_max, lower_2_a):
+        self.lower = lower_2_a
         self.ev = 27.211324570273 
         self.fs = 0.02418884254
         self.aa = 0.5291772105638411 
@@ -37,6 +38,35 @@ class PlotComb:
         bins = namedtuple("bins","ene hnch hnc pyr")
         self.bins = bins(bins_ene,bins_hnch,bins_hnc,bins_pyr)
 
+    def filter_files(self, folder):
+        file_1 = self._filter_cv_files(os.path.join(folder,"dis_r25.dat")) #NH
+        file_2 = self._filter_cv_files(os.path.join(folder,"dis_r13.dat")) #CH
+        file_3 = self._filter_cv_files(os.path.join(folder,"dis_r14.dat")) #CH
+        result = []
+        for elem in file_1:
+            if elem in file_2 and elem in file_3:
+                result.append(elem)    
+        print("Len after intersection",len(result))
+        print("Array final:",result)
+        return result
+
+    def _filter_cv_files(self, files):
+        traj_2_l = []
+        with open(files, 'r') as fh:
+            reader = csv.DictReader(fh)
+            for row in reader:
+                pass
+        for k, val in row.items():
+            if k == 'time':
+                continue
+            if float(val) <= 2:
+                traj_2_l.append(k)
+        print("Len before filter:",len(list(row.items())[1:]))
+        print("Array before:",list(row.items())[1:])
+        print("Len after filter:",len(traj_2_l))
+        print("Array after:",traj_2_l)
+        return traj_2_l
+        
     def read_prop(self, fssh):
         #LVC
         spp = open(os.path.join(fssh,"spp.inp"), 'r+')
@@ -312,13 +342,14 @@ class PlotComb:
         ave_para = []
         para_data = []  # Store all parameter values across time steps for each trajectory
         
+        filter_2 = self.filter_files(folder)
         with open(filename, 'r') as fh:
             reader = csv.DictReader(fh)
             for row in reader:
                 ave_time.append(float(row['time']))
                 para_vals = []
                 for k, val in row.items():
-                    if k == 'time':
+                    if k == 'time' or k not in filter_2:
                         continue
                     if val != 'nan':  # Only consider valid (non-'nan') values
                         para_vals.append(abs(float(val)))
@@ -404,6 +435,7 @@ class PlotComb:
         nstates = prop.nstates
         ave_time = []
         ave_popu = []
+        filter_2 = self.filter_files(fssh)
         with open(filename, 'r') as fh:
             reader = csv.DictReader(fh)
             for row in reader:
@@ -412,7 +444,7 @@ class PlotComb:
                 trajs = 0
                 ref = np.zeros(nstates)
                 for k, val in row.items():
-                    if k == 'time':
+                    if k == 'time' or k not in filter_2:
                         continue
                     if val == 'nan':
                         nans += 1
@@ -1331,6 +1363,7 @@ class PlotComb:
         cur = pop.to_numpy()[:,1:] # removing time column
         tor = torsion.to_numpy()[:,1:] # removing time column
         mdsteps,trajs = cur.shape 
+        print("Traj in get_histogram:",trajs)
         torsion_0 = []
         for i in range(trajs):          #trajectories
             if state == 0:
@@ -1774,7 +1807,8 @@ if __name__=="__main__":
     #time in fs
     t_0 = 0
     t_max = 200 
-    out = PlotComb(t_0, t_max)
+    lower_2_a = "True"
+    out = PlotComb(t_0, t_max, lower_2_a)
     #out.plot_population_adi(index,xms_caspt2,sa_casscf,sa_oo_vqe)
     #out.plot_1d_histogram(xms_caspt2,sa_casscf,sa_oo_vqe, 8)
     #out.plot_1d_histogram_2_plots(xms_caspt2,sa_casscf,sa_oo_vqe, 17)
@@ -1800,6 +1834,6 @@ if __name__=="__main__":
     #out.get_torsion_qy_ave_noise(noise_sa_oo_vqe)
     #out.plot_total_energy_fitted(noise_sa_oo_vqe)
     #out.energy_diff_slope_vs_dt()
-    out.energy_diff_slope_vs_dt_curve()
+    #out.energy_diff_slope_vs_dt_curve()
     #out.plot_1d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 7)
-    ##out.plot_2d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 7)
+    out.plot_2d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 7)
