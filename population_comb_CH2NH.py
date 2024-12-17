@@ -117,6 +117,7 @@ class PlotComb:
     def get_torsion_qy_ave_2(self, folder):
         filename = os.path.join(folder,"dihe_2014.dat")
         popu = os.path.join(folder,"pop.dat")
+        filter_2 = self.filter_files(folder)
         ave_torsion = []
         ave_time = []
         ave_lower = []
@@ -138,7 +139,7 @@ class PlotComb:
                 upper_125 = 0
                 else_ang = 0
                 for k_1, val_1 in row_1.items():
-                    if k_1 == 'time':
+                    if k_1 == 'time'or k_1 not in filter_2:
                         continue
                     if k_1 == '0':
                         tor_i = float(val_1)
@@ -202,6 +203,7 @@ class PlotComb:
     def get_torsion_qy_ave(self, folder):
         filename = os.path.join(folder,"dihe_2014.dat")
         popu = os.path.join(folder,"pop.dat")
+        filter_2 = self.filter_files(folder)
         ave_torsion = []
         ave_time = []
         ave_lower = []
@@ -223,7 +225,7 @@ class PlotComb:
                 upper_150 = 0
                 else_ang = 0
                 for k_1, val_1 in row_1.items():
-                    if k_1 == 'time':
+                    if k_1 == 'time' or k_1 not in filter_2:
                         continue
                     if val_1 == 'nan':
                         nans += 1
@@ -1387,8 +1389,11 @@ class PlotComb:
         pop_name = os.path.join(folder,"pop.dat")
         e_gap = read_csv(e_gap_name)
         pop = read_csv(pop_name)
-        hop = pop.to_numpy()[:,1:] # removing time column
-        ene_d = e_gap.to_numpy()[:,1:] # removing time column
+        filter_2 = self.filter_files(folder)
+        #hop = pop.to_numpy()[:,1:] # removing time column
+        #ene_d = e_gap.to_numpy()[:,1:] # removing time column
+        ene_d = e_gap[filter_2].to_numpy() 
+        hop = pop[filter_2].to_numpy() 
         mdsteps,trajs = hop.shape 
         hop_10 = []
         hop_01 = []
@@ -1825,9 +1830,9 @@ if __name__=="__main__":
     #out.plot_av_popu_torsion_noise(noise_sa_oo_vqe)
     #out.plot_av_popu_diff_ene(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_one_method_av_popu_diff_ene(method)
-    #out.get_torsion_qy_ave(xms_caspt2)
-    #out.get_torsion_qy_ave(sa_oo_vqe)
-    #out.get_torsion_qy_ave(sa_casscf)
+    out.get_torsion_qy_ave(xms_caspt2)
+    out.get_torsion_qy_ave(sa_oo_vqe)
+    out.get_torsion_qy_ave(sa_casscf)
     #out.get_torsion_qy_ave_2(xms_caspt2)
     #out.get_torsion_qy_ave_2(sa_oo_vqe)
     #out.get_torsion_qy_ave_2(sa_casscf)
@@ -1836,4 +1841,4 @@ if __name__=="__main__":
     #out.energy_diff_slope_vs_dt()
     #out.energy_diff_slope_vs_dt_curve()
     #out.plot_1d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 7)
-    out.plot_2d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 7)
+    ##out.plot_2d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 7)
