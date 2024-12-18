@@ -1362,8 +1362,11 @@ class PlotComb:
         torsion_name = os.path.join(folder,"dihe_2014.dat")
         pop = read_csv(pop_name)
         torsion = read_csv(torsion_name)
-        cur = pop.to_numpy()[:,1:] # removing time column
-        tor = torsion.to_numpy()[:,1:] # removing time column
+        filter_2 = self.filter_files(folder)
+        #cur = pop.to_numpy()[:,1:] # removing time column
+        #tor = torsion.to_numpy()[:,1:] # removing time column
+        cur = pop[filter_2].to_numpy() 
+        tor = torsion[filter_2].to_numpy() 
         mdsteps,trajs = cur.shape 
         print("Traj in get_histogram:",trajs)
         torsion_0 = []
@@ -1830,9 +1833,9 @@ if __name__=="__main__":
     #out.plot_av_popu_torsion_noise(noise_sa_oo_vqe)
     #out.plot_av_popu_diff_ene(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_one_method_av_popu_diff_ene(method)
-    out.get_torsion_qy_ave(xms_caspt2)
-    out.get_torsion_qy_ave(sa_oo_vqe)
-    out.get_torsion_qy_ave(sa_casscf)
+    ##out.get_torsion_qy_ave(xms_caspt2)
+    ##out.get_torsion_qy_ave(sa_oo_vqe)
+    ##out.get_torsion_qy_ave(sa_casscf)
     #out.get_torsion_qy_ave_2(xms_caspt2)
     #out.get_torsion_qy_ave_2(sa_oo_vqe)
     #out.get_torsion_qy_ave_2(sa_casscf)
@@ -1840,5 +1843,5 @@ if __name__=="__main__":
     #out.plot_total_energy_fitted(noise_sa_oo_vqe)
     #out.energy_diff_slope_vs_dt()
     #out.energy_diff_slope_vs_dt_curve()
-    #out.plot_1d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 7)
+    out.plot_1d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 7)
     ##out.plot_2d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 7)
