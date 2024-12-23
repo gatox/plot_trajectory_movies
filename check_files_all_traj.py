@@ -36,7 +36,7 @@ def compare():
         f.write(f'{sorted(set(no_sub))}\n')
         f.write('--------------------------------------------------------')
         f.close()
-    return sorted(set(comp))
+    return sorted(set(no_sub))
 
 def missing_traj():
     read = compare()
