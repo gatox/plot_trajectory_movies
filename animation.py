@@ -1,16 +1,28 @@
-import sys
+#import sys
+import shutil
+import subprocess
 import numpy as np
+from numpy import copy 
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
+from jinja2 import Template #build templates
 from pysurf.database import PySurfDB
+from pysurf.system import Molecule
 from Bio.PDB.vectors import (Vector, calc_dihedral, calc_angle)
 from moviepy.editor import VideoFileClip, clips_array
 
+tpl = Template("""{{natoms}}
+{% for atomid, crd in mol %} 
+{{mol.format(atomid, crd)}} {% endfor %}
+
+""")
+
 class PlotDB:
 
-    def __init__(self, output, traj_movie, plot_e):
+    tpl = tpl
+
+    def __init__(self, output, plot_e):
         self.plot_e = plot_e 
-        self.traj_movie = traj_movie 
         self.output = PySurfDB.load_database(output, read_only=True)
         self.nstates = self.output.dimensions["nstates"]
         self.fs = 0.02418884254
@@ -30,6 +42,14 @@ class PlotDB:
             gs = self.fig.add_gridspec(2, 1, hspace=0)
             self.ax0 = self.fig.add_subplot(gs[0])
             self.ax1 = self.fig.add_subplot(gs[1])
+            self.transition_point, = self.ax0.plot([], [], 'o', color='black', markersize=10, zorder=5)
+        elif self.plot_e == "ene_ang_ene_diff":
+            plt.rcParams['font.size'] = '18' 
+            self.fig = plt.figure(figsize=(7, 12))
+            gs = self.fig.add_gridspec(3, 1, hspace=0)
+            self.ax0 = self.fig.add_subplot(gs[0])
+            self.ax1 = self.fig.add_subplot(gs[1])
+            self.ax2 = self.fig.add_subplot(gs[2])
             self.transition_point, = self.ax0.plot([], [], 'o', color='black', markersize=10, zorder=5)
         else:
             raise SystemExit("This option does not exit")
@@ -82,6 +102,127 @@ class PlotDB:
             elif y[i-1]<0 and y[i]>0:
                 y_nan[i] = y[i]*np.nan
         return y_nan
+
+    def write_traj_movie_xyz(self):
+        db_file = "sampling.db"
+        db = PySurfDB.load_database(db_file, read_only=True)
+        atomids = copy(db['atomids'])
+        crd = self.output["crd"]
+        natoms = len(atomids)
+        molecule = Molecule(atomids, None) 
+        filename = 'traj.xyz'
+        traj_xyz = open(filename, 'w')
+        for i in range(self.dim):
+            molecule.crd = np.array(crd[i])*self.aa  # coordinates must be in Angstrom units 
+            traj_xyz.write(self.tpl.render(natoms=natoms,mol=molecule))
+        traj_xyz.close()
+
+    def make_movie_mpg_mp4(self):
+        output_mpg = "traj.mpg"  
+        output_mp4 = "traj.mp4" 
+        #Making the traj.xyz file
+        self.write_traj_movie_xyz()
+        # VMD script with the desired visualization and movie settings
+        script_file = "/Users/edisonsalazar/Desktop/Postdoct_Position/Xmaris/plot_trajectory_movies/traj.tcl"
+        # Run VMD with the generated script
+        try:
+            vmd_path = "/Applications/VMD 1.9.4a57-x86_64-Rev12.app/Contents/Resources/VMD.app/Contents/MacOS/VMD"
+            # Generate frames using VMD
+            subprocess.run([vmd_path, "-e", script_file], check=True)
+            print(f"Frames generated successfully in './frames/'")
+            # Combine frames into an MPG movie using FFmpeg
+            subprocess.run([
+                "ffmpeg", "-framerate", "30", "-i", "./frames/frame_%d.tga",
+                "-c:v", "mpeg2video", "-q:v", "2", output_mpg
+            ], check=True)
+            print(f"Movie generated successfully in MPG format: {output_mpg}")
+            # Convert the MPG movie to MP4 format using FFmpeg
+            subprocess.run([
+                "ffmpeg", "-i", output_mpg, "-c:v", "libx264", output_mp4
+            ], check=True)
+            print(f"Movie successfully converted to MP4 format: {output_mp4}")
+        finally:
+            # Clean up the script file
+            shutil.rmtree("frames")
+
+    def plot_energy_angles_ene_diff_vs_time(self):
+        # Positions of atoms defined only for the CH2NH molecule 
+        atom_1=0
+        atom_2=1
+        atom_3=2
+        atom_4=3
+        atom_5=4
+
+        # the first subplot
+        self.ax0.set_ylabel("Energy (eV)", fontweight = 'bold', fontsize = 16)
+        self.ax0.set_xlim(self.times.min(), self.times.max())
+        self.ax0.set_ylim(- 1, (self.ene_max-self.ene_min)*self.ev + 1)
+        self.ax0.set_facecolor('white')
+        handles1 = []
+        labels1 = []
+        for i in range(self.nstates):
+            ene = np.array(self.output["energy"])[:,i] 
+            line, = self.ax0.plot(self.times,(ene-self.ene_min)*self.ev)
+            handles1.append(line)
+            labels1.append('$S_%i$'%i)
+        self.transition_point.set_data([], [])
+        for i in range(1, self.dim):
+            if self.output["currstate"][i] != self.output["currstate"][i-1]:
+                curr = self.output["currstate"][i-1]
+                new = self.output["currstate"][i]
+                x = self.times[i]
+                line0 = self.ax0.axvline(x[0],linestyle='--', c = 'purple')
+                handles1.append(line0)
+                labels1.append(fr"Hop:($S_{int(curr[0])} \to S_{int(new[0])}$) at {int(x[0])} fs")
+
+        # the second subplot
+        self.ax1.set_ylabel("Angle (degrees)", fontweight = 'bold', fontsize = 16)
+        self.ax1.set_xlim(self.times.min(), self.times.max())
+        dihedral = self.dihedral(atom_3, atom_1, atom_2, atom_5)
+        dihedral_nan = self.high_180(dihedral)
+        angle = self.angle(atom_1, atom_2, atom_5)
+        pira = self.pyramidalization_angle(atom_3, atom_4, atom_2, atom_1)
+        line1, = self.ax1.plot(self.times, dihedral_nan, color='blue')
+        line2, = self.ax1.plot(self.times, angle, color='darkgreen',linestyle='--')
+        line3, = self.ax1.plot(self.times, pira, color='black',linestyle='-.')
+        handles2 = [line1,line2,line3]
+        labels2 = ['HCNH','CNH', 'pyram.']
+        for i in range(1, self.dim):
+            if self.output["currstate"][i] != self.output["currstate"][i-1]:
+                curr = self.output["currstate"][i-1]
+                new = self.output["currstate"][i]
+                x = self.times[i]
+                line1 = self.ax1.axvline(x[0],linestyle='--', c = 'purple')
+        plt.setp(self.ax0.get_xticklabels(), visible=False)
+
+        # the third subplot
+
+        self.ax2.set_xlabel('Time (fs)', fontweight = 'bold', fontsize = 16)
+        self.ax2.set_ylabel('$\mathbf{\Delta(E_{t_i}-E_{t_0})(eV)}$', fontsize = 16)
+        self.ax2.set_xlim(self.times.min(), self.times.max())
+        etot = np.array(self.output["etot"])
+        epot = np.array(self.output["epot"])
+        ekin = np.array(self.output["ekin"])
+        line1_3, = self.ax2.plot(self.times, (etot-etot[0])*self.ev, color='orange')
+        line2_3, = self.ax2.plot(self.times, (epot-epot[0])*self.ev, color='purple',linestyle='-.')
+        line3_3, = self.ax2.plot(self.times, (ekin-ekin[0])*self.ev, color='black',linestyle='--')
+        handles3 = [line1_3,line2_3,line3_3]
+        labels3 = ['$\Delta E_{tot}$','$\Delta E_{pot}$', '$\Delta E_{kin}$']
+        for i in range(1, self.dim):
+            if self.output["currstate"][i] != self.output["currstate"][i-1]:
+                curr = self.output["currstate"][i-1]
+                new = self.output["currstate"][i]
+                x = self.times[i]
+                line1_3 = self.ax2.axvline(x[0],linestyle='--', c = 'purple')
+        plt.setp(self.ax1.get_xticklabels(), visible=False)
+        # Adjust layout to prevent overlap
+        plt.tight_layout()
+        plt.subplots_adjust(top=0.9)  # Adjust the top padding as needed
+
+        self.ax0.legend(handles1,labels1,loc='upper center', bbox_to_anchor=(0.5, 1.2), prop={'size': 14}, ncol=len(labels1))
+        self.ax1.legend(handles2,labels2,loc='upper center', bbox_to_anchor=(0.5, 2.35), prop={'size': 14}, ncol=len(labels2))
+        self.ax2.legend(handles3,labels3,loc='lower center', bbox_to_anchor=(0.5, -0.4), prop={'size': 14}, ncol=len(labels3))
+        return self.transition_point,
 
     def plot_energy_angles_vs_time(self):
         # Positions of atoms defined only for the CH2NH molecule 
@@ -181,6 +322,9 @@ class PlotDB:
         elif self.plot_e == "ene_ang":
             ani = animation.FuncAnimation(self.fig, self.update_plot, init_func=self.plot_energy_angles_vs_time, frames=len(self.times), blit=True)
             energy_animation_file = 'ene_ang_animation.mp4'
+        elif self.plot_e == "ene_ang_ene_diff":
+            ani = animation.FuncAnimation(self.fig, self.update_plot, init_func=self.plot_energy_angles_ene_diff_vs_time, frames=len(self.times), blit=True)
+            energy_animation_file = 'ene_ang_animation.mp4'
         else:   
             raise SystemExit("This option does not exit")
         Writer = animation.writers['ffmpeg']
@@ -192,8 +336,10 @@ class PlotDB:
     def create_animation_combined(self):
         energy_animation_file = self.create_ene_ang_animation()
 
+        #create the movie in mp4 format saved as traj.mp4
+        self.make_movie_mpg_mp4() 
         # Load the trajectory video
-        trajectory_clip = VideoFileClip(self.traj_movie)
+        trajectory_clip = VideoFileClip("traj.mp4")
 
         # Load the energy animation video
         energy_clip = VideoFileClip(energy_animation_file)
@@ -206,19 +352,22 @@ class PlotDB:
             combined_animation_file = 'ene_combined_video.mp4'
         elif self.plot_e == "ene_ang":
             combined_animation_file = 'ene_combined_video.mp4'
+        elif self.plot_e == "ene_ang_ene_diff":
+            combined_animation_file = 'ene_combined_video.mp4'
         else:   
             raise SystemExit("This option does not exit")
         final_clip.write_videofile(combined_animation_file, fps=trajectory_clip.fps)
 
 if __name__ == '__main__':
     # Database. In PySurf it is called results.db
-    db = sys.argv[1] 
-    # Trajectory movie saved in mp4 format
-    traj_movie = sys.argv[2]
-    # Type of movie: energies or energies and angles
-    type_movie = sys.argv[3]
+    #db = sys.argv[1] 
+    db = "results.db" 
+    # Type of movie: energies (ene) or energies and angles (ene_ang)
+    #type_movie = sys.argv[2]
+    #type_movie = "ene_ang"
+    type_movie = "ene_ang_ene_diff"
     # Calling the class PlotDB
-    plot_db = PlotDB(db,traj_movie,type_movie)
+    plot_db = PlotDB(db,type_movie)
     # Function to create an animation 
     plot_db.create_animation_combined()
 

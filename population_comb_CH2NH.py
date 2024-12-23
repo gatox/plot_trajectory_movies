@@ -16,7 +16,8 @@ from pysurf.database import PySurfDB
 
 class PlotComb:
 
-    def __init__(self, t_0, t_max):
+    def __init__(self, t_0, t_max, lower_2_a):
+        self.lower = lower_2_a
         self.ev = 27.211324570273 
         self.fs = 0.02418884254
         self.aa = 0.5291772105638411 
@@ -37,6 +38,35 @@ class PlotComb:
         bins = namedtuple("bins","ene hnch hnc pyr")
         self.bins = bins(bins_ene,bins_hnch,bins_hnc,bins_pyr)
 
+    def filter_files(self, folder):
+        file_1 = self._filter_cv_files(os.path.join(folder,"dis_r25.dat")) #NH
+        file_2 = self._filter_cv_files(os.path.join(folder,"dis_r13.dat")) #CH
+        file_3 = self._filter_cv_files(os.path.join(folder,"dis_r14.dat")) #CH
+        result = []
+        for elem in file_1:
+            if elem in file_2 and elem in file_3:
+                result.append(elem)    
+        print("Len after intersection",len(result))
+        print("Array final:",result)
+        return result
+
+    def _filter_cv_files(self, files):
+        traj_2_l = []
+        with open(files, 'r') as fh:
+            reader = csv.DictReader(fh)
+            for row in reader:
+                pass
+        for k, val in row.items():
+            if k == 'time':
+                continue
+            if float(val) <= 2:
+                traj_2_l.append(k)
+        print("Len before filter:",len(list(row.items())[1:]))
+        print("Array before:",list(row.items())[1:])
+        print("Len after filter:",len(traj_2_l))
+        print("Array after:",traj_2_l)
+        return traj_2_l
+        
     def read_prop(self, fssh):
         #LVC
         spp = open(os.path.join(fssh,"spp.inp"), 'r+')
@@ -87,6 +117,7 @@ class PlotComb:
     def get_torsion_qy_ave_2(self, folder):
         filename = os.path.join(folder,"dihe_2014.dat")
         popu = os.path.join(folder,"pop.dat")
+        filter_2 = self.filter_files(folder)
         ave_torsion = []
         ave_time = []
         ave_lower = []
@@ -108,7 +139,7 @@ class PlotComb:
                 upper_125 = 0
                 else_ang = 0
                 for k_1, val_1 in row_1.items():
-                    if k_1 == 'time':
+                    if k_1 == 'time'or k_1 not in filter_2:
                         continue
                     if k_1 == '0':
                         tor_i = float(val_1)
@@ -172,6 +203,7 @@ class PlotComb:
     def get_torsion_qy_ave(self, folder):
         filename = os.path.join(folder,"dihe_2014.dat")
         popu = os.path.join(folder,"pop.dat")
+        filter_2 = self.filter_files(folder)
         ave_torsion = []
         ave_time = []
         ave_lower = []
@@ -193,7 +225,7 @@ class PlotComb:
                 upper_150 = 0
                 else_ang = 0
                 for k_1, val_1 in row_1.items():
-                    if k_1 == 'time':
+                    if k_1 == 'time' or k_1 not in filter_2:
                         continue
                     if val_1 == 'nan':
                         nans += 1
@@ -312,13 +344,14 @@ class PlotComb:
         ave_para = []
         para_data = []  # Store all parameter values across time steps for each trajectory
         
+        filter_2 = self.filter_files(folder)
         with open(filename, 'r') as fh:
             reader = csv.DictReader(fh)
             for row in reader:
                 ave_time.append(float(row['time']))
                 para_vals = []
                 for k, val in row.items():
-                    if k == 'time':
+                    if k == 'time' or k not in filter_2:
                         continue
                     if val != 'nan':  # Only consider valid (non-'nan') values
                         para_vals.append(abs(float(val)))
@@ -340,7 +373,6 @@ class PlotComb:
         ave_time = []
         ave_noise = []
         noise_data = []  # Store all noise values across time steps for each trajectory
-        
         with open(filename, 'r') as fh:
             reader = csv.DictReader(fh)
             for row in reader:
@@ -349,9 +381,11 @@ class PlotComb:
                 for k, val in row.items():
                     if k == 'time':
                         continue
-                    if val != 'nan':  # Only consider valid (non-'nan') values
+                    if val != 'nan' and not "etot" in noise:  # Only consider valid (non-'nan') values
                         noise_vals.append(abs(float(val)))
-                
+                    else:
+                        noise_vals.append(float(val))
+
                 if len(noise_vals) > 0:  # If we have valid noise values
                     ave_noise.append(np.mean(noise_vals))  # Compute average
                     noise_data.append(noise_vals)  # Store the noise values for std calculation
@@ -403,6 +437,7 @@ class PlotComb:
         nstates = prop.nstates
         ave_time = []
         ave_popu = []
+        filter_2 = self.filter_files(fssh)
         with open(filename, 'r') as fh:
             reader = csv.DictReader(fh)
             for row in reader:
@@ -411,7 +446,7 @@ class PlotComb:
                 trajs = 0
                 ref = np.zeros(nstates)
                 for k, val in row.items():
-                    if k == 'time':
+                    if k == 'time' or k not in filter_2:
                         continue
                     if val == 'nan':
                         nans += 1
@@ -1067,7 +1102,7 @@ class PlotComb:
         ax2.plot(time_1, noise_1, color = self.n_colors[1], label = r"$\sigma^2$=1.0e-08", lw=2)
         ax2.plot(time_2, noise_2, color = self.n_colors[2], label = r"$\sigma^2$=1.0e-06", lw=2)
         ax2r = ax2.twinx()
-        ax2r.set_ylim([-0.05, 2.37])
+        ax2r.set_ylim([-2.37, 2.37])
         ax2r.yaxis.set_major_locator(ticker.MultipleLocator(0.3))
         ax2r.tick_params(labelsize=self.fs_rcParams)
         # Plot the standard deviation (shaded area)
@@ -1084,7 +1119,7 @@ class PlotComb:
         ax2.plot(time_0, self.linear_total_energy(time_0, a_0, b_0), '--', color = "orange", label=f"$\Delta T.E. = {a_0:.5f}t + {b_0:.5f}$")
         ax2.plot(time_1, self.linear_total_energy(time_1, a_1, b_1), '--', color = "green", label=f"$\Delta T.E. = {a_1:.5f}t +{b_1:.5f}$")
         ax2.plot(time_2, self.linear_total_energy(time_2, a_2, b_2), '--', color = "red", label=f"$\Delta T.E. = {a_2:.5f}t + {b_2:.5f}$")
-        ax2.set_ylim([-0.05, 2.37])
+        ax2.set_ylim([-2.37, 2.37])
         ax2.yaxis.set_major_locator(ticker.MultipleLocator(0.3))
         ax2.set_ylabel('$\mathbf{\Delta\ Total\ Energy\ (eV)}$', fontsize=self.f_size)
         ax2.set_xlabel('Time (fs)', fontweight = 'bold', fontsize =self.f_size)
@@ -1327,9 +1362,13 @@ class PlotComb:
         torsion_name = os.path.join(folder,"dihe_2014.dat")
         pop = read_csv(pop_name)
         torsion = read_csv(torsion_name)
-        cur = pop.to_numpy()[:,1:] # removing time column
-        tor = torsion.to_numpy()[:,1:] # removing time column
+        filter_2 = self.filter_files(folder)
+        #cur = pop.to_numpy()[:,1:] # removing time column
+        #tor = torsion.to_numpy()[:,1:] # removing time column
+        cur = pop[filter_2].to_numpy() 
+        tor = torsion[filter_2].to_numpy() 
         mdsteps,trajs = cur.shape 
+        print("Traj in get_histogram:",trajs)
         torsion_0 = []
         for i in range(trajs):          #trajectories
             if state == 0:
@@ -1353,8 +1392,11 @@ class PlotComb:
         pop_name = os.path.join(folder,"pop.dat")
         e_gap = read_csv(e_gap_name)
         pop = read_csv(pop_name)
-        hop = pop.to_numpy()[:,1:] # removing time column
-        ene_d = e_gap.to_numpy()[:,1:] # removing time column
+        filter_2 = self.filter_files(folder)
+        #hop = pop.to_numpy()[:,1:] # removing time column
+        #ene_d = e_gap.to_numpy()[:,1:] # removing time column
+        ene_d = e_gap[filter_2].to_numpy() 
+        hop = pop[filter_2].to_numpy() 
         mdsteps,trajs = hop.shape 
         hop_10 = []
         hop_01 = []
@@ -1767,13 +1809,14 @@ if __name__=="__main__":
     sa_oo_vqe = "../sa_oo_vqe"
     sa_casscf = "../sa_casscf"
     #noise_sa_oo_vqe = "../noise_sa_oo_vqe_025"
-    noise_sa_oo_vqe = "../noise_sa_oo_vqe_012"
-    #noise_sa_oo_vqe = "../noise_sa_oo_vqe_007"
+    #noise_sa_oo_vqe = "../noise_sa_oo_vqe_012"
+    noise_sa_oo_vqe = "../noise_sa_oo_vqe_007"
     method = os.getcwd()
     #time in fs
     t_0 = 0
     t_max = 200 
-    out = PlotComb(t_0, t_max)
+    lower_2_a = "True"
+    out = PlotComb(t_0, t_max, lower_2_a)
     #out.plot_population_adi(index,xms_caspt2,sa_casscf,sa_oo_vqe)
     #out.plot_1d_histogram(xms_caspt2,sa_casscf,sa_oo_vqe, 8)
     #out.plot_1d_histogram_2_plots(xms_caspt2,sa_casscf,sa_oo_vqe, 17)
@@ -1790,15 +1833,15 @@ if __name__=="__main__":
     #out.plot_av_popu_torsion_noise(noise_sa_oo_vqe)
     #out.plot_av_popu_diff_ene(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_one_method_av_popu_diff_ene(method)
-    #out.get_torsion_qy_ave(xms_caspt2)
-    #out.get_torsion_qy_ave(sa_oo_vqe)
-    #out.get_torsion_qy_ave(sa_casscf)
+    ##out.get_torsion_qy_ave(xms_caspt2)
+    ##out.get_torsion_qy_ave(sa_oo_vqe)
+    ##out.get_torsion_qy_ave(sa_casscf)
     #out.get_torsion_qy_ave_2(xms_caspt2)
     #out.get_torsion_qy_ave_2(sa_oo_vqe)
     #out.get_torsion_qy_ave_2(sa_casscf)
     #out.get_torsion_qy_ave_noise(noise_sa_oo_vqe)
     #out.plot_total_energy_fitted(noise_sa_oo_vqe)
     #out.energy_diff_slope_vs_dt()
-    out.energy_diff_slope_vs_dt_curve()
-    #out.plot_1d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 7)
+    #out.energy_diff_slope_vs_dt_curve()
+    out.plot_1d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 7)
     ##out.plot_2d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 7)
