@@ -36,7 +36,7 @@ def compare():
         f.write(f'{sorted(set(no_sub))}\n')
         f.write('--------------------------------------------------------')
         f.close()
-    return sorted(set(comp))
+    return sorted(set(no_sub))
 
 def missing_traj():
     read = compare()
@@ -65,5 +65,5 @@ def submit_traj_missed():
             print("Submitting", subfolder)
 
 # Example usage
-compare()
-#submit_traj_missed()
+#compare()
+submit_traj_missed()
