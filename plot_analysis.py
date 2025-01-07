@@ -1166,6 +1166,8 @@ class Population:
         hop_01_cnh = []
         hop_10_pyr = []
         hop_01_pyr = []
+        hop_10_egap = []
+        hop_01_egap = []
         ene_z = []
         dihe_x = []
         angle_y = []
@@ -1186,21 +1188,153 @@ class Population:
                         mecp_10.append(x)
                     else:
                         hop_10.append(x)
-                        hop_10_hcnh.append(phi)
+                        hop_10_hcnh.append(abs(phi))
                         hop_10_cnh.append(alpha)
                         hop_10_pyr.append(pyram)
+                        hop_10_egap.append(ene_d)
                 elif hop[j-1,i]==0 and hop[j,i]==1:
                     if ((self.compare(alpha,self.ci[0],self.err) and self.compare(np.abs(phi),self.ci[1],self.err)) or 
                         (self.compare(alpha,self.ci[0],self.err) and self.compare(np.abs(y_dihe_1),self.ci[1],self.err))): 
                         mecp_01.append(x)
                     else:
                         hop_01.append(x)
-                        hop_01_hcnh.append(phi)
+                        hop_01_hcnh.append(abs(phi))
                         hop_01_cnh.append(alpha)
                         hop_01_pyr.append(pyram)
-        self._1d_histogram(hop_10,hop_01,n_bins)
-        self._2d_histogram(hop_10,hop_01,hop_10_hcnh,hop_01_hcnh,n_bins)
-        self._2d_surf_ene_dihedral_angle(dihe_x, angle_y, ene_z)
+                        hop_01_egap.append(ene_d)
+        #self._1d_histogram(hop_10,hop_01,n_bins)
+        #self._2d_histogram(hop_10,hop_01,hop_10_hcnh,hop_01_hcnh,n_bins)
+        self._2d_time_ene_histogram(hop_10,hop_01,hop_10_egap,hop_01_egap,n_bins)
+        #self._2d_ene_dihe_histogram(hop_10_egap,hop_01_egap,hop_10_hcnh,hop_01_hcnh,n_bins)
+        #self._2d_surf_ene_dihedral_angle(dihe_x, angle_y, ene_z)
+
+    def _2d_time_ene_histogram(self,hop_10_x,hop_01_x,hop_10_y,hop_01_y,n_bins, x_type="time", y_type="egap"):
+        plt.rcParams['font.size'] = '14'
+        #plt.rcParams['axes.labelpad'] = 9
+        fig = plt.figure()          #create a canvas, tell matplotlib it's 3d
+        ax = fig.add_subplot(111, projection='3d')
+        #plt.xlim([0, 3])
+        plt.ylim([0, 3])
+        plt.xlim([self.t_0, self.t_max])
+        bins = [x for x in range(self.t_0, self.t_max+1,int(self.t_max/n_bins))]
+        bins_1 = np.linspace(0, 3, 16) 
+        hist, xedges, yedges = np.histogram2d(hop_10_x,hop_10_y, bins=[bins,bins_1])
+        #hist_1, xedges_1, yedges_1 = np.histogram2d(hop_01_x,hop_01_y, bins=[bins,bins_1])
+        #hist, xedges, yedges = np.histogram2d([hop_10_x,hop_01_x],[hop_10_y,hop_01_y], bins=bins)
+
+        # Construct arrays for the anchor positions of the 16 bars.
+        xpos, ypos = np.meshgrid(xedges[:-1], yedges[:-1], indexing="ij")
+        #xpos, ypos = np.meshgrid(xedges[:-1] + 0.25, yedges[:-1] + 0.25, indexing="ij")
+        xpos = xpos.ravel()
+        ypos = ypos.ravel()
+        zpos = 0
+
+        dx = (xedges [1] - xedges [0])/3
+        dy = (yedges [1] - yedges [0])/3
+        dz = hist.flatten()
+
+        #xpos_1, ypos_1 = np.meshgrid(xedges_1[:-1] + 0.25 + dx, yedges_1[:-1] - 0.25 - dy, indexing="ij")
+        #xpos_1 = xpos_1.ravel()
+        #ypos_1 = ypos_1.ravel()
+        #zpos_1 = 0
+
+        #dx_1 = (xedges_1 [1] - xedges_1 [0])/3
+        #dy_1 = (yedges_1 [1] - yedges_1 [0])/3
+        #dz_1 = hist_1.flatten()
+
+        #print("10: ",hist, xedges, yedges)
+        #print("10: ",xpos, ypos, zpos, dx, dy, dz)
+        #print("01: ",hist_1, xedges_1, yedges_1)
+        #print("01: ",xpos_1, ypos_1, zpos_1, dx_1, dy_1, dz_1)
+        ax.bar3d(xpos, ypos, zpos, dx, dy, dz, color="green", zsort='max', alpha=0.4, edgecolor='black')
+        green_proxy = plt.Rectangle((0, 0), 1, 1, fc="green")
+        #ax.bar3d(xpos_1, ypos_1, zpos_1, dx_1, dy_1, dz_1, color="red", zsort='max', alpha=0.5, edgecolor='black')
+        #red_proxy = plt.Rectangle((0, 0), 1, 1, fc="red")
+        label = [r"$S_1$ $\rightarrow$ $S_0$"]
+        #labels = [r"$S_1$ $\rightarrow$ $S_0$",r"$S_0$ $\rightarrow$ $S_1$"]
+        ax.legend([green_proxy],label, loc='upper center', bbox_to_anchor=(0.5, 1.1), prop={'size': 12}, ncol=2)
+        #ax.legend([green_proxy,red_proxy],labels, loc='upper center', bbox_to_anchor=(0.5, 1.1), prop={'size': 12}, ncol=2)
+        ax.set_ylabel('Energy Gap (eV)', fontsize=12,fontweight = 'bold',rotation=150)
+        ax.set_xlabel('Time (fs)', fontsize=12,fontweight = 'bold',rotation=150)
+        # change fontsize
+        ax.zaxis.set_tick_params(labelsize=12, pad=0)
+        ax.xaxis.set_tick_params(labelsize=12, pad=0)
+        ax.yaxis.set_tick_params(labelsize=12, pad=0)
+        # disable auto rotation
+        ax.zaxis.set_rotate_label(False)
+        ax.set_zlabel('Number of Hops', fontsize=12,fontweight = 'bold', rotation=90, labelpad=0)
+        ax.view_init(30, 230)
+        if self.label =="fssh":
+            plt.savefig("fssh_"+x_type+"_"+y_type+"_hops.pdf", bbox_inches='tight', pad_inches = 0.4)
+            plt.savefig("fssh_"+x_type+"_"+y_type+"_hops.png", bbox_inches='tight', pad_inches = 0.4)
+        elif self.label =="lz":
+            plt.savefig("lz_"+x_type+"_"+y_type+"_hops.pdf", bbox_inches='tight', pad_inches = 0.4)
+            plt.savefig("lz_"+x_type+"_"+y_type+"_hops.png", bbox_inches='tight', pad_inches = 0.4)
+        plt.close()
+
+    def _2d_ene_dihe_histogram(self,hop_10_x,hop_01_x,hop_10_y,hop_01_y,n_bins, x_type="egap", y_type="hcnh"):
+        plt.rcParams['font.size'] = '14'
+        #plt.rcParams['axes.labelpad'] = 9
+        fig = plt.figure()          #create a canvas, tell matplotlib it's 3d
+        ax = fig.add_subplot(111, projection='3d')
+        plt.xlim([0, 3])
+        #plt.xlim([self.t_0, self.t_max])
+        bins = np.linspace(0, 3, 16) 
+        bins_1 = np.linspace(0, 180, 19) 
+        #bins = [x for x in range(self.t_0, self.t_max+1,int(self.t_max/n_bins))]
+        #bins_1 = [x for x in range(-180, 180+1,int((180+180)/n_bins))]
+        hist, xedges, yedges = np.histogram2d(hop_10_x,hop_10_y, bins=[bins,bins_1])
+        #hist_1, xedges_1, yedges_1 = np.histogram2d(hop_01_x,hop_01_y, bins=[bins,bins_1])
+        #hist, xedges, yedges = np.histogram2d([hop_10_x,hop_01_x],[hop_10_y,hop_01_y], bins=bins)
+
+        # Construct arrays for the anchor positions of the 16 bars.
+        xpos, ypos = np.meshgrid(xedges[:-1] + 0.25, yedges[:-1] + 0.25, indexing="ij")
+        xpos = xpos.ravel()
+        ypos = ypos.ravel()
+        zpos = 0
+
+        dx = (xedges [1] - xedges [0])/3
+        dy = (yedges [1] - yedges [0])/3
+        dz = hist.flatten()
+
+        #xpos_1, ypos_1 = np.meshgrid(xedges_1[:-1] + 0.25 + dx, yedges_1[:-1] - 0.25 - dy, indexing="ij")
+        #xpos_1 = xpos_1.ravel()
+        #ypos_1 = ypos_1.ravel()
+        #zpos_1 = 0
+
+        #dx_1 = (xedges_1 [1] - xedges_1 [0])/3
+        #dy_1 = (yedges_1 [1] - yedges_1 [0])/3
+        #dz_1 = hist_1.flatten()
+
+        #print("10: ",hist, xedges, yedges)
+        #print("10: ",xpos, ypos, zpos, dx, dy, dz)
+        #print("01: ",hist_1, xedges_1, yedges_1)
+        #print("01: ",xpos_1, ypos_1, zpos_1, dx_1, dy_1, dz_1)
+        ax.bar3d(xpos, ypos, zpos, dx, dy, dz, color="green", zsort='max', alpha=0.4, edgecolor='black')
+        green_proxy = plt.Rectangle((0, 0), 1, 1, fc="green")
+        #ax.bar3d(xpos_1, ypos_1, zpos_1, dx_1, dy_1, dz_1, color="red", zsort='max', alpha=0.5, edgecolor='black')
+        #red_proxy = plt.Rectangle((0, 0), 1, 1, fc="red")
+        label = r"$S_1$ $\rightarrow$ $S_0$"
+        #labels = [r"$S_1$ $\rightarrow$ $S_0$",r"$S_0$ $\rightarrow$ $S_1$"]
+        ax.legend([green_proxy],label, loc='upper center', bbox_to_anchor=(0.5, 1.1), prop={'size': 12}, ncol=2)
+        #ax.legend([green_proxy,red_proxy],labels, loc='upper center', bbox_to_anchor=(0.5, 1.1), prop={'size': 12}, ncol=2)
+        ax.set_xlabel('Energy Gap (eV)', fontsize=12,fontweight = 'bold',rotation=150)
+        ax.set_ylabel('$\mathbf{\sphericalangle H_3C_1N_2H_5(degrees)}$', fontsize=12,fontweight = 'bold')
+        # change fontsize
+        ax.zaxis.set_tick_params(labelsize=12, pad=0)
+        ax.xaxis.set_tick_params(labelsize=12, pad=0)
+        ax.yaxis.set_tick_params(labelsize=12, pad=0)
+        # disable auto rotation
+        ax.zaxis.set_rotate_label(False)
+        ax.set_zlabel('Number of Hops', fontsize=12,fontweight = 'bold', rotation=90, labelpad=0)
+        ax.view_init(30, 230)
+        if self.label =="fssh":
+            plt.savefig("fssh_"+x_type+"_"+y_type+"_hops.pdf", bbox_inches='tight', pad_inches = 0.4)
+            plt.savefig("fssh_"+x_type+"_"+y_type+"_hops.png", bbox_inches='tight', pad_inches = 0.4)
+        elif self.label =="lz":
+            plt.savefig("lz_"+x_type+"_"+y_type+"_hops.pdf", bbox_inches='tight', pad_inches = 0.4)
+            plt.savefig("lz_"+x_type+"_"+y_type+"_hops.png", bbox_inches='tight', pad_inches = 0.4)
+        plt.close()
 
     def _2d_histogram(self,hop_10_x,hop_01_x,hop_10_y,hop_01_y,n_bins, x_type="time", y_type="hcnh"):
         plt.rcParams['font.size'] = '14'
@@ -1647,10 +1781,10 @@ if __name__=="__main__":
     #popu.plot_angle_hops_time()
     #popu.plot_pyra_hops_time()
     #popu.plot_pyra_angle_hops()
-    #popu.plot_histogram_hops(8)
+    popu.plot_histogram_hops(8)
     #popu.plot_dihedral_angle_map_hops()
     #popu.plot_energies_diff_time()
-    popu.plot_population_adi_fitted()
+    #popu.plot_population_adi_fitted()
     #popu.get_qy_popu()
     #popu.plot_angle_dihedral_hops()
     #print(popu.get_all_var())
