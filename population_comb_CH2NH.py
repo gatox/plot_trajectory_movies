@@ -46,8 +46,10 @@ class PlotComb:
         for elem in file_1:
             if elem in file_2 and elem in file_3:
                 result.append(elem)    
-        print("Len after intersection",len(result))
-        print("Array final:",result)
+        title = folder.replace("../", "").replace("/", "_")
+        print(f'Folder: {title}')
+        print(f'Length after intersection: {len(result)}')
+        print(f'Array final: {result}')
         return result
 
     def _filter_cv_files(self, files):
@@ -61,10 +63,10 @@ class PlotComb:
                 continue
             if float(val) <= 2:
                 traj_2_l.append(k)
-        print("Len before filter:",len(list(row.items())[1:]))
-        print("Array before:",list(row.items())[1:])
-        print("Len after filter:",len(traj_2_l))
-        print("Array after:",traj_2_l)
+        #print("Len before filter:",len(list(row.items())[1:]))
+        #print("Array before:",list(row.items())[1:])
+        #print("Len after filter:",len(traj_2_l))
+        #print("Array after:",traj_2_l)
         return traj_2_l
         
     def read_prop(self, fssh):
@@ -278,6 +280,8 @@ class PlotComb:
             f3.write(f'error 95% confident interval lower_30: {round(100*(err_95_l_30),0)}\n')
             f3.write(f'error 95% confident interval upper_150: {round(100*(err_95_u_150),0)}\n')
             f3.write(f'Trajs - Nans: {int(trajs-nans)}\n')
+            f3.write('--------------------------------------------------------------\n')
+            f3.write(f'Length lower 2 angstrom: {len(filter_2)}\n')
             f3.write('--------------------------------------------------------------')
             f3.close()
         return ave_time, ave_lower, ave_upper, ave_else
@@ -343,7 +347,6 @@ class PlotComb:
         ave_time = []
         ave_para = []
         para_data = []  # Store all parameter values across time steps for each trajectory
-        
         filter_2 = self.filter_files(folder)
         with open(filename, 'r') as fh:
             reader = csv.DictReader(fh)
@@ -652,6 +655,57 @@ class PlotComb:
         plt.subplots_adjust(hspace=.0)
         plt.savefig("number_of_dihe_qy.pdf", bbox_inches='tight')
         plt.savefig("number_of_dihe_qy.png", bbox_inches='tight')
+        plt.close()
+
+    def _2d_histogram(self,hop_10_x,hop_10_y,n_bins, x_type="e_gap", y_type="hcnh"):
+        plt.rcParams['font.size'] = '14'
+        #plt.rcParams['axes.labelpad'] = 9
+        fig = plt.figure()          #create a canvas, tell matplotlib it's 3d
+        ax = fig.add_subplot(111, projection='3d')
+        plt.xlim([self.t_0, self.t_max])
+        bins = [x for x in range(self.t_0, self.t_max+1,int(self.t_max/n_bins))]
+        hist, xedges, yedges = np.histogram2d(hop_10_x,hop_10_y, bins=[bins,bins_1])
+
+        # Construct arrays for the anchor positions of the 16 bars.
+        xpos, ypos = np.meshgrid(xedges[:-1] + 0.25, yedges[:-1] + 0.25, indexing="ij")
+        xpos = xpos.ravel()
+        ypos = ypos.ravel()
+        zpos = 0
+
+        dx = (xedges [1] - xedges [0])/3
+        dy = (yedges [1] - yedges [0])/3
+        dz = hist.flatten()
+
+        xpos_1, ypos_1 = np.meshgrid(xedges_1[:-1] + 0.25 + dx, yedges_1[:-1] - 0.25 - dy, indexing="ij")
+        xpos_1 = xpos_1.ravel()
+        ypos_1 = ypos_1.ravel()
+        zpos_1 = 0
+
+        dx_1 = (xedges_1 [1] - xedges_1 [0])/3
+        dy_1 = (yedges_1 [1] - yedges_1 [0])/3
+        dz_1 = hist_1.flatten()
+
+        #print("10: ",hist, xedges, yedges)
+        #print("10: ",xpos, ypos, zpos, dx, dy, dz)
+        #print("01: ",hist_1, xedges_1, yedges_1)
+        #print("01: ",xpos_1, ypos_1, zpos_1, dx_1, dy_1, dz_1)
+        ax.bar3d(xpos, ypos, zpos, dx, dy, dz, color="green", zsort='max', alpha=0.4, edgecolor='black')
+        green_proxy = plt.Rectangle((0, 0), 1, 1, fc="green")
+        ax.bar3d(xpos_1, ypos_1, zpos_1, dx_1, dy_1, dz_1, color="red", zsort='max', alpha=0.5, edgecolor='black')
+        labels = [r"$S_1$ $\rightarrow$ $S_0$"]
+        ax.legend([green_proxy],labels, loc='upper center', bbox_to_anchor=(0.5, 1.1), prop={'size': 12}, ncol=2)
+        ax.set_xlabel('Energy Gap (eV)', fontsize=12,fontweight = 'bold',rotation=150)
+        ax.set_ylabel('$\mathbf{\sphericalangle H_3C_1N_2H_5(degrees)}$', fontsize=12,fontweight = 'bold')
+        # change fontsize
+        ax.zaxis.set_tick_params(labelsize=12, pad=0)
+        ax.xaxis.set_tick_params(labelsize=12, pad=0)
+        ax.yaxis.set_tick_params(labelsize=12, pad=0)
+        # disable auto rotation
+        ax.zaxis.set_rotate_label(False)
+        ax.set_zlabel('Number of Hops', fontsize=12,fontweight = 'bold', rotation=90, labelpad=0)
+        ax.view_init(30, 230)
+        plt.savefig("number_of_hops_ene_dihe.pdf", bbox_inches='tight', pad_inches = 0.4)
+        plt.savefig("number_of_hops_ene_dihe.png", bbox_inches='tight', pad_inches = 0.4)
         plt.close()
 
     def plot_1d_histogram_QY_time(self, xms_caspt2,sa_casscf,sa_oo_vqe,n_bins=16):
@@ -1827,15 +1881,15 @@ if __name__=="__main__":
     #out.print_stat(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_torsion_ave(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_torsion_ave_qy(xms_caspt2, sa_casscf, sa_oo_vqe)
-    #out.plot_av_popu_torsion_bend(xms_caspt2, sa_casscf, sa_oo_vqe)
+    ##out.plot_av_popu_torsion_bend(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_variance_noise(noise_sa_oo_vqe)
     #out.plot_av_popu_noise(noise_sa_oo_vqe)
     #out.plot_av_popu_torsion_noise(noise_sa_oo_vqe)
     #out.plot_av_popu_diff_ene(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_one_method_av_popu_diff_ene(method)
-    ##out.get_torsion_qy_ave(xms_caspt2)
-    ##out.get_torsion_qy_ave(sa_oo_vqe)
-    ##out.get_torsion_qy_ave(sa_casscf)
+    out.get_torsion_qy_ave(xms_caspt2)
+    out.get_torsion_qy_ave(sa_oo_vqe)
+    out.get_torsion_qy_ave(sa_casscf)
     #out.get_torsion_qy_ave_2(xms_caspt2)
     #out.get_torsion_qy_ave_2(sa_oo_vqe)
     #out.get_torsion_qy_ave_2(sa_casscf)
@@ -1843,5 +1897,5 @@ if __name__=="__main__":
     #out.plot_total_energy_fitted(noise_sa_oo_vqe)
     #out.energy_diff_slope_vs_dt()
     #out.energy_diff_slope_vs_dt_curve()
-    out.plot_1d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 7)
+    ##out.plot_1d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 7)
     ##out.plot_2d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 7)
