@@ -8,6 +8,7 @@ import numpy as np
 import sys
 import csv
 
+from scipy.interpolate import make_interp_spline
 from pandas import (read_csv, DataFrame)
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
@@ -1278,6 +1279,64 @@ class PlotComb:
         plt.savefig("avg_popu_noise_4.png", bbox_inches='tight')
         plt.close()
 
+    def plot_1d_curves(self, xms_caspt2, sa_casscf, sa_oo_vqe):
+        # Load data for each parameter
+        hop_e = self._hop_10(xms_caspt2, sa_casscf, sa_oo_vqe, "e_gap.dat")
+        hop_d = self._hop_10(xms_caspt2, sa_casscf, sa_oo_vqe, "dihe_2014.dat")
+        hop_a = self._hop_10(xms_caspt2, sa_casscf, sa_oo_vqe, "angle_014.dat")
+        hop_p = self._hop_10(xms_caspt2, sa_casscf, sa_oo_vqe, "pyr_3210.dat")
+        
+        data = [
+            (hop_e, self.bins.ene, 'Energy Gap (eV)', [0, 3], 0, f'(a)'),
+            (hop_d, self.bins.hnch, r'$\mathbf{\sphericalangle H_3C_1N_2H_5}$ (degrees)', [0, 180], 109, f'(b)'),
+            (hop_a, self.bins.hnc, r'$\mathbf{\sphericalangle C_1N_2H_5}$ (degrees)', [0, 180], 111, f'(c)'),
+            (hop_p, self.bins.pyr, 'Pyramidalization (degrees)', [0, 180], 34, f'(d)'),
+        ]
+    
+        plt.rcParams['font.size'] = self.fs_rcParams
+        fig, axs = plt.subplots(2, 2, figsize=(10, 8))
+        fig.supylabel('Distribution of Hops', fontweight='bold', fontsize=18)
+        plt.subplots_adjust(top=0.9, bottom=0.1, left=0.09, right=0.9, hspace=0.2)
+    
+        for ax, (hop, bins, xlabel, xlim, meci, i_label) in zip(axs.flatten(), data):
+            bin_centers = 0.5 * (bins[:-1] + bins[1:])  # Calculate bin centers
+            
+            # Compute counts for each method
+            counts_cas, _ = np.histogram(hop.cas, bins=bins)
+            counts_vqe, _ = np.histogram(hop.vqe, bins=bins)
+    
+            # Smooth curves
+            x_new = np.linspace(bin_centers[0], bin_centers[-1], 300)
+            cas_smooth = make_interp_spline(bin_centers, counts_cas, k=3)(x_new)
+            vqe_smooth = make_interp_spline(bin_centers, counts_vqe, k=3)(x_new)
+    
+            # Plot
+            ax_1, = ax.plot(x_new, cas_smooth, label="", color=self.colors[1], lw=2)
+            ax.scatter(bin_centers, counts_cas, color=self.colors[1], zorder=5)
+    
+            ax_2, = ax.plot(x_new, vqe_smooth, label="", color=self.colors[2], lw=2)
+            ax.scatter(bin_centers, counts_vqe, color=self.colors[2], zorder=5)
+
+    
+            # Set labels and legends
+            ax.text(0.95, 0.95, i_label, transform=ax.transAxes,
+             fontsize=self.f_size, fontweight='bold', va='top', ha='right')
+            ax.set_xlim(xlim)
+            ax.set_xlabel(xlabel, fontsize=self.f_size, fontweight='bold')
+
+            if meci != 0:
+                ax.axvline(meci,label="MECI",linestyle='--', c = 'purple')
+        # Add legend only once
+        axs[0,0].legend([ax_1,ax_2],
+        [self.labels[1], self.labels[2]],
+        loc='upper center', bbox_to_anchor=(1, 1.2),
+        prop={'size': 14}, ncol=2
+        )   
+
+        plt.savefig("number_of_hops_curves.pdf", bbox_inches='tight')
+        plt.savefig("number_of_hops_curves.png", bbox_inches='tight')
+        plt.close()
+
     def plot_1d_histogram_4_plots_S1_S0(self, xms_caspt2, sa_casscf, sa_oo_vqe):
         #e_gap
         hop_e = self._hop_10(xms_caspt2,sa_casscf,sa_oo_vqe,"e_gap.dat")
@@ -1294,7 +1353,7 @@ class PlotComb:
         gs = gridspec.GridSpec(2, 2, height_ratios=[1, 1])
         # the 1st subplot
         ax00 = plt.subplot(gs[0,0])
-        ax00.hist(hop_e.xms, bins = self.bins.ene, ec = self.colors[0], label=self.labels[0] ,fc='none', lw=2)
+        #ax00.hist(hop_e.xms, bins = self.bins.ene, ec = self.colors[0], label=self.labels[0] ,fc='none', lw=2)
         ax00.hist(hop_e.cas, bins = self.bins.ene, ec = self.colors[1], label=self.labels[1] ,fc='none', lw=2)
         ax00.hist(hop_e.vqe, bins = self.bins.ene, ec = self.colors[2], label=self.labels[2] ,fc='none', lw=2)
         ax00.set_xlim([0,3])
@@ -1303,7 +1362,7 @@ class PlotComb:
             
         # the 2nd subplot
         ax01 = plt.subplot(gs[0,1])
-        ax01.hist(hop_d.xms, bins = self.bins.hnch, ec = self.colors[0], label="" ,fc='none', lw=2)
+        #ax01.hist(hop_d.xms, bins = self.bins.hnch, ec = self.colors[0], label="" ,fc='none', lw=2)
         ax01.hist(hop_d.cas, bins = self.bins.hnch, ec = self.colors[1], label="" ,fc='none', lw=2)
         ax01.hist(hop_d.vqe, bins = self.bins.hnch, ec = self.colors[2], label="" ,fc='none', lw=2)
         ax01.set_xlim([0,180])
@@ -1313,7 +1372,7 @@ class PlotComb:
 
         # the 3rd subplot
         ax10 = plt.subplot(gs[1,0])
-        ax10.hist(hop_a.xms, bins = self.bins.hnc, ec = self.colors[0], label="" ,fc='none', lw=2)
+        #ax10.hist(hop_a.xms, bins = self.bins.hnc, ec = self.colors[0], label="" ,fc='none', lw=2)
         ax10.hist(hop_a.cas, bins = self.bins.hnc, ec = self.colors[1], label="" ,fc='none', lw=2)
         ax10.hist(hop_a.vqe, bins = self.bins.hnc, ec = self.colors[2], label="" ,fc='none', lw=2)
         ax10.axvline(111,label="MECI",linestyle='--', c = 'purple')
@@ -1323,7 +1382,7 @@ class PlotComb:
 
         # the 4th subplot
         ax11 = plt.subplot(gs[1,1])
-        ax11.hist(hop_p.xms, bins = self.bins.pyr, ec = self.colors[0], label="" ,fc='none', lw=2)
+        #ax11.hist(hop_p.xms, bins = self.bins.pyr, ec = self.colors[0], label="" ,fc='none', lw=2)
         ax11.hist(hop_p.cas, bins = self.bins.pyr, ec = self.colors[1], label="" ,fc='none', lw=2)
         ax11.hist(hop_p.vqe, bins = self.bins.pyr, ec = self.colors[2], label="" ,fc='none', lw=2)
         ax11.axvline(34,label="MECI",linestyle='--', c = 'purple')
@@ -1859,11 +1918,12 @@ if __name__=="__main__":
     #out.plot_1d_histogram_2_plots_samen(xms_caspt2,sa_casscf,sa_oo_vqe, 8)
     #out.plot_1d_histogram_2_plots_samen_energy(xms_caspt2,sa_casscf,sa_oo_vqe, 20)
     #out.plot_1d_histogram_2_plots_energy(xms_caspt2,sa_casscf,sa_oo_vqe, 31)
+    out.plot_1d_curves(xms_caspt2,sa_casscf,sa_oo_vqe)
     #out.plot_1d_histogram_4_plots_S1_S0(xms_caspt2,sa_casscf,sa_oo_vqe)
     #out.print_stat(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_torsion_ave(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_torsion_ave_qy(xms_caspt2, sa_casscf, sa_oo_vqe)
-    out.plot_av_popu_torsion_bend(xms_caspt2, sa_casscf, sa_oo_vqe)
+    ##out.plot_av_popu_torsion_bend(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_variance_noise(noise_sa_oo_vqe)
     #out.plot_av_popu_noise(noise_sa_oo_vqe)
     #out.plot_av_popu_torsion_noise(noise_sa_oo_vqe)
