@@ -219,9 +219,17 @@ class PlotDB:
         plt.tight_layout()
         plt.subplots_adjust(top=0.9)  # Adjust the top padding as needed
 
+        if len(labels2) > 3:
+            ncol_2 = 3
+        else:
+            ncol_2 = len(labels2) 
+        if len(labels3) > 3:
+            ncol_3 = 3
+        else:
+            ncol_3 = len(labels3) 
         self.ax0.legend(handles1,labels1,loc='upper center', bbox_to_anchor=(0.5, 1.2), prop={'size': 14}, ncol=len(labels1))
-        self.ax1.legend(handles2,labels2,loc='upper center', bbox_to_anchor=(0.5, 2.35), prop={'size': 14}, ncol=len(labels2))
-        self.ax2.legend(handles3,labels3,loc='lower center', bbox_to_anchor=(0.5, -0.4), prop={'size': 14}, ncol=len(labels3))
+        self.ax1.legend(handles2,labels2,loc='upper center', bbox_to_anchor=(0.5, 2.35), prop={'size': 14}, ncol=ncol_2)
+        self.ax2.legend(handles3,labels3,loc='lower center', bbox_to_anchor=(0.5, -0.4), prop={'size': 14}, ncol=ncol_3)
         return self.transition_point,
 
     def plot_energy_angles_vs_time(self):
