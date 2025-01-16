@@ -145,24 +145,24 @@ class Population:
         prob = prop.prob
         mdsteps = prop.mdsteps
         trajs = prop.trajs
-        matrix_2  = np.empty([trajs,mdsteps + 1])*np.nan
+        matrix_2  = np.empty([trajs,mdsteps])*np.nan
         if prob != "lz" and self.model is None:
-            matrix_0  = np.empty([trajs,mdsteps + 1])*np.nan
-            matrix_1  = np.empty([trajs,mdsteps + 1])*np.nan
-            matrix_3  = np.empty([trajs,mdsteps + 1])*np.nan
-            matrix_4  = np.empty([trajs,mdsteps + 1])*np.nan
-            matrix_5  = np.empty([trajs,mdsteps + 1])*np.nan
-            matrix_6  = np.empty([trajs,mdsteps + 1])*np.nan
-            matrix_7  = np.empty([trajs,mdsteps + 1])*np.nan
-            matrix_8  = np.empty([trajs,mdsteps + 1])*np.nan
-            matrix_9  = np.empty([trajs,mdsteps + 1])*np.nan
-            matrix_10 = np.empty([trajs,mdsteps + 1])*np.nan
-            matrix_11 = np.empty([trajs,mdsteps + 1])*np.nan
-            matrix_12 = np.empty([trajs,mdsteps + 1])*np.nan
-            matrix_13 = np.empty([trajs,mdsteps + 1])*np.nan
-            matrix_14 = np.empty([trajs,mdsteps + 1])*np.nan
-            matrix_pyr = np.empty([trajs,mdsteps + 1])*np.nan
-            matrix_dihe = np.empty([trajs,mdsteps + 1])*np.nan
+            matrix_0  = np.empty([trajs,mdsteps])*np.nan
+            matrix_1  = np.empty([trajs,mdsteps])*np.nan
+            matrix_3  = np.empty([trajs,mdsteps])*np.nan
+            matrix_4  = np.empty([trajs,mdsteps])*np.nan
+            matrix_5  = np.empty([trajs,mdsteps])*np.nan
+            matrix_6  = np.empty([trajs,mdsteps])*np.nan
+            matrix_7  = np.empty([trajs,mdsteps])*np.nan
+            matrix_8  = np.empty([trajs,mdsteps])*np.nan
+            matrix_9  = np.empty([trajs,mdsteps])*np.nan
+            matrix_10 = np.empty([trajs,mdsteps])*np.nan
+            matrix_11 = np.empty([trajs,mdsteps])*np.nan
+            matrix_12 = np.empty([trajs,mdsteps])*np.nan
+            matrix_13 = np.empty([trajs,mdsteps])*np.nan
+            matrix_14 = np.empty([trajs,mdsteps])*np.nan
+            matrix_pyr = np.empty([trajs,mdsteps])*np.nan
+            matrix_dihe = np.empty([trajs,mdsteps])*np.nan
         traj = 0
         allowed = self.skip_traj()
         for rootdir, dirs, files in os.walk(rootdir):
@@ -172,6 +172,7 @@ class Population:
                 path = os.path.join(rootdir, subdir)
                 print("Reading database from:",path)
                 db = PySurfDB.load_database(os.path.join(path,self.results), read_only=True)
+                self.time = np.array(db["time"])
                 row = len(np.array(db["currstate"]))
                 for t in range(row):
                     pop = np.array(db["currstate"][t])
@@ -493,12 +494,12 @@ class Population:
         return ave_time, ave_var
 
     def get_all_var(self, var):
-        prop = self.read_prop()
-        dt = prop.dt
+        #prop = self.read_prop()
+        #dt = prop.dt
         var = var.T
         mdsteps, trajs = var.shape
-        print(mdsteps, trajs)
-        time = [m*dt*self.fs for m in range(mdsteps)]
+        #time = [m*dt*self.fs for m in range(mdsteps)]
+        time = [m[0]*self.fs for m in self.time]
         return time, var
 
     #def get_all_var(self):
