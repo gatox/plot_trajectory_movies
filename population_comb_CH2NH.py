@@ -653,8 +653,8 @@ class PlotComb:
         
         # remove vertical gap between subplots
         plt.subplots_adjust(hspace=.0)
-        plt.savefig("number_of_dihe_qy.pdf", bbox_inches='tight')
-        plt.savefig("number_of_dihe_qy.png", bbox_inches='tight')
+        plt.savefig("number_of_dihe_qy_2.pdf", bbox_inches='tight')
+        plt.savefig("number_of_dihe_qy_2.png", bbox_inches='tight')
         plt.close()
 
     def _2d_histogram(self,hop_10_x,hop_10_y,n_bins, x_type="e_gap", y_type="hcnh"):
@@ -735,8 +735,8 @@ class PlotComb:
         ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.15), prop={'size': 12}, ncol=3)
         
         # Save and close the plot
-        plt.savefig("number_of_dihe_qy.pdf", bbox_inches='tight')
-        plt.savefig("number_of_dihe_qy.png", bbox_inches='tight')
+        plt.savefig("number_of_dihe_qy_1.pdf", bbox_inches='tight')
+        plt.savefig("number_of_dihe_qy_1.png", bbox_inches='tight')
         plt.close()
 
     def plot_1d_histogram_2_plots(self, xms_caspt2,sa_casscf,sa_oo_vqe,n_bins=16):
@@ -1887,9 +1887,9 @@ if __name__=="__main__":
     #out.plot_av_popu_torsion_noise(noise_sa_oo_vqe)
     #out.plot_av_popu_diff_ene(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_one_method_av_popu_diff_ene(method)
-    out.get_torsion_qy_ave(xms_caspt2)
-    out.get_torsion_qy_ave(sa_oo_vqe)
-    out.get_torsion_qy_ave(sa_casscf)
+    #out.get_torsion_qy_ave(xms_caspt2)
+    #out.get_torsion_qy_ave(sa_oo_vqe)
+    #out.get_torsion_qy_ave(sa_casscf)
     #out.get_torsion_qy_ave_2(xms_caspt2)
     #out.get_torsion_qy_ave_2(sa_oo_vqe)
     #out.get_torsion_qy_ave_2(sa_casscf)
@@ -1897,5 +1897,5 @@ if __name__=="__main__":
     #out.plot_total_energy_fitted(noise_sa_oo_vqe)
     #out.energy_diff_slope_vs_dt()
     #out.energy_diff_slope_vs_dt_curve()
-    ##out.plot_1d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 7)
-    ##out.plot_2d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 7)
+    #out.plot_1d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 7)
+    out.plot_2d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 7)
