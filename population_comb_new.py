@@ -48,9 +48,13 @@ class PlotComb:
             if elem in file_2 and elem in file_3:
                 result.append(elem)    
         title = folder.replace("../", "").replace("/", "_")
-        #print(f'Folder: {title}')
-        #print(f'Length after intersection: {len(result)}')
-        #print(f'Array final: {result}')
+        with open(f'filter_trajectories_{title}.out', 'w') as f1:
+            f1.write('--------------------------------------------------------------\n')
+            f1.write(f'Folder: {title}\n')
+            f1.write(f'Number of trajt. after filter: {len(result)}\n')
+            f1.write(f'Array final: {result}\n')
+            f1.write('--------------------------------------------------------------')
+            f1.close() 
         return result
 
     def _filter_cv_files(self, files):
@@ -438,7 +442,7 @@ class PlotComb:
         return ave_time, ave_torsion, torsion_std
 
     def get_popu_adi(self, fssh, filename):
-        filter_name = filename.replace("pop.dat","")
+        filter_name = filename.replace("/pop.dat","")
         prop = self.read_prop(filter_name)
         states = prop.states
         nstates = prop.nstates
@@ -1236,27 +1240,22 @@ class PlotComb:
         with open(f'ci_noise_linear_regression_{title}.out', 'w') as f3:
             f3.write('--------------------------------------------------------------\n')
             f3.write(f'Folder: {title}\n')
-            f3.write(f'Number of Trajs no noise: {len(time_0)}\n')
             f3.write(f'a_00_mean: {a_0}\n')
             f3.write(f'b_00_mean: {b_0}\n')
             f3.write(f'a_00_error: {bs_error_95_0[0]}\n')
             f3.write(f'b_00_error: {bs_error_95_0[1]}\n')
-            f3.write(f'Number of Trajs 08: {len(time_1)}\n')
             f3.write(f'a_08_mean: {a_1}\n')
             f3.write(f'b_08_mean: {b_1}\n')
             f3.write(f'a_08_error: {bs_error_95_1[0]}\n')
             f3.write(f'b_08_error: {bs_error_95_1[1]}\n')
-            f3.write(f'Number of Trajs 07: {len(time_2)}\n')
             f3.write(f'a_07_mean: {a_2}\n')
             f3.write(f'b_07_mean: {b_2}\n')
             f3.write(f'a_07_error: {bs_error_95_2[0]}\n')
             f3.write(f'b_07_error: {bs_error_95_2[1]}\n')
-            f3.write(f'Number of Trajs 06: {len(time_3)}\n')
             f3.write(f'a_06_mean: {a_3}\n')
             f3.write(f'b_06_mean: {b_3}\n')
             f3.write(f'a_06_error: {bs_error_95_3[0]}\n')
             f3.write(f'b_06_error: {bs_error_95_3[1]}\n')
-            f3.write(f'Number of Trajs 05: {len(time_4)}\n')
             f3.write(f'a_05_mean: {a_4}\n')
             f3.write(f'b_05_mean: {b_4}\n')
             f3.write(f'a_05_error: {bs_error_95_4[0]}\n')
