@@ -1113,19 +1113,19 @@ class PlotComb:
         time_3, noise_3, std_3 = self.get_noise_ave(folder,'variance_06/etot.dat')
         time_4, noise_4, std_4 = self.get_noise_ave(folder,'variance_05/etot.dat')
         #fitted
-        params_0, bs_error_95_0 = self.confidence_interval_95_bootstrap(linear_total_energy,time_0, noise_0)
+        params_0, bs_error_95_0 = self.confidence_interval_95_bootstrap(self.linear_total_energy,time_0, noise_0)
         a_0 = params_0[0]
         b_0 = params_0[1]
-        params_1, bs_error_95_1 = self.confidence_interval_95_bootstrap(linear_total_energy,time_1, noise_1)
+        params_1, bs_error_95_1 = self.confidence_interval_95_bootstrap(self.linear_total_energy,time_1, noise_1)
         a_1 = params_1[0]
         b_1 = params_1[1]
-        params_2, bs_error_95_2 = self.confidence_interval_95_bootstrap(linear_total_energy,time_2, noise_2)
+        params_2, bs_error_95_2 = self.confidence_interval_95_bootstrap(self.linear_total_energy,time_2, noise_2)
         a_2 = params_2[0]
         b_2 = params_2[1]
-        params_3, bs_error_95_3 = self.confidence_interval_95_bootstrap(linear_total_energy,time_3, noise_3)
+        params_3, bs_error_95_3 = self.confidence_interval_95_bootstrap(self.linear_total_energy,time_3, noise_3)
         a_3 = params_3[0]
         b_3 = params_3[1]
-        params_4, bs_error_95_4 = self.confidence_interval_95_bootstrap(linear_total_energy,time_4, noise_4)
+        params_4, bs_error_95_4 = self.confidence_interval_95_bootstrap(self.linear_total_energy,time_4, noise_4)
         a_4 = params_4[0]
         b_4 = params_4[1]
         plt.rcParams['font.size'] = self.fs_rcParams
@@ -1871,16 +1871,16 @@ class PlotComb:
         #    time_2, noise_2, std_2 = self.get_noise_ave(folder,'variance_06/etot.dat')
         #    time_3, noise_3, std_3 = self.get_noise_ave(folder,'variance_00/etot.dat')
         #    #fitted
-        #    params_0, bs_error_95_0 = self.confidence_interval_95_bootstrap(linear_total_energy,time_0, noise_0)
+        #    params_0, bs_error_95_0 = self.confidence_interval_95_bootstrap(self.linear_total_energy,time_0, noise_0)
         #    a_0 = params_0[0]
         #    b_0 = params_0[1]
-        #    params_1, bs_error_95_1 = self.confidence_interval_95_bootstrap(linear_total_energy,time_1, noise_1)
+        #    params_1, bs_error_95_1 = self.confidence_interval_95_bootstrap(self.linear_total_energy,time_1, noise_1)
         #    a_1 = params_1[0]
         #    b_1 = params_1[1]
-        #    params_2, bs_error_95_2 = self.confidence_interval_95_bootstrap(linear_total_energy,time_2, noise_2)
+        #    params_2, bs_error_95_2 = self.confidence_interval_95_bootstrap(self.linear_total_energy,time_2, noise_2)
         #    a_2 = params_2[0]
         #    b_2 = params_2[1]
-        #    params_3, bs_error_95_3 = self.confidence_interval_95_bootstrap(linear_total_energy,time_3, noise_3)
+        #    params_3, bs_error_95_3 = self.confidence_interval_95_bootstrap(self.linear_total_energy,time_3, noise_3)
         #    a_3 = params_3[0]
         #    b_3 = params_3[1]
         sl_025 = [0.0007329738307754767,0.0007255966508638325,0.000853636977203613,0.005424441916756572]
