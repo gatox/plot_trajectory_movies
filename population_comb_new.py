@@ -48,9 +48,9 @@ class PlotComb:
             if elem in file_2 and elem in file_3:
                 result.append(elem)    
         title = folder.replace("../", "").replace("/", "_")
-        print(f'Folder: {title}')
-        print(f'Length after intersection: {len(result)}')
-        print(f'Array final: {result}')
+        #print(f'Folder: {title}')
+        #print(f'Length after intersection: {len(result)}')
+        #print(f'Array final: {result}')
         return result
 
     def _filter_cv_files(self, files):
@@ -174,7 +174,7 @@ class PlotComb:
                     else:
                         ave_upper.append(ref/int(trajs-nans))
                     if lower_50 != 0:
-                        print(lower_50, nans)
+                        #print(lower_50, nans)
                         ave_lower.append(ref_non_r/int(lower_50-nans))
                     else:
                         ave_lower.append(ref/int(trajs-nans))
@@ -839,6 +839,36 @@ class PlotComb:
         para = namedtuple("para","t_cas av_cas std_cas t_vqe av_vqe std_vqe") 
         return para(time_cas,ave_cas,std_cas,time_vqe,ave_vqe,std_vqe)
 
+    def plot_population_adi_fitted(self, folder):
+        title = folder.replace('../','')
+        #popu
+        time, population = self.get_popu_adi(folder,os.path.join(folder,"pop.dat"))
+        params_S1, cv_S1 = curve_fit(self.monoexponetial_S1, time, np.array(population)[:,1])
+        S1_t_d = params_S1[0]
+        S1_t_e = params_S1[1]
+        plt.plot(time,np.array(population)[:,1], label = '$S_1$')
+        plt.plot(time, self.monoexponetial_S1(time, S1_t_d, S1_t_e), '--', label="fitted S1")
+        plt.xlim([0, 200])
+        plt.ylim([-0.05, 1.05])
+        plt.xlabel('Time (fs)', fontweight = 'bold', fontsize = 16)
+        plt.ylabel('$\mathbf{Population}$', fontsize = 16)
+        plt.legend(loc='center right',fontsize=15)
+        #plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+        plt.savefig(f"population_adi_fitted_{title}.pdf", bbox_inches='tight')
+        plt.savefig(f"population_adi_fitted_{title}.png", bbox_inches='tight')
+        plt.close()
+
+        conf_S1, error_S1 = self.confidence_interval_95_bootstrap(self.monoexponetial_S1,np.array(time),np.array(population)[:,1]) 
+            
+        with open(f'time_d_e_{title}.out','w') as f2:
+            f2.write(f'--------------------------------------------------------------\n')
+            f2.write(f't_d_S1_mean: {conf_S1[0]:>0.3f}\n')
+            f2.write(f't_e_S1_mean: {conf_S1[1]:>0.3f}\n')
+            f2.write(f't_e_S1_error: {error_S1[0]:>0.3f}\n')
+            f2.write(f't_e_S1_error: {error_S1[1]:>0.3f}\n')
+            f2.write('--------------------------------------------------------------')
+            f2.close() 
+
     def plot_av_popu_torsion_bend(self, xms_caspt2, sa_casscf, sa_oo_vqe):
         #popu
         time_1, population_1 = self.get_popu_adi(sa_casscf,os.path.join(sa_casscf,"pop.dat"))
@@ -1083,19 +1113,19 @@ class PlotComb:
         time_3, noise_3, std_3 = self.get_noise_ave(folder,'variance_06/etot.dat')
         time_4, noise_4, std_4 = self.get_noise_ave(folder,'variance_05/etot.dat')
         #fitted
-        params_0, bs_error_95_0 = self.confidence_interval_95_bootstrap(time_0, noise_0)
+        params_0, bs_error_95_0 = self.confidence_interval_95_bootstrap(linear_total_energy,time_0, noise_0)
         a_0 = params_0[0]
         b_0 = params_0[1]
-        params_1, bs_error_95_1 = self.confidence_interval_95_bootstrap(time_1, noise_1)
+        params_1, bs_error_95_1 = self.confidence_interval_95_bootstrap(linear_total_energy,time_1, noise_1)
         a_1 = params_1[0]
         b_1 = params_1[1]
-        params_2, bs_error_95_2 = self.confidence_interval_95_bootstrap(time_2, noise_2)
+        params_2, bs_error_95_2 = self.confidence_interval_95_bootstrap(linear_total_energy,time_2, noise_2)
         a_2 = params_2[0]
         b_2 = params_2[1]
-        params_3, bs_error_95_3 = self.confidence_interval_95_bootstrap(time_3, noise_3)
+        params_3, bs_error_95_3 = self.confidence_interval_95_bootstrap(linear_total_energy,time_3, noise_3)
         a_3 = params_3[0]
         b_3 = params_3[1]
-        params_4, bs_error_95_4 = self.confidence_interval_95_bootstrap(time_4, noise_4)
+        params_4, bs_error_95_4 = self.confidence_interval_95_bootstrap(linear_total_energy,time_4, noise_4)
         a_4 = params_4[0]
         b_4 = params_4[1]
         plt.rcParams['font.size'] = self.fs_rcParams
@@ -1157,19 +1187,19 @@ class PlotComb:
         ax2r.set_ylim([-2.37, 2.37])
         ax2r.yaxis.set_major_locator(ticker.MultipleLocator(0.3))
         ax2r.tick_params(labelsize=self.fs_rcParams)
-        # Plot the standard deviation (shaded area)
-        ax2.fill_between(time_0, np.array(noise_0) - np.array(std_0),
-                         np.array(noise_0) + np.array(std_0), alpha=0.3, color = self.n_colors[0], linestyle='-', edgecolor=self.n_colors[0])
-        ax2.fill_between(time_1, np.array(noise_1) - np.array(std_1),
-                         np.array(noise_1) + np.array(std_1), alpha=0.3, color = self.n_colors[1], linestyle='--', edgecolor=self.n_colors[1])
-        ax2.fill_between(time_2, np.array(noise_2) - np.array(std_2),
-                         np.array(noise_2) + np.array(std_2), alpha=0.3, color = self.n_colors[2], linestyle=':', edgecolor=self.n_colors[2])
-        ax2.fill_between(time_3, np.array(noise_3) - np.array(std_3),
-                         np.array(noise_3) + np.array(std_3), alpha=0.3, color = self.n_colors[3], linestyle='-.', edgecolor=self.n_colors[1])
-        ax2.fill_between(time_4, np.array(noise_4) - np.array(std_4),
-                         np.array(noise_4) + np.array(std_4), alpha=0.3, color = self.n_colors[4], linestyle=(0, (1, 1)), edgecolor=self.n_colors[2])
+        ## Plot the standard deviation (shaded area)
+        #ax2.fill_between(time_0, np.array(noise_0) - np.array(std_0),
+        #                 np.array(noise_0) + np.array(std_0), alpha=0.3, color = self.n_colors[0], linestyle='-', edgecolor=self.n_colors[0])
+        #ax2.fill_between(time_1, np.array(noise_1) - np.array(std_1),
+        #                 np.array(noise_1) + np.array(std_1), alpha=0.3, color = self.n_colors[1], linestyle='--', edgecolor=self.n_colors[1])
+        #ax2.fill_between(time_2, np.array(noise_2) - np.array(std_2),
+        #                 np.array(noise_2) + np.array(std_2), alpha=0.3, color = self.n_colors[2], linestyle=':', edgecolor=self.n_colors[2])
+        #ax2.fill_between(time_3, np.array(noise_3) - np.array(std_3),
+        #                 np.array(noise_3) + np.array(std_3), alpha=0.3, color = self.n_colors[3], linestyle='-.', edgecolor=self.n_colors[1])
+        #ax2.fill_between(time_4, np.array(noise_4) - np.array(std_4),
+        #                 np.array(noise_4) + np.array(std_4), alpha=0.3, color = self.n_colors[4], linestyle=(0, (1, 1)), edgecolor=self.n_colors[2])
         # Plot linear equation with fitted data
-        sig = "+"
+        #sig = "+"
         ax2.plot(time_0, self.linear_total_energy(time_0, a_0, b_0), '--', color = "orange", label=f"$\Delta T.E. = {a_0:.5f}t {'+' if b_0 >= 0 else ''}{b_0:.5f}$")
         ax2.plot(time_1, self.linear_total_energy(time_1, a_1, b_1), '--', color = "green", label=f"$\Delta T.E. = {a_1:.5f}t {'+' if b_1 >= 0 else ''}{b_1:.5f}$")
         ax2.plot(time_2, self.linear_total_energy(time_2, a_2, b_2), '--', color = "red", label=f"$\Delta T.E. = {a_2:.5f}t {'+' if b_2 >= 0 else ''}{b_2:.5f}$")
@@ -1206,22 +1236,27 @@ class PlotComb:
         with open(f'ci_noise_linear_regression_{title}.out', 'w') as f3:
             f3.write('--------------------------------------------------------------\n')
             f3.write(f'Folder: {title}\n')
+            f3.write(f'Number of Trajs no noise: {len(time_0)}\n')
             f3.write(f'a_00_mean: {a_0}\n')
             f3.write(f'b_00_mean: {b_0}\n')
             f3.write(f'a_00_error: {bs_error_95_0[0]}\n')
             f3.write(f'b_00_error: {bs_error_95_0[1]}\n')
+            f3.write(f'Number of Trajs 08: {len(time_1)}\n')
             f3.write(f'a_08_mean: {a_1}\n')
             f3.write(f'b_08_mean: {b_1}\n')
             f3.write(f'a_08_error: {bs_error_95_1[0]}\n')
             f3.write(f'b_08_error: {bs_error_95_1[1]}\n')
+            f3.write(f'Number of Trajs 07: {len(time_2)}\n')
             f3.write(f'a_07_mean: {a_2}\n')
             f3.write(f'b_07_mean: {b_2}\n')
             f3.write(f'a_07_error: {bs_error_95_2[0]}\n')
             f3.write(f'b_07_error: {bs_error_95_2[1]}\n')
+            f3.write(f'Number of Trajs 06: {len(time_3)}\n')
             f3.write(f'a_06_mean: {a_3}\n')
             f3.write(f'b_06_mean: {b_3}\n')
             f3.write(f'a_06_error: {bs_error_95_3[0]}\n')
             f3.write(f'b_06_error: {bs_error_95_3[1]}\n')
+            f3.write(f'Number of Trajs 05: {len(time_4)}\n')
             f3.write(f'a_05_mean: {a_4}\n')
             f3.write(f'b_05_mean: {b_4}\n')
             f3.write(f'a_05_error: {bs_error_95_4[0]}\n')
@@ -1655,11 +1690,13 @@ class PlotComb:
         plt.savefig("torsion_ave_comb_std.png", bbox_inches='tight')
         plt.close()
 
+    def monoexponetial_S1(self, t, t_d, t_e):
+        return np.exp(-(t -t_d)/t_e)
+
     def linear_total_energy(self, t, a, b):
         return a*t + b
 
-    def confidence_interval_95_bootstrap(self, t_data, data):
-        params_0, cv_noise_0 = curve_fit(self.linear_total_energy, t_data, data)
+    def confidence_interval_95_bootstrap(self, function, t_data, data):
         # Number of bootstrap samples
         num_bootstrap_samples = 1000
         
@@ -1675,7 +1712,7 @@ class PlotComb:
             bootstrap_data = data[bootstrap_indices]
 
             # Perform monoexponential fit
-            data_f, _ = curve_fit(self.linear_total_energy, bootstrap_t, bootstrap_data)
+            data_f, _ = curve_fit(function, bootstrap_t, bootstrap_data)
 
             # Store bootstrap estimates
             bootstrap_a[i] = data_f[0]
@@ -1834,16 +1871,16 @@ class PlotComb:
         #    time_2, noise_2, std_2 = self.get_noise_ave(folder,'variance_06/etot.dat')
         #    time_3, noise_3, std_3 = self.get_noise_ave(folder,'variance_00/etot.dat')
         #    #fitted
-        #    params_0, bs_error_95_0 = self.confidence_interval_95_bootstrap(time_0, noise_0)
+        #    params_0, bs_error_95_0 = self.confidence_interval_95_bootstrap(linear_total_energy,time_0, noise_0)
         #    a_0 = params_0[0]
         #    b_0 = params_0[1]
-        #    params_1, bs_error_95_1 = self.confidence_interval_95_bootstrap(time_1, noise_1)
+        #    params_1, bs_error_95_1 = self.confidence_interval_95_bootstrap(linear_total_energy,time_1, noise_1)
         #    a_1 = params_1[0]
         #    b_1 = params_1[1]
-        #    params_2, bs_error_95_2 = self.confidence_interval_95_bootstrap(time_2, noise_2)
+        #    params_2, bs_error_95_2 = self.confidence_interval_95_bootstrap(linear_total_energy,time_2, noise_2)
         #    a_2 = params_2[0]
         #    b_2 = params_2[1]
-        #    params_3, bs_error_95_3 = self.confidence_interval_95_bootstrap(time_3, noise_3)
+        #    params_3, bs_error_95_3 = self.confidence_interval_95_bootstrap(linear_total_energy,time_3, noise_3)
         #    a_3 = params_3[0]
         #    b_3 = params_3[1]
         sl_025 = [0.0007329738307754767,0.0007255966508638325,0.000853636977203613,0.005424441916756572]
@@ -1934,7 +1971,7 @@ if __name__=="__main__":
     xms_caspt2 = "../xms_caspt2"
     sa_oo_vqe = "../sa_oo_vqe"
     sa_casscf = "../sa_casscf"
-    noise_sa_oo_vqe_050 = "../noise_sa_oo_vqe_050"
+    #noise_sa_oo_vqe_050 = "../noise_sa_oo_vqe_050"
     #noise_sa_oo_vqe_025 = "../noise_sa_oo_vqe_025"
     #noise_sa_oo_vqe_012 = "../noise_sa_oo_vqe_012"
     #noise_sa_oo_vqe_007 = "../noise_sa_oo_vqe_007"
@@ -1955,14 +1992,15 @@ if __name__=="__main__":
     #out.print_stat(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_torsion_ave(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_torsion_ave_qy(xms_caspt2, sa_casscf, sa_oo_vqe)
+    #out.plot_population_adi_fitted(sa_casscf)
+    #out.plot_population_adi_fitted(sa_oo_vqe)
     #out.plot_av_popu_torsion_bend(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_variance_noise(noise_sa_oo_vqe)
     #out.plot_av_popu_noise(noise_sa_oo_vqe)
     ##noise
-    ##out.plot_av_popu_torsion_noise(noise_sa_oo_vqe_050)
-    #out.plot_av_popu_torsion_noise(noise_sa_oo_vqe_025)
-    #out.plot_av_popu_torsion_noise(noise_sa_oo_vqe_012)
-    #out.plot_av_popu_torsion_noise(noise_sa_oo_vqe_007)
+    for i in ["007","012","025","050"]:
+        folder = "../noise_sa_oo_vqe_" + i
+        out.plot_av_popu_torsion_noise(folder)
     ##noise
     #out.plot_av_popu_diff_ene(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_one_method_av_popu_diff_ene(method)
@@ -1975,6 +2013,6 @@ if __name__=="__main__":
     #out.get_torsion_qy_ave_noise(noise_sa_oo_vqe)
     #out.plot_total_energy_fitted(noise_sa_oo_vqe)
     #out.energy_diff_slope_vs_dt()
-    out.energy_diff_slope_vs_dt_curve()
-    #out.plot_1d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 7)
+    ##out.energy_diff_slope_vs_dt_curve()
+    ##out.plot_1d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 7)
     ##out.plot_2d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 7)
