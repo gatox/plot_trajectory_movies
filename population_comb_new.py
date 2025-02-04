@@ -40,9 +40,9 @@ class PlotComb:
         self.bins = bins(bins_ene,bins_hnch,bins_hnc,bins_pyr)
 
     def filter_files(self, folder):
-        file_1 = self._filter_cv_files(os.path.join(folder,"dis_r25.dat")) #NH
-        file_2 = self._filter_cv_files(os.path.join(folder,"dis_r13.dat")) #CH
-        file_3 = self._filter_cv_files(os.path.join(folder,"dis_r14.dat")) #CH
+        file_1, nan_traj, val_traj, all_traj = self._filter_cv_files(os.path.join(folder,"dis_r25.dat")) #NH
+        file_2, , , = self._filter_cv_files(os.path.join(folder,"dis_r13.dat")) #CH
+        file_3, , , = self._filter_cv_files(os.path.join(folder,"dis_r14.dat")) #CH
         result = []
         for elem in file_1:
             if elem in file_2 and elem in file_3:
@@ -51,6 +51,11 @@ class PlotComb:
         with open(f'filter_trajectories_{title}.out', 'w') as f1:
             f1.write('--------------------------------------------------------------\n')
             f1.write(f'Folder: {title}\n')
+            f1.write(f'Number of all trajt: {len(all_traj)}\n')
+            f1.write(f'Number of val trajt: {len(val_traj)}\n')
+            f1.write(f'Array val traj: {val_traj}\n')
+            f1.write(f'Number of val trajt: {len(nan_traj)}\n')
+            f1.write(f'Array nan traj: {nan_traj}\n')
             f1.write(f'Number of trajt. after filter: {len(result)}\n')
             f1.write(f'Array final: {result}\n')
             f1.write('--------------------------------------------------------------')
@@ -58,22 +63,33 @@ class PlotComb:
         return result
 
     def _filter_cv_files(self, files):
-        traj_2_l = []
+        traj_2_l = []  # Stores columns where value <= 2
+        nan_trajs = []  # Stores columns that contain NaN values
+        all_trajs = []
         with open(files, 'r') as fh:
             reader = csv.DictReader(fh)
+            last_row = None  # Store the last row
             for row in reader:
-                pass
-        for k, val in row.items():
-            if k == 'time':
-                continue
-            if float(val) <= 2:
-                traj_2_l.append(k)
-        #print("Len before filter:",len(list(row.items())[1:]))
-        #print("Array before:",list(row.items())[1:])
-        #print("Len after filter:",len(traj_2_l))
-        #print("Array after:",traj_2_l)
-        return traj_2_l
-        
+                last_row = row  # Keep updating last_row with the latest row
+        if last_row:  # Ensure the file was not empty
+            for k, val in last_row.items():
+                if k == 'time':
+                    continue
+                all_trajs.append(k) # Store all trajectories
+
+                # Check for NaN values (handles 'nan' strings and non-numeric values)
+                if val.strip().lower() == 'nan' or not val.replace('.', '', 1).isdigit():
+                    nan_trajs.append(k)  # Store trajectory with NaN
+                    continue  # Skip further processing for this column
+
+                if float(val) <= 2:
+                    traj_2_l.append(k)
+
+            # Compute valid trajectories without NaN values
+        valid_trajs_no_nan = list(set(all_trajs) - set(nan_trajs))
+
+        return traj_2_l, nan_trajs, valid_trajs_no_nan, all_traj
+
     def read_prop(self, fssh):
         #LVC
         spp = open(os.path.join(fssh,"spp.inp"), 'r+')
