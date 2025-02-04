@@ -8,6 +8,7 @@ import numpy as np
 import sys
 import csv
 
+from scipy.interpolate import make_interp_spline
 from pandas import (read_csv, DataFrame)
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
@@ -25,7 +26,7 @@ class PlotComb:
         self.f_size = '11'
         self.t_0 = t_0
         self.colors = plt.rcParams['axes.prop_cycle'].by_key()['color'][:3] 
-        self.n_colors = ["purple","gold","olive"] 
+        self.n_colors = [self.colors[2],"purple","gold","olive","blue"] 
         self.labels = ["XMS-CASPT2","SA-CASSCF","SA-OO-VQE"]
         self.t_max = t_max
         # Define bins
@@ -47,9 +48,13 @@ class PlotComb:
             if elem in file_2 and elem in file_3:
                 result.append(elem)    
         title = folder.replace("../", "").replace("/", "_")
-        print(f'Folder: {title}')
-        print(f'Length after intersection: {len(result)}')
-        print(f'Array final: {result}')
+        with open(f'filter_trajectories_{title}.out', 'w') as f1:
+            f1.write('--------------------------------------------------------------\n')
+            f1.write(f'Folder: {title}\n')
+            f1.write(f'Number of trajt. after filter: {len(result)}\n')
+            f1.write(f'Array final: {result}\n')
+            f1.write('--------------------------------------------------------------')
+            f1.close() 
         return result
 
     def _filter_cv_files(self, files):
@@ -173,7 +178,7 @@ class PlotComb:
                     else:
                         ave_upper.append(ref/int(trajs-nans))
                     if lower_50 != 0:
-                        print(lower_50, nans)
+                        #print(lower_50, nans)
                         ave_lower.append(ref_non_r/int(lower_50-nans))
                     else:
                         ave_lower.append(ref/int(trajs-nans))
@@ -376,13 +381,15 @@ class PlotComb:
         ave_time = []
         ave_noise = []
         noise_data = []  # Store all noise values across time steps for each trajectory
+        filter_name = noise.split('/')[0]
+        filter_2 = self.filter_files(os.path.join(folder, filter_name))
         with open(filename, 'r') as fh:
             reader = csv.DictReader(fh)
             for row in reader:
                 ave_time.append(float(row['time']))
                 noise_vals = []
                 for k, val in row.items():
-                    if k == 'time':
+                    if k == 'time' or k not in filter_2:
                         continue
                     if val != 'nan' and not "etot" in noise:  # Only consider valid (non-'nan') values
                         noise_vals.append(abs(float(val)))
@@ -435,12 +442,13 @@ class PlotComb:
         return ave_time, ave_torsion, torsion_std
 
     def get_popu_adi(self, fssh, filename):
-        prop = self.read_prop(fssh)
+        filter_name = filename.replace("/pop.dat","")
+        prop = self.read_prop(filter_name)
         states = prop.states
         nstates = prop.nstates
         ave_time = []
         ave_popu = []
-        filter_2 = self.filter_files(fssh)
+        filter_2 = self.filter_files(filter_name)
         with open(filename, 'r') as fh:
             reader = csv.DictReader(fh)
             for row in reader:
@@ -598,11 +606,9 @@ class PlotComb:
 
     def plot_2d_histogram_QY_time(self, xms_caspt2,sa_casscf,sa_oo_vqe,n_bins=16):
         #Grond state
-        tor_0_0 = self.get_histogram_qy(xms_caspt2,0)
         tor_1_0 = self.get_histogram_qy(sa_casscf,0)
         tor_2_0 = self.get_histogram_qy(sa_oo_vqe,0)
         #First state
-        tor_0_1 = self.get_histogram_qy(xms_caspt2,1)
         tor_1_1 = self.get_histogram_qy(sa_casscf,1)
         tor_2_1 = self.get_histogram_qy(sa_oo_vqe,1)
         bins = np.linspace(0, 180, n_bins) 
@@ -612,7 +618,6 @@ class PlotComb:
         gs = gridspec.GridSpec(2, 1, height_ratios=[1, 1])
         # the first subplot
         ax0 = plt.subplot(gs[0])
-        ax0.hist(tor_0_1, bins=bins, ec=self.colors[0], label=self.labels[0], fc='none', lw=2)
         ax0.hist(tor_1_1, bins=bins, ec=self.colors[1], label=self.labels[1], fc='none', lw=2)
         ax0.hist(tor_2_1, bins=bins, ec=self.colors[2], label=self.labels[2], fc='none', lw=2)
         
@@ -627,7 +632,6 @@ class PlotComb:
         # the second subplot
         # shared axis X
         ax1 = plt.subplot(gs[1], sharex = ax0)
-        ax1.hist(tor_0_0, bins=bins, ec=self.colors[0], label=self.labels[0], fc='none', lw=2)
         ax1.hist(tor_1_0, bins=bins, ec=self.colors[1], label=self.labels[1], fc='none', lw=2)
         ax1.hist(tor_2_0, bins=bins, ec=self.colors[2], label=self.labels[2], fc='none', lw=2)
 
@@ -709,7 +713,6 @@ class PlotComb:
         plt.close()
 
     def plot_1d_histogram_QY_time(self, xms_caspt2,sa_casscf,sa_oo_vqe,n_bins=16):
-        tor_0_0 = self.get_histogram_qy(xms_caspt2,0)
         tor_1_0 = self.get_histogram_qy(sa_casscf,0)
         tor_2_0 = self.get_histogram_qy(sa_oo_vqe,0)
         bins = np.linspace(0, 180, n_bins) 
@@ -719,7 +722,6 @@ class PlotComb:
         plt.rcParams['font.size'] = self.fs_rcParams
         
         # Plot histograms on the axis
-        ax.hist(tor_0_0, bins=bins, ec=self.colors[0], label=self.labels[0], fc='none', lw=2)
         ax.hist(tor_1_0, bins=bins, ec=self.colors[1], label=self.labels[1], fc='none', lw=2)
         ax.hist(tor_2_0, bins=bins, ec=self.colors[2], label=self.labels[2], fc='none', lw=2)
         
@@ -835,24 +837,52 @@ class PlotComb:
         para = namedtuple("para","t_met av_met std_met") 
         return para(time_met,ave_met,std_met)
 
-    def _para(self, xms_caspt2, sa_casscf, sa_oo_vqe, data):
-        time_xms, ave_xms, std_xms = self.get_parameter_ave(xms_caspt2, data)
+    def _para(self, sa_casscf, sa_oo_vqe, data):
         time_cas, ave_cas, std_cas = self.get_parameter_ave(sa_casscf, data)
         time_vqe, ave_vqe, std_vqe = self.get_parameter_ave(sa_oo_vqe, data)
-        para = namedtuple("para","t_xms av_xms std_xms t_cas av_cas std_cas t_vqe av_vqe std_vqe") 
-        return para(time_xms,ave_xms,std_xms,time_cas,ave_cas,std_cas,time_vqe,ave_vqe,std_vqe)
+        para = namedtuple("para","t_cas av_cas std_cas t_vqe av_vqe std_vqe") 
+        return para(time_cas,ave_cas,std_cas,time_vqe,ave_vqe,std_vqe)
+
+    def plot_population_adi_fitted(self, folder):
+        title = folder.replace('../','')
+        #popu
+        time, population = self.get_popu_adi(folder,os.path.join(folder,"pop.dat"))
+        params_S1, cv_S1 = curve_fit(self.monoexponetial_S1, time, np.array(population)[:,1])
+        S1_t_d = params_S1[0]
+        S1_t_e = params_S1[1]
+        plt.plot(time,np.array(population)[:,1], label = '$S_1$')
+        plt.plot(time, self.monoexponetial_S1(time, S1_t_d, S1_t_e), '--', label="fitted S1")
+        plt.xlim([0, 200])
+        plt.ylim([-0.05, 1.05])
+        plt.xlabel('Time (fs)', fontweight = 'bold', fontsize = 16)
+        plt.ylabel('$\mathbf{Population}$', fontsize = 16)
+        plt.legend(loc='center right',fontsize=15)
+        #plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+        plt.savefig(f"population_adi_fitted_{title}.pdf", bbox_inches='tight')
+        plt.savefig(f"population_adi_fitted_{title}.png", bbox_inches='tight')
+        plt.close()
+
+        conf_S1, error_S1 = self.confidence_interval_95_bootstrap(self.monoexponetial_S1,np.array(time),np.array(population)[:,1]) 
+            
+        with open(f'time_d_e_{title}.out','w') as f2:
+            f2.write(f'--------------------------------------------------------------\n')
+            f2.write(f't_d_S1_mean: {conf_S1[0]:>0.3f}\n')
+            f2.write(f't_e_S1_mean: {conf_S1[1]:>0.3f}\n')
+            f2.write(f't_e_S1_error: {error_S1[0]:>0.3f}\n')
+            f2.write(f't_e_S1_error: {error_S1[1]:>0.3f}\n')
+            f2.write('--------------------------------------------------------------')
+            f2.close() 
 
     def plot_av_popu_torsion_bend(self, xms_caspt2, sa_casscf, sa_oo_vqe):
         #popu
-        time_0, population_0 = self.get_popu_adi(xms_caspt2,os.path.join(xms_caspt2,"pop.dat"))
         time_1, population_1 = self.get_popu_adi(sa_casscf,os.path.join(sa_casscf,"pop.dat"))
         time_2, population_2 = self.get_popu_adi(sa_oo_vqe,os.path.join(sa_oo_vqe,"pop.dat"))
         #dihe_2014
-        dihe = self._para(xms_caspt2,sa_casscf,sa_oo_vqe,"dihe_2014.dat")
+        dihe = self._para(sa_casscf,sa_oo_vqe,"dihe_2014.dat")
         #angle_014
-        bend = self._para(xms_caspt2,sa_casscf,sa_oo_vqe,"angle_014.dat")
+        bend = self._para(sa_casscf,sa_oo_vqe,"angle_014.dat")
         #pyr_3210
-        pyr = self._para(xms_caspt2,sa_casscf,sa_oo_vqe,"pyr_3210.dat")
+        pyr = self._para(sa_casscf,sa_oo_vqe,"pyr_3210.dat")
 
         plt.rcParams['font.size'] = self.fs_rcParams
         fig = plt.figure(figsize=(6,14))
@@ -860,9 +890,8 @@ class PlotComb:
         gs = gridspec.GridSpec(4, 1, height_ratios=[1,1,1,1])
         # the 1st subplot
         ax0 = plt.subplot(gs[0])
-        ax0.plot(time_0,np.array(population_0)[:,1], label = self.labels[0], lw=2)
-        ax0.plot(time_1,np.array(population_1)[:,1], label = self.labels[1], lw=2)
-        ax0.plot(time_2,np.array(population_2)[:,1], label = self.labels[2], lw=2)
+        ax0.plot(time_1,np.array(population_1)[:,1], label = self.labels[1], color = self.colors[1], lw=2)
+        ax0.plot(time_2,np.array(population_2)[:,1], label = self.labels[2], color = self.colors[2], lw=2)
         ax0r = ax0.twinx()
         ax0r.set_ylim([-0.05, 1.05])
         ax0r.tick_params(labelsize=self.fs_rcParams)
@@ -873,20 +902,17 @@ class PlotComb:
             
         # the 2nd subplot
         ax1 = plt.subplot(gs[1], sharex = ax0)
-        ax1.plot(dihe.t_xms,dihe.av_xms, lw=2)
-        ax1.plot(dihe.t_cas,dihe.av_cas, lw=2)
-        ax1.plot(dihe.t_vqe,dihe.av_vqe, lw=2)
+        ax1.plot(dihe.t_cas,dihe.av_cas, color = self.colors[1], lw=2)
+        ax1.plot(dihe.t_vqe,dihe.av_vqe, color = self.colors[2], lw=2)
         ax1r = ax1.twinx()
         ax1r.set_ylim([-8, 185])
         ax1r.yaxis.set_major_locator(ticker.MultipleLocator(30))
         ax1r.tick_params(labelsize=self.fs_rcParams)
         # Plot the standard deviation (shaded area)
-        ax1.fill_between(dihe.t_xms, np.array(dihe.av_xms) - np.array(dihe.std_xms),
-                         np.array(dihe.av_xms) + np.array(dihe.std_xms), alpha=0.3, linestyle='-.', edgecolor=self.colors[0])
         ax1.fill_between(dihe.t_cas, np.array(dihe.av_cas) - np.array(dihe.std_cas),
-                         np.array(dihe.av_cas) + np.array(dihe.std_cas), alpha=0.3, linestyle='--', edgecolor=self.colors[1])
+                         np.array(dihe.av_cas) + np.array(dihe.std_cas), alpha=0.3, linestyle='--', color = self.colors[1], edgecolor=self.colors[1])
         ax1.fill_between(dihe.t_vqe, np.array(dihe.av_vqe) - np.array(dihe.std_vqe),
-                         np.array(dihe.av_vqe) + np.array(dihe.std_vqe), alpha=0.3, linestyle=':', edgecolor=self.colors[2])
+                         np.array(dihe.av_vqe) + np.array(dihe.std_vqe), alpha=0.3, linestyle=':', color = self.colors[2], edgecolor=self.colors[2])
         ax1.set_ylim([-8,185])
         ax1.yaxis.set_major_locator(ticker.MultipleLocator(30))
         ax1.set_ylabel('$\mathbf{\sphericalangle H_3C_1N_2H_5(degrees)}$', fontsize=self.f_size)
@@ -894,20 +920,17 @@ class PlotComb:
 
         # the 3rd subplot
         ax2 = plt.subplot(gs[2], sharex = ax0)
-        ax2.plot(bend.t_xms,bend.av_xms, lw=2)
-        ax2.plot(bend.t_cas,bend.av_cas, lw=2)
-        ax2.plot(bend.t_vqe,bend.av_vqe, lw=2)
+        ax2.plot(bend.t_cas,bend.av_cas, color = self.colors[1], lw=2)
+        ax2.plot(bend.t_vqe,bend.av_vqe, color = self.colors[2], lw=2)
         ax2r = ax2.twinx()
         ax2r.set_ylim([53, 185])
         ax2r.yaxis.set_major_locator(ticker.MultipleLocator(20))
         ax2r.tick_params(labelsize=self.fs_rcParams)
         # Plot the standard deviation (shaded area)
-        ax2.fill_between(bend.t_xms, np.array(bend.av_xms) - np.array(bend.std_xms),
-                         np.array(bend.av_xms) + np.array(bend.std_xms), alpha=0.3, linestyle='-.', edgecolor=self.colors[0])
         ax2.fill_between(bend.t_cas, np.array(bend.av_cas) - np.array(bend.std_cas),
-                         np.array(bend.av_cas) + np.array(bend.std_cas), alpha=0.3, linestyle='--', edgecolor=self.colors[1])
+                         np.array(bend.av_cas) + np.array(bend.std_cas), alpha=0.3, linestyle='--', color = self.colors[1], edgecolor=self.colors[1])
         ax2.fill_between(bend.t_vqe, np.array(bend.av_vqe) - np.array(bend.std_vqe),
-                         np.array(bend.av_vqe) + np.array(bend.std_vqe), alpha=0.3, linestyle=':', edgecolor=self.colors[2])
+                         np.array(bend.av_vqe) + np.array(bend.std_vqe), alpha=0.3, linestyle=':', color = self.colors[2], edgecolor=self.colors[2])
         ax2.set_ylim([53,185])
         ax2.yaxis.set_major_locator(ticker.MultipleLocator(20))
         ax2.set_ylabel('$\mathbf{\sphericalangle C_1N_2H_5(degrees)}$', fontsize=self.f_size)
@@ -915,20 +938,17 @@ class PlotComb:
 
         # the 4th subplot
         ax3 = plt.subplot(gs[3], sharex = ax0)
-        ax3.plot(pyr.t_xms,pyr.av_xms, lw=2)
-        ax3.plot(pyr.t_cas,pyr.av_cas, lw=2)
-        ax3.plot(pyr.t_vqe,pyr.av_vqe, lw=2)
+        ax3.plot(pyr.t_cas,pyr.av_cas, color = self.colors[1], lw=2)
+        ax3.plot(pyr.t_vqe,pyr.av_vqe, color = self.colors[2], lw=2)
         ax3r = ax3.twinx()
         ax3r.set_ylim([-8, 95])
         ax3r.yaxis.set_major_locator(ticker.MultipleLocator(15))
         ax3r.tick_params(labelsize=self.fs_rcParams)
         # Plot the standard deviation (shaded area)
-        ax3.fill_between(pyr.t_xms, np.array(pyr.av_xms) - np.array(pyr.std_xms),
-                         np.array(pyr.av_xms) + np.array(pyr.std_xms), alpha=0.3, linestyle='-.', edgecolor=self.colors[0])
         ax3.fill_between(pyr.t_cas, np.array(pyr.av_cas) - np.array(pyr.std_cas),
-                         np.array(pyr.av_cas) + np.array(pyr.std_cas), alpha=0.3, linestyle='--', edgecolor=self.colors[1])
+                         np.array(pyr.av_cas) + np.array(pyr.std_cas), alpha=0.3, linestyle='--', color = self.colors[1], edgecolor=self.colors[1])
         ax3.fill_between(pyr.t_vqe, np.array(pyr.av_vqe) - np.array(pyr.std_vqe),
-                         np.array(pyr.av_vqe) + np.array(pyr.std_vqe), alpha=0.3, linestyle=':', edgecolor=self.colors[2])
+                         np.array(pyr.av_vqe) + np.array(pyr.std_vqe), alpha=0.3, linestyle=':', color = self.colors[2], edgecolor=self.colors[2])
         ax3.set_ylim([-8,95])
         ax3.yaxis.set_major_locator(ticker.MultipleLocator(15))
         ax3.set_ylabel('$\mathbf{Pyramidalization (degrees)}$', fontsize=self.f_size)
@@ -1079,33 +1099,39 @@ class PlotComb:
 
     def plot_av_popu_torsion_noise(self, folder):
         #popu
-        time_0, population_0 = self.get_popu_adi(folder,os.path.join(folder,"variance_10/pop.dat"))
+        time_0, population_0 = self.get_popu_adi(folder,os.path.join(folder,"variance_00/pop.dat"))
         time_1, population_1 = self.get_popu_adi(folder,os.path.join(folder,"variance_08/pop.dat"))
-        time_2, population_2 = self.get_popu_adi(folder,os.path.join(folder,"variance_06/pop.dat"))
-        time_3, population_3 = self.get_popu_adi(folder,os.path.join(folder,"variance_00/pop.dat"))
+        time_2, population_2 = self.get_popu_adi(folder,os.path.join(folder,"variance_07/pop.dat"))
+        time_3, population_3 = self.get_popu_adi(folder,os.path.join(folder,"variance_06/pop.dat"))
+        time_4, population_4 = self.get_popu_adi(folder,os.path.join(folder,"variance_05/pop.dat"))
         #torsion
-        time_0, t_noise_0, t_std_0 = self.get_noise_ave(folder,'variance_10/dihe_2014.dat')
+        time_0, t_noise_0, t_std_0 = self.get_noise_ave(folder,'variance_00/dihe_2014.dat')
         time_1, t_noise_1, t_std_1 = self.get_noise_ave(folder,'variance_08/dihe_2014.dat')
-        time_2, t_noise_2, t_std_2 = self.get_noise_ave(folder,'variance_06/dihe_2014.dat')
-        time_3, t_noise_3, t_std_3 = self.get_noise_ave(folder,'variance_00/dihe_2014.dat')
+        time_2, t_noise_2, t_std_2 = self.get_noise_ave(folder,'variance_07/dihe_2014.dat')
+        time_3, t_noise_3, t_std_3 = self.get_noise_ave(folder,'variance_06/dihe_2014.dat')
+        time_4, t_noise_4, t_std_4 = self.get_noise_ave(folder,'variance_05/dihe_2014.dat')
         #noise
-        time_0, noise_0, std_0 = self.get_noise_ave(folder,'variance_10/etot.dat')
+        time_0, noise_0, std_0 = self.get_noise_ave(folder,'variance_00/etot.dat')
         time_1, noise_1, std_1 = self.get_noise_ave(folder,'variance_08/etot.dat')
-        time_2, noise_2, std_2 = self.get_noise_ave(folder,'variance_06/etot.dat')
-        time_3, noise_3, std_3 = self.get_noise_ave(folder,'variance_00/etot.dat')
+        time_2, noise_2, std_2 = self.get_noise_ave(folder,'variance_07/etot.dat')
+        time_3, noise_3, std_3 = self.get_noise_ave(folder,'variance_06/etot.dat')
+        time_4, noise_4, std_4 = self.get_noise_ave(folder,'variance_05/etot.dat')
         #fitted
-        params_0, bs_error_95_0 = self.confidence_interval_95_bootstrap(time_0, noise_0)
+        params_0, bs_error_95_0 = self.confidence_interval_95_bootstrap(self.linear_total_energy,time_0, noise_0)
         a_0 = params_0[0]
         b_0 = params_0[1]
-        params_1, bs_error_95_1 = self.confidence_interval_95_bootstrap(time_1, noise_1)
+        params_1, bs_error_95_1 = self.confidence_interval_95_bootstrap(self.linear_total_energy,time_1, noise_1)
         a_1 = params_1[0]
         b_1 = params_1[1]
-        params_2, bs_error_95_2 = self.confidence_interval_95_bootstrap(time_2, noise_2)
+        params_2, bs_error_95_2 = self.confidence_interval_95_bootstrap(self.linear_total_energy,time_2, noise_2)
         a_2 = params_2[0]
         b_2 = params_2[1]
-        params_3, bs_error_95_3 = self.confidence_interval_95_bootstrap(time_3, noise_3)
+        params_3, bs_error_95_3 = self.confidence_interval_95_bootstrap(self.linear_total_energy,time_3, noise_3)
         a_3 = params_3[0]
         b_3 = params_3[1]
+        params_4, bs_error_95_4 = self.confidence_interval_95_bootstrap(self.linear_total_energy,time_4, noise_4)
+        a_4 = params_4[0]
+        b_4 = params_4[1]
         plt.rcParams['font.size'] = self.fs_rcParams
 
         fig = plt.figure(figsize=(6,14))
@@ -1113,67 +1139,78 @@ class PlotComb:
         gs = gridspec.GridSpec(4, 1, height_ratios=[1,1,1,1])
         # the 1st subplot
         ax0 = plt.subplot(gs[0])
-        ax0.plot(time_3,np.array(population_3)[:,1], color = "blue", label = "no noise", lw=2, alpha=0.8)
-        ax0.plot(time_0,np.array(population_0)[:,1], color = self.n_colors[0], label = r"$\sigma^2$=1.0e-10", lw=2)
+        ax0.plot(time_0,np.array(population_0)[:,1], color = self.n_colors[0], label = "no noise", lw=2, alpha=0.8)
         ax0.plot(time_1,np.array(population_1)[:,1], color = self.n_colors[1], label = r"$\sigma^2$=1.0e-08", lw=2)
-        ax0.plot(time_2,np.array(population_2)[:,1], color = self.n_colors[2], label = r"$\sigma^2$=1.0e-06", lw=2)
+        ax0.plot(time_2,np.array(population_2)[:,1], color = self.n_colors[2], label = r"$\sigma^2$=1.0e-07", lw=2)
+        ax0.plot(time_3,np.array(population_3)[:,1], color = self.n_colors[3], label = r"$\sigma^2$=1.0e-06", lw=2)
+        ax0.plot(time_4,np.array(population_4)[:,1], color = self.n_colors[4], label = r"$\sigma^2$=1.0e-05", lw=2)
         ax0r = ax0.twinx()
         ax0r.set_ylim([-0.05, 1.05])
         ax0r.tick_params(labelsize=self.fs_rcParams)
         ax0.set_ylabel('$\mathbf{S_1\ Population}$', fontsize =self.f_size)
-        ax0.set_xlim([0,200])
+        ax0.set_xlim([0,100])
         ax0.set_ylim([-0.05,1.05])
         ax0.xaxis.set_major_locator(ticker.MultipleLocator(25))
 
         # the 2nd subplot
         ax1 = plt.subplot(gs[1], sharex = ax0)
-        ax1.plot(time_3, t_noise_3, color = "blue", lw=2, alpha=0.8)
-        ax1.plot(time_0, t_noise_0, color = self.n_colors[0], lw=2)
+        ax1.plot(time_0, t_noise_0, color = self.n_colors[0], lw=2, alpha=0.8)
         ax1.plot(time_1, t_noise_1, color = self.n_colors[1], lw=2)
         ax1.plot(time_2, t_noise_2, color = self.n_colors[2], lw=2)
+        ax1.plot(time_3, t_noise_3, color = self.n_colors[3], lw=2)
+        ax1.plot(time_4, t_noise_4, color = self.n_colors[4], lw=2)
         ax1r = ax1.twinx()
         ax1r.set_ylim([-8, 185])
         ax1r.yaxis.set_major_locator(ticker.MultipleLocator(30))
         ax1r.tick_params(labelsize=self.fs_rcParams)
         # Plot the standard deviation (shaded area)
-        ax1.fill_between(time_3, np.array(t_noise_3) - np.array(t_std_3),
-                         np.array(t_noise_3) + np.array(t_std_3), alpha=0.3, color = "blue", linestyle=':', edgecolor="blue")
         ax1.fill_between(time_0, np.array(t_noise_0) - np.array(t_std_0),
-                         np.array(t_noise_0) + np.array(t_std_0), alpha=0.3, color = self.n_colors[0], linestyle='-.', edgecolor=self.n_colors[0])
+                         np.array(t_noise_0) + np.array(t_std_0), alpha=0.3, color = self.n_colors[0], linestyle='-', edgecolor=self.n_colors[0])
         ax1.fill_between(time_1, np.array(t_noise_1) - np.array(t_std_1),
                          np.array(t_noise_1) + np.array(t_std_1), alpha=0.3, color = self.n_colors[1], linestyle='--', edgecolor=self.n_colors[1])
         ax1.fill_between(time_2, np.array(t_noise_2) - np.array(t_std_2),
                          np.array(t_noise_2) + np.array(t_std_2), alpha=0.3, color = self.n_colors[2], linestyle=':', edgecolor=self.n_colors[2])
+        ax1.fill_between(time_3, np.array(t_noise_3) - np.array(t_std_3),
+                         np.array(t_noise_3) + np.array(t_std_3), alpha=0.3, color = self.n_colors[3], linestyle='-.', edgecolor=self.n_colors[1])
+        ax1.fill_between(time_4, np.array(t_noise_4) - np.array(t_std_4),
+                         np.array(t_noise_4) + np.array(t_std_4), alpha=0.3, color = self.n_colors[4], linestyle=(0, (1, 1)), edgecolor=self.n_colors[2])
         ax1.set_ylim([-8,185])
+        ax1.set_xlim([0,100])
         ax1.yaxis.set_major_locator(ticker.MultipleLocator(30))
         ax1.set_ylabel('$\mathbf{\sphericalangle H_3C_1N_2H_5(degrees)}$', fontsize=self.f_size)
         plt.setp(ax0.get_xticklabels(), visible=False)
             
         # the 3rd subplot
         ax2 = plt.subplot(gs[2], sharex = ax0)
-        ax2.plot(time_3, noise_3, color = "blue", label = "no noise", lw=2, alpha=0.8)
-        ax2.plot(time_0, noise_0, color = self.n_colors[0], label = r"$\sigma^2$=1.0e-10", lw=2)
+        ax2.plot(time_0, noise_0, color = self.n_colors[0], label = "no noise", lw=2, alpha=0.8)
         ax2.plot(time_1, noise_1, color = self.n_colors[1], label = r"$\sigma^2$=1.0e-08", lw=2)
-        ax2.plot(time_2, noise_2, color = self.n_colors[2], label = r"$\sigma^2$=1.0e-06", lw=2)
+        ax2.plot(time_2, noise_2, color = self.n_colors[2], label = r"$\sigma^2$=1.0e-07", lw=2)
+        ax2.plot(time_3, noise_3, color = self.n_colors[3], label = r"$\sigma^2$=1.0e-06", lw=2)
+        ax2.plot(time_4, noise_4, color = self.n_colors[4], label = r"$\sigma^2$=1.0e-05", lw=2)
         ax2r = ax2.twinx()
         ax2r.set_ylim([-2.37, 2.37])
         ax2r.yaxis.set_major_locator(ticker.MultipleLocator(0.3))
         ax2r.tick_params(labelsize=self.fs_rcParams)
-        # Plot the standard deviation (shaded area)
-        ax2.fill_between(time_3, np.array(noise_3) - np.array(std_3),
-                         np.array(noise_3) + np.array(std_3), alpha=0.3, color = "blue", linestyle=':', edgecolor="blue")
-        ax2.fill_between(time_0, np.array(noise_0) - np.array(std_0),
-                         np.array(noise_0) + np.array(std_0), alpha=0.3, color = self.n_colors[0], linestyle='-.', edgecolor=self.n_colors[0])
-        ax2.fill_between(time_1, np.array(noise_1) - np.array(std_1),
-                         np.array(noise_1) + np.array(std_1), alpha=0.3, color = self.n_colors[1], linestyle='--', edgecolor=self.n_colors[1])
-        ax2.fill_between(time_2, np.array(noise_2) - np.array(std_2),
-                         np.array(noise_2) + np.array(std_2), alpha=0.3, color = self.n_colors[2], linestyle=':', edgecolor=self.n_colors[2])
+        ## Plot the standard deviation (shaded area)
+        #ax2.fill_between(time_0, np.array(noise_0) - np.array(std_0),
+        #                 np.array(noise_0) + np.array(std_0), alpha=0.3, color = self.n_colors[0], linestyle='-', edgecolor=self.n_colors[0])
+        #ax2.fill_between(time_1, np.array(noise_1) - np.array(std_1),
+        #                 np.array(noise_1) + np.array(std_1), alpha=0.3, color = self.n_colors[1], linestyle='--', edgecolor=self.n_colors[1])
+        #ax2.fill_between(time_2, np.array(noise_2) - np.array(std_2),
+        #                 np.array(noise_2) + np.array(std_2), alpha=0.3, color = self.n_colors[2], linestyle=':', edgecolor=self.n_colors[2])
+        #ax2.fill_between(time_3, np.array(noise_3) - np.array(std_3),
+        #                 np.array(noise_3) + np.array(std_3), alpha=0.3, color = self.n_colors[3], linestyle='-.', edgecolor=self.n_colors[1])
+        #ax2.fill_between(time_4, np.array(noise_4) - np.array(std_4),
+        #                 np.array(noise_4) + np.array(std_4), alpha=0.3, color = self.n_colors[4], linestyle=(0, (1, 1)), edgecolor=self.n_colors[2])
         # Plot linear equation with fitted data
-        ax2.plot(time_3, self.linear_total_energy(time_3, a_3, b_3), '--', color = "brown", label=f"$\Delta T.E. = {a_3:.5f}t + {b_3:.5f}$")
-        ax2.plot(time_0, self.linear_total_energy(time_0, a_0, b_0), '--', color = "orange", label=f"$\Delta T.E. = {a_0:.5f}t + {b_0:.5f}$")
-        ax2.plot(time_1, self.linear_total_energy(time_1, a_1, b_1), '--', color = "green", label=f"$\Delta T.E. = {a_1:.5f}t +{b_1:.5f}$")
-        ax2.plot(time_2, self.linear_total_energy(time_2, a_2, b_2), '--', color = "red", label=f"$\Delta T.E. = {a_2:.5f}t + {b_2:.5f}$")
+        #sig = "+"
+        ax2.plot(time_0, self.linear_total_energy(time_0, a_0, b_0), '--', color = "orange", label=f"$\Delta T.E. = {a_0:.5f}t {'+' if b_0 >= 0 else ''}{b_0:.5f}$")
+        ax2.plot(time_1, self.linear_total_energy(time_1, a_1, b_1), '--', color = "green", label=f"$\Delta T.E. = {a_1:.5f}t {'+' if b_1 >= 0 else ''}{b_1:.5f}$")
+        ax2.plot(time_2, self.linear_total_energy(time_2, a_2, b_2), '--', color = "red", label=f"$\Delta T.E. = {a_2:.5f}t {'+' if b_2 >= 0 else ''}{b_2:.5f}$")
+        ax2.plot(time_3, self.linear_total_energy(time_3, a_3, b_3), '--', color = "brown", label=f"$\Delta T.E. = {a_3:.5f}t {'+' if b_3 >= 0 else ''}{b_3:.5f}$")
+        ax2.plot(time_4, self.linear_total_energy(time_4, a_4, b_4), '--', color = "magenta", label=f"$\Delta T.E. = {a_4:.5f}t {'+' if b_4 >= 0 else ''}{b_4:.5f}$")
         ax2.set_ylim([-2.37, 2.37])
+        ax2.set_xlim([0,100])
         ax2.yaxis.set_major_locator(ticker.MultipleLocator(0.3))
         ax2.set_ylabel('$\mathbf{\Delta\ Total\ Energy\ (eV)}$', fontsize=self.f_size)
         ax2.set_xlabel('Time (fs)', fontweight = 'bold', fontsize =self.f_size)
@@ -1192,7 +1229,7 @@ class PlotComb:
 
 
         # put legend on first subplot
-        ax2.legend(loc='upper center', bbox_to_anchor=(0.5, 3.42), prop={'size': 12}, ncol=2)
+        ax2.legend(loc='upper center', bbox_to_anchor=(0.5, 3.51), prop={'size': 12}, ncol=2)
 
         # remove vertical gap between subplots
         plt.subplots_adjust(hspace=0.0)
@@ -1203,22 +1240,26 @@ class PlotComb:
         with open(f'ci_noise_linear_regression_{title}.out', 'w') as f3:
             f3.write('--------------------------------------------------------------\n')
             f3.write(f'Folder: {title}\n')
-            f3.write(f'a_00_mean: {a_3}\n')
-            f3.write(f'b_00_mean: {b_3}\n')
-            f3.write(f'a_00_error: {bs_error_95_3[0]}\n')
-            f3.write(f'b_00_error: {bs_error_95_3[1]}\n')
-            f3.write(f'a_10_mean: {a_0}\n')
-            f3.write(f'b_10_mean: {b_0}\n')
-            f3.write(f'a_10_error: {bs_error_95_0[0]}\n')
-            f3.write(f'b_10_error: {bs_error_95_0[1]}\n')
+            f3.write(f'a_00_mean: {a_0}\n')
+            f3.write(f'b_00_mean: {b_0}\n')
+            f3.write(f'a_00_error: {bs_error_95_0[0]}\n')
+            f3.write(f'b_00_error: {bs_error_95_0[1]}\n')
             f3.write(f'a_08_mean: {a_1}\n')
             f3.write(f'b_08_mean: {b_1}\n')
             f3.write(f'a_08_error: {bs_error_95_1[0]}\n')
             f3.write(f'b_08_error: {bs_error_95_1[1]}\n')
-            f3.write(f'a_06_mean: {a_2}\n')
-            f3.write(f'b_06_mean: {b_2}\n')
-            f3.write(f'a_06_error: {bs_error_95_2[0]}\n')
-            f3.write(f'b_06_error: {bs_error_95_2[1]}\n')
+            f3.write(f'a_07_mean: {a_2}\n')
+            f3.write(f'b_07_mean: {b_2}\n')
+            f3.write(f'a_07_error: {bs_error_95_2[0]}\n')
+            f3.write(f'b_07_error: {bs_error_95_2[1]}\n')
+            f3.write(f'a_06_mean: {a_3}\n')
+            f3.write(f'b_06_mean: {b_3}\n')
+            f3.write(f'a_06_error: {bs_error_95_3[0]}\n')
+            f3.write(f'b_06_error: {bs_error_95_3[1]}\n')
+            f3.write(f'a_05_mean: {a_4}\n')
+            f3.write(f'b_05_mean: {b_4}\n')
+            f3.write(f'a_05_error: {bs_error_95_4[0]}\n')
+            f3.write(f'b_05_error: {bs_error_95_4[1]}\n')
             f3.write('--------------------------------------------------------------')
             f3.close() 
  
@@ -1296,6 +1337,64 @@ class PlotComb:
         plt.savefig("avg_popu_noise_4.png", bbox_inches='tight')
         plt.close()
 
+    def plot_1d_curves(self, xms_caspt2, sa_casscf, sa_oo_vqe):
+        # Load data for each parameter
+        hop_e = self._hop_10(xms_caspt2, sa_casscf, sa_oo_vqe, "e_gap.dat")
+        hop_d = self._hop_10(xms_caspt2, sa_casscf, sa_oo_vqe, "dihe_2014.dat")
+        hop_a = self._hop_10(xms_caspt2, sa_casscf, sa_oo_vqe, "angle_014.dat")
+        hop_p = self._hop_10(xms_caspt2, sa_casscf, sa_oo_vqe, "pyr_3210.dat")
+        
+        data = [
+            (hop_e, self.bins.ene, 'Energy Gap (eV)', [0, 3], 0, f'(a)'),
+            (hop_d, self.bins.hnch, r'$\mathbf{\sphericalangle H_3C_1N_2H_5}$ (degrees)', [0, 180], 109, f'(b)'),
+            (hop_a, self.bins.hnc, r'$\mathbf{\sphericalangle C_1N_2H_5}$ (degrees)', [0, 180], 111, f'(c)'),
+            (hop_p, self.bins.pyr, 'Pyramidalization (degrees)', [0, 180], 34, f'(d)'),
+        ]
+    
+        plt.rcParams['font.size'] = self.fs_rcParams
+        fig, axs = plt.subplots(2, 2, figsize=(10, 8))
+        fig.supylabel('Distribution of Hops', fontweight='bold', fontsize=18)
+        plt.subplots_adjust(top=0.9, bottom=0.1, left=0.09, right=0.9, hspace=0.2)
+    
+        for ax, (hop, bins, xlabel, xlim, meci, i_label) in zip(axs.flatten(), data):
+            bin_centers = 0.5 * (bins[:-1] + bins[1:])  # Calculate bin centers
+            
+            # Compute counts for each method
+            counts_cas, _ = np.histogram(hop.cas, bins=bins)
+            counts_vqe, _ = np.histogram(hop.vqe, bins=bins)
+    
+            # Smooth curves
+            x_new = np.linspace(bin_centers[0], bin_centers[-1], 300)
+            cas_smooth = make_interp_spline(bin_centers, counts_cas, k=3)(x_new)
+            vqe_smooth = make_interp_spline(bin_centers, counts_vqe, k=3)(x_new)
+    
+            # Plot
+            ax_1, = ax.plot(x_new, cas_smooth, label="", color=self.colors[1], lw=2)
+            ax.scatter(bin_centers, counts_cas, color=self.colors[1], zorder=5)
+    
+            ax_2, = ax.plot(x_new, vqe_smooth, label="", color=self.colors[2], lw=2)
+            ax.scatter(bin_centers, counts_vqe, color=self.colors[2], zorder=5)
+
+    
+            # Set labels and legends
+            ax.text(0.95, 0.95, i_label, transform=ax.transAxes,
+             fontsize=self.f_size, fontweight='bold', va='top', ha='right')
+            ax.set_xlim(xlim)
+            ax.set_xlabel(xlabel, fontsize=self.f_size, fontweight='bold')
+
+            if meci != 0:
+                ax.axvline(meci,label="MECI",linestyle='--', c = 'purple')
+        # Add legend only once
+        axs[0,0].legend([ax_1,ax_2],
+        [self.labels[1], self.labels[2]],
+        loc='upper center', bbox_to_anchor=(1, 1.2),
+        prop={'size': 14}, ncol=2
+        )   
+
+        plt.savefig("number_of_hops_curves.pdf", bbox_inches='tight')
+        plt.savefig("number_of_hops_curves.png", bbox_inches='tight')
+        plt.close()
+
     def plot_1d_histogram_4_plots_S1_S0(self, xms_caspt2, sa_casscf, sa_oo_vqe):
         #e_gap
         hop_e = self._hop_10(xms_caspt2,sa_casscf,sa_oo_vqe,"e_gap.dat")
@@ -1312,7 +1411,7 @@ class PlotComb:
         gs = gridspec.GridSpec(2, 2, height_ratios=[1, 1])
         # the 1st subplot
         ax00 = plt.subplot(gs[0,0])
-        ax00.hist(hop_e.xms, bins = self.bins.ene, ec = self.colors[0], label=self.labels[0] ,fc='none', lw=2)
+        #ax00.hist(hop_e.xms, bins = self.bins.ene, ec = self.colors[0], label=self.labels[0] ,fc='none', lw=2)
         ax00.hist(hop_e.cas, bins = self.bins.ene, ec = self.colors[1], label=self.labels[1] ,fc='none', lw=2)
         ax00.hist(hop_e.vqe, bins = self.bins.ene, ec = self.colors[2], label=self.labels[2] ,fc='none', lw=2)
         ax00.set_xlim([0,3])
@@ -1321,7 +1420,7 @@ class PlotComb:
             
         # the 2nd subplot
         ax01 = plt.subplot(gs[0,1])
-        ax01.hist(hop_d.xms, bins = self.bins.hnch, ec = self.colors[0], label="" ,fc='none', lw=2)
+        #ax01.hist(hop_d.xms, bins = self.bins.hnch, ec = self.colors[0], label="" ,fc='none', lw=2)
         ax01.hist(hop_d.cas, bins = self.bins.hnch, ec = self.colors[1], label="" ,fc='none', lw=2)
         ax01.hist(hop_d.vqe, bins = self.bins.hnch, ec = self.colors[2], label="" ,fc='none', lw=2)
         ax01.set_xlim([0,180])
@@ -1331,7 +1430,7 @@ class PlotComb:
 
         # the 3rd subplot
         ax10 = plt.subplot(gs[1,0])
-        ax10.hist(hop_a.xms, bins = self.bins.hnc, ec = self.colors[0], label="" ,fc='none', lw=2)
+        #ax10.hist(hop_a.xms, bins = self.bins.hnc, ec = self.colors[0], label="" ,fc='none', lw=2)
         ax10.hist(hop_a.cas, bins = self.bins.hnc, ec = self.colors[1], label="" ,fc='none', lw=2)
         ax10.hist(hop_a.vqe, bins = self.bins.hnc, ec = self.colors[2], label="" ,fc='none', lw=2)
         ax10.axvline(111,label="MECI",linestyle='--', c = 'purple')
@@ -1341,7 +1440,7 @@ class PlotComb:
 
         # the 4th subplot
         ax11 = plt.subplot(gs[1,1])
-        ax11.hist(hop_p.xms, bins = self.bins.pyr, ec = self.colors[0], label="" ,fc='none', lw=2)
+        #ax11.hist(hop_p.xms, bins = self.bins.pyr, ec = self.colors[0], label="" ,fc='none', lw=2)
         ax11.hist(hop_p.cas, bins = self.bins.pyr, ec = self.colors[1], label="" ,fc='none', lw=2)
         ax11.hist(hop_p.vqe, bins = self.bins.pyr, ec = self.colors[2], label="" ,fc='none', lw=2)
         ax11.axvline(34,label="MECI",linestyle='--', c = 'purple')
@@ -1590,11 +1689,13 @@ class PlotComb:
         plt.savefig("torsion_ave_comb_std.png", bbox_inches='tight')
         plt.close()
 
+    def monoexponetial_S1(self, t, t_d, t_e):
+        return np.exp(-(t -t_d)/t_e)
+
     def linear_total_energy(self, t, a, b):
         return a*t + b
 
-    def confidence_interval_95_bootstrap(self, t_data, data):
-        params_0, cv_noise_0 = curve_fit(self.linear_total_energy, t_data, data)
+    def confidence_interval_95_bootstrap(self, function, t_data, data):
         # Number of bootstrap samples
         num_bootstrap_samples = 1000
         
@@ -1610,7 +1711,7 @@ class PlotComb:
             bootstrap_data = data[bootstrap_indices]
 
             # Perform monoexponential fit
-            data_f, _ = curve_fit(self.linear_total_energy, bootstrap_t, bootstrap_data)
+            data_f, _ = curve_fit(function, bootstrap_t, bootstrap_data)
 
             # Store bootstrap estimates
             bootstrap_a[i] = data_f[0]
@@ -1700,55 +1801,62 @@ class PlotComb:
         plt.close()
 
     def energy_diff_slope_vs_dt_curve(self):
-        dt = [7,12,25]
+        dt = [7,12,25,50]
         var_00 = []
-        var_10 = []
         var_08 = []
+        var_07 = []
         var_06 = []
+        var_05 = []
         err_00 = []
-        err_10 = []
         err_08 = []
+        err_07 = []
         err_06 = []
+        err_05 = []
         for i in dt:
             field = open(f"ci_noise_linear_regression_noise_sa_oo_vqe_{i:03d}.out", 'r+')
             for line in field:
                 if "a_00_mean:" in line:
                     var_00.append(float(line.split()[1]))
-                elif "a_10_mean" in line:
-                    var_10.append(float(line.split()[1]))
                 elif "a_08_mean" in line:
                     var_08.append(float(line.split()[1]))
+                elif "a_07_mean" in line:
+                    var_07.append(float(line.split()[1]))
                 elif "a_06_mean" in line:
                     var_06.append(float(line.split()[1]))
+                elif "a_05_mean" in line:
+                    var_05.append(float(line.split()[1]))
                 elif "a_00_error:" in line:
                     err_00.append(float(line.split()[1]))
-                elif "a_10_error:" in line:
-                    err_10.append(float(line.split()[1]))
                 elif "a_08_error:" in line:
                     err_08.append(float(line.split()[1]))
+                elif "a_07_error:" in line:
+                    err_07.append(float(line.split()[1]))
                 elif "a_06_error:" in line:
                     err_06.append(float(line.split()[1]))
-        dt = [0.07,0.12,0.25]
-
-
+                elif "a_05_error:" in line:
+                    err_05.append(float(line.split()[1]))
+        dt = [0.07,0.12,0.25,0.5]
         plt.rcParams['font.size'] = self.fs_rcParams
         # Plot data points and connect them for each noise level
         plt.plot(dt, var_00, color='blue', label='no noise', lw=2, marker='D')
         plt.errorbar(dt, var_00, yerr=err_00, fmt="D", color='blue')  # Add error bars
         
-        plt.plot(dt, var_10, color=self.n_colors[0], label=r"$\sigma^2$=1.0e-10", lw=2, marker='D')
-        plt.errorbar(dt, var_10, yerr=err_10, fmt="D", color=self.n_colors[0])
+        plt.plot(dt, var_08, color=self.n_colors[0], label=r"$\sigma^2$=1.0e-08", lw=2, marker='D')
+        plt.errorbar(dt, var_08, yerr=err_08, fmt="D", color=self.n_colors[0])
         
-        plt.plot(dt, var_08, color=self.n_colors[1], label=r"$\sigma^2$=1.0e-08", lw=2, marker='D')
-        plt.errorbar(dt, var_08, yerr=err_08, fmt="D", color=self.n_colors[1])
+        plt.plot(dt, var_07, color=self.n_colors[1], label=r"$\sigma^2$=1.0e-07", lw=2, marker='D')
+        plt.errorbar(dt, var_07, yerr=err_07, fmt="D", color=self.n_colors[1])
 
         plt.plot(dt, var_06, color=self.n_colors[2], label=r"$\sigma^2$=1.0e-06", lw=2, marker='D')
         plt.errorbar(dt, var_06, yerr=err_06, fmt="D", color=self.n_colors[2])
 
+        plt.plot(dt, var_05, color=self.n_colors[3], label=r"$\sigma^2$=1.0e-05", lw=2, marker='D')
+        plt.errorbar(dt, var_05, yerr=err_05, fmt="D", color=self.n_colors[3])
+
         # Labels and title
         plt.xlabel('dt (fs)', fontweight = 'bold', fontsize =self.f_size)
         plt.ylabel('Slope (eV/fs)', fontweight = 'bold', fontsize =self.f_size)
-        plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.25), prop={'size': 14}, ncol=2)
+        plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.3), prop={'size': 14}, ncol=2)
         plt.savefig("energy_diff_slope_vs_dt_curve.pdf", bbox_inches='tight')
         plt.savefig("energy_diff_slope_vs_dt_curve.png", bbox_inches='tight')
         plt.close()
@@ -1762,16 +1870,16 @@ class PlotComb:
         #    time_2, noise_2, std_2 = self.get_noise_ave(folder,'variance_06/etot.dat')
         #    time_3, noise_3, std_3 = self.get_noise_ave(folder,'variance_00/etot.dat')
         #    #fitted
-        #    params_0, bs_error_95_0 = self.confidence_interval_95_bootstrap(time_0, noise_0)
+        #    params_0, bs_error_95_0 = self.confidence_interval_95_bootstrap(self.linear_total_energy,time_0, noise_0)
         #    a_0 = params_0[0]
         #    b_0 = params_0[1]
-        #    params_1, bs_error_95_1 = self.confidence_interval_95_bootstrap(time_1, noise_1)
+        #    params_1, bs_error_95_1 = self.confidence_interval_95_bootstrap(self.linear_total_energy,time_1, noise_1)
         #    a_1 = params_1[0]
         #    b_1 = params_1[1]
-        #    params_2, bs_error_95_2 = self.confidence_interval_95_bootstrap(time_2, noise_2)
+        #    params_2, bs_error_95_2 = self.confidence_interval_95_bootstrap(self.linear_total_energy,time_2, noise_2)
         #    a_2 = params_2[0]
         #    b_2 = params_2[1]
-        #    params_3, bs_error_95_3 = self.confidence_interval_95_bootstrap(time_3, noise_3)
+        #    params_3, bs_error_95_3 = self.confidence_interval_95_bootstrap(self.linear_total_energy,time_3, noise_3)
         #    a_3 = params_3[0]
         #    b_3 = params_3[1]
         sl_025 = [0.0007329738307754767,0.0007255966508638325,0.000853636977203613,0.005424441916756572]
@@ -1862,9 +1970,10 @@ if __name__=="__main__":
     xms_caspt2 = "../xms_caspt2"
     sa_oo_vqe = "../sa_oo_vqe"
     sa_casscf = "../sa_casscf"
-    #noise_sa_oo_vqe = "../noise_sa_oo_vqe_025"
-    #noise_sa_oo_vqe = "../noise_sa_oo_vqe_012"
-    noise_sa_oo_vqe = "../noise_sa_oo_vqe_007"
+    #noise_sa_oo_vqe_050 = "../noise_sa_oo_vqe_050"
+    #noise_sa_oo_vqe_025 = "../noise_sa_oo_vqe_025"
+    #noise_sa_oo_vqe_012 = "../noise_sa_oo_vqe_012"
+    #noise_sa_oo_vqe_007 = "../noise_sa_oo_vqe_007"
     method = os.getcwd()
     #time in fs
     t_0 = 0
@@ -1877,14 +1986,21 @@ if __name__=="__main__":
     #out.plot_1d_histogram_2_plots_samen(xms_caspt2,sa_casscf,sa_oo_vqe, 8)
     #out.plot_1d_histogram_2_plots_samen_energy(xms_caspt2,sa_casscf,sa_oo_vqe, 20)
     #out.plot_1d_histogram_2_plots_energy(xms_caspt2,sa_casscf,sa_oo_vqe, 31)
+    ##out.plot_1d_curves(xms_caspt2,sa_casscf,sa_oo_vqe)
     #out.plot_1d_histogram_4_plots_S1_S0(xms_caspt2,sa_casscf,sa_oo_vqe)
     #out.print_stat(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_torsion_ave(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_torsion_ave_qy(xms_caspt2, sa_casscf, sa_oo_vqe)
-    ##out.plot_av_popu_torsion_bend(xms_caspt2, sa_casscf, sa_oo_vqe)
+    #out.plot_population_adi_fitted(sa_casscf)
+    #out.plot_population_adi_fitted(sa_oo_vqe)
+    #out.plot_av_popu_torsion_bend(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_variance_noise(noise_sa_oo_vqe)
     #out.plot_av_popu_noise(noise_sa_oo_vqe)
-    #out.plot_av_popu_torsion_noise(noise_sa_oo_vqe)
+    ##noise
+    for i in ["007","012","025","050"]:
+        folder = "../noise_sa_oo_vqe_" + i
+        out.plot_av_popu_torsion_noise(folder)
+    ##noise
     #out.plot_av_popu_diff_ene(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_one_method_av_popu_diff_ene(method)
     #out.get_torsion_qy_ave(xms_caspt2)
@@ -1896,6 +2012,6 @@ if __name__=="__main__":
     #out.get_torsion_qy_ave_noise(noise_sa_oo_vqe)
     #out.plot_total_energy_fitted(noise_sa_oo_vqe)
     #out.energy_diff_slope_vs_dt()
-    #out.energy_diff_slope_vs_dt_curve()
-    #out.plot_1d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 7)
-    out.plot_2d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 7)
+    ##out.energy_diff_slope_vs_dt_curve()
+    ##out.plot_1d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 7)
+    ##out.plot_2d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 7)
