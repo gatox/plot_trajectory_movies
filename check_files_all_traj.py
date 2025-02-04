@@ -65,5 +65,5 @@ def submit_traj_missed():
             print("Submitting", subfolder)
 
 # Example usage
-compare()
-#submit_traj_missed()
+#compare()
+submit_traj_missed()

@@ -174,11 +174,16 @@ class Population:
                 db = PySurfDB.load_database(os.path.join(path,self.results), read_only=True)
                 self.time = np.array(db["time"])
                 row = len(np.array(db["currstate"]))
-                for t in range(row):
+                #for t in range(row):
+                for t in range(mdsteps):
+                    time = np.array(db["time"][t])
                     pop = np.array(db["currstate"][t])
                     matrix_2[traj][t] = pop[0]
                     etot = np.array(db["etot"][t])
                     ene = np.array(db["energy"][t])
+                    #t_max = time[0]*self.fs
+                    #if t_max > 200.5:
+                    #    break
                     if t==0:
                         self.ini_etot = etot[0] 
                     if prob != "lz" and self.model is None: 
@@ -1782,7 +1787,7 @@ if __name__=="__main__":
     #popu.plot_angle_hops_time()
     #popu.plot_pyra_hops_time()
     #popu.plot_pyra_angle_hops()
-    popu.plot_histogram_hops(8)
+    #popu.plot_histogram_hops(8)
     #popu.plot_dihedral_angle_map_hops()
     #popu.plot_energies_diff_time()
     #popu.plot_population_adi_fitted()
