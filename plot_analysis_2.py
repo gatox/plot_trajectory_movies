@@ -18,8 +18,9 @@ from pysurf.database import PySurfDB
 
 class Population:
     
-    def __init__(self, skip):
+    def __init__(self, skip, time):
         self.skip = skip
+        self.time_max = time
         self.ev = 27.211324570273 
         self.fs = 0.02418884254
         self.aa = 0.5291772105638411 
@@ -144,6 +145,8 @@ class Population:
         prop = self.read_prop()
         prob = prop.prob
         mdsteps = prop.mdsteps
+        if self.time_max == 100:
+            mdsteps = int(np.ceil(mdsteps/2))
         trajs = prop.trajs
         matrix_2  = np.empty([trajs,mdsteps])*np.nan
         if prob != "lz" and self.model is None:
@@ -1777,7 +1780,8 @@ class Population:
 
 if __name__=="__main__":
     skip = sys.argv[1]
-    popu = Population(skip)
+    time = sys.argv[2]
+    popu = Population(skip, time)
     popu.write_csvs()
     #popu.plot_population_pop_c()
     #popu.plot_population_adi()
