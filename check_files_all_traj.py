@@ -1,13 +1,10 @@
 #Script for checking missing computed trajectories
 #And submitting the missed trajectories 
 import os
+import numpy as np
 from subprocess import run, CalledProcessError
+from pysurf.database import PySurfDB
 
-def all_traj():
-    total_traj = []
-    for i in range(200):
-        total_traj.append(int(i))
-    return total_traj
 
 def read_files():
     add_traj = []
@@ -18,6 +15,44 @@ def read_files():
             numb = line.split('./prop/traj_')[1]
             add_traj.append(int(numb))
     return sorted(add_traj)
+
+def all_traj():
+    return [int(i) for i in range(200)]
+
+def ok_traj():
+    with open("trajectories_ok_list", 'r') as read:
+        ok_traj = sorted(int(line.split('./prop/traj_')[1]) for line in read)
+    return ok_traj 
+
+def pote_traj():
+    ok_traj_old = ok_traj() 
+    total_traj = all_traj()
+    return [f"traj_{i:08d}" for i in sorted(set(total_traj) - set(ok_traj_old))]
+
+def md_steps():
+    with open("prop.inp", 'r') as prop:
+        line = next((line for line in prop if "mdsteps" in line), None)
+    return int(np.ceil(int(line.split()[2]) / 2)) if line else None
+
+def new_traj_ok():
+    mdsteps = md_steps()
+    valid_trajs = pote_traj()  # Get the valid trajectory list as a set for fast lookup
+    return [
+        int(traj.split('traj_')[1]) for traj in os.listdir("prop")
+        if traj in valid_trajs  # Only consider trajectories from read_ok_traj()
+        and (subfolder := os.path.join("prop", traj)) and os.path.isdir(subfolder)  # Ensure it's a directory
+        and (db := PySurfDB.load_database(os.path.join(subfolder, "results.db"), read_only=True))  # Load DB
+        and len(db["currstate"]) >= mdsteps  # Check condition
+    ]
+
+def update_ok_traj_list():
+    ok_traj_old = ok_traj()
+    new_traj = new_traj_ok()
+    added_traj = sorted(ok_traj_old+new_traj)
+    with open("added_trajectories_ok_list", 'w') as f:
+        for i in added_traj:
+            f.write(f"./prop/traj_{i:08d}\n")
+        f.close()
 
 def compare():
     comp = read_files()
@@ -64,6 +99,15 @@ def submit_traj_missed():
                 break
             print("Submitting", subfolder)
 
-# Example usage
-#compare()
-submit_traj_missed()
+if __name__=="__main__":
+    #request = input("available features: traj_missed, compare_inf, add_ok_list\n")
+    #request = 'add_ok_list' 
+    update_ok_traj_list()
+    #if request == 'traj_missed':
+    #    submit_traj_missed()
+    #elif request == 'compare_inf':
+    #    compare()
+    #elif request == 'add_ok_list':
+    #    update_ok_traj_list()
+    #else:
+    #    print("wrong request")
