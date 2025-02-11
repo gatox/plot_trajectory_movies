@@ -1,4 +1,5 @@
 import os
+import math
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
@@ -20,7 +21,7 @@ class Population:
     
     def __init__(self, skip, time):
         self.skip = skip
-        self.time_max = time
+        self.time_max = int(time)
         self.ev = 27.211324570273 
         self.fs = 0.02418884254
         self.aa = 0.5291772105638411 
@@ -38,8 +39,11 @@ class Population:
         #self.ci = [106.5,71.7]
 
     def skip_traj(self):
-        if self.skip == "yes":
+        if self.skip == "yes" and self.time_max == 200:
             read = open("trajectories_ok_list", 'r+') 
+            return [line.strip().split("/")[2] for line in read]
+        elif self.skip == "yes" and self.time_max == 100:
+            read = open("added_trajectories_ok_list", 'r+') 
             return [line.strip().split("/")[2] for line in read]
         return None
 
@@ -67,7 +71,7 @@ class Population:
         d_cu = np.dot(vec_c,vec_u)
         cr_cu = np.cross(vec_c, vec_u)
         n_cr_cu = np.linalg.norm(cr_cu)
-        angle = np.math.atan2(n_cr_cu,d_cu)
+        angle = math.atan2(n_cr_cu,d_cu)
         return 90 - np.degrees(angle) 
 
     def monoexponetial_S1(self, t, t_d, t_e):
@@ -138,15 +142,20 @@ class Population:
                     properties = namedtuple("properties", "dt mdsteps nstates states trajs")
                     return properties(timestep/self.fs, int(time_final/timestep), nstates, [i for i in range(nstates)], trajs)
 
+    def md_steps(self):
+        prop = self.read_prop()
+        if self.time_max == 100:
+            return int(np.ceil(prop.mdsteps/2))
+        else:
+            return prop.mdsteps
+
     def read_db(self):
         acstate = []
         crd = []
         rootdir = 'prop'
         prop = self.read_prop()
         prob = prop.prob
-        mdsteps = prop.mdsteps
-        if self.time_max == 100:
-            mdsteps = int(np.ceil(mdsteps/2))
+        mdsteps = self.md_steps()
         trajs = prop.trajs
         matrix_2  = np.empty([trajs,mdsteps])*np.nan
         if prob != "lz" and self.model is None:
@@ -164,8 +173,6 @@ class Population:
             matrix_12 = np.empty([trajs,mdsteps])*np.nan
             matrix_13 = np.empty([trajs,mdsteps])*np.nan
             matrix_14 = np.empty([trajs,mdsteps])*np.nan
-            matrix_pyr = np.empty([trajs,mdsteps])*np.nan
-            matrix_dihe = np.empty([trajs,mdsteps])*np.nan
         traj = 0
         allowed = self.skip_traj()
         for rootdir, dirs, files in os.walk(rootdir):
@@ -177,16 +184,12 @@ class Population:
                 db = PySurfDB.load_database(os.path.join(path,self.results), read_only=True)
                 self.time = np.array(db["time"])
                 row = len(np.array(db["currstate"]))
-                #for t in range(row):
                 for t in range(mdsteps):
                     time = np.array(db["time"][t])
                     pop = np.array(db["currstate"][t])
                     matrix_2[traj][t] = pop[0]
                     etot = np.array(db["etot"][t])
                     ene = np.array(db["energy"][t])
-                    #t_max = time[0]*self.fs
-                    #if t_max > 200.5:
-                    #    break
                     if t==0:
                         self.ini_etot = etot[0] 
                     if prob != "lz" and self.model is None: 
@@ -196,13 +199,6 @@ class Population:
                         matrix_3[traj][t] = self.dihedral(np.array(db["crd"][t], dtype=float),3,0,1,4) #H4-C1-N2-H5
                         self.ini_dihe_2014 = self.dihedral(np.array(db["crd"][t-1], dtype=float),2,0,1,4)
                         self.fin_dihe_2014 = self.dihedral(np.array(db["crd"][t], dtype=float),2,0,1,4)
-                        if 40 < self.ini_dihe_2014 < 60 and 40 < self.fin_dihe_2014 < 60 and self.fin_dihe_2014 > self.ini_dihe_2014:
-                            if t<=80:
-                                traj_neg = 0
-                            else:   
-                                traj_neg = 1
-                        else:
-                            traj_neg = 2
                         matrix_4[traj][t] = self.dihedral(np.array(db["crd"][t], dtype=float),2,0,1,4) #H3-C1-N2-H5
                         matrix_5[traj][t] = (etot[0]-self.ini_etot)*self.ev
                         matrix_6[traj][t] = self.dis_dimer(np.array(db["crd"][t], dtype=float),0,1) #C1-N2  
@@ -214,25 +210,9 @@ class Population:
                         matrix_12[traj][t] = (ene[1]-ene[0])*self.ev #Energy gap between S_1 and S_0 
                         matrix_13[traj][t] = ene[0]
                         matrix_14[traj][t] = (ene[1]+ene[0])/2 #Average between (S_1 and S_0)
-                        matrix_dihe[traj][t] = self.dihedral(np.array(db["crd"][t], dtype=float),2,0,1,4) #H3-C1-N2-H5
-                        matrix_pyr[traj][t] = self.pyramidalization_angle(np.array(db["crd"][t], dtype=float),3,2,1,0) #H4-H3-N2-C1 
                 if prob != "lz" and self.model is None:
                     matrix_14[traj][:]=(matrix_14[traj][:]-matrix_13[traj][:].min())*self.ev # - E_S_0_min
-                    if traj_neg == 1:
-                        matrix_dihe[traj][:] = -matrix_dihe[traj][:]
-                        matrix_pyr[traj][:] = -matrix_pyr[traj][:]
-                        print("traj:",traj)
                 traj +=1
-        #        #acstate.append(np.array(db["currstate"]))
-        #        acstate.append(np.array(db["fosc"]))
-        #matrix_1  = np.empty([trajs,mdsteps + 1])*np.nan
-        #for traj, sta in enumerate(acstate):
-        #    for t in range(len(acstate[traj])):
-        #        matrix_1[traj,t] = np.array(acstate)[traj][t]
-        #var = namedtuple("var", "p_c0 p_c1") 
-        #return var(matrix_0,matrix_1)
-        #var = namedtuple("var", "dihe_polar pyr_polar") 
-        #return var(matrix_dihe,matrix_pyr)
         if prob != "lz" and self.model is None:
             var = namedtuple("var", "p_c0 p_c1 pop dihe_3014 dihe_2014 etot dis_r12 dis_r25 dis_r14 dis_r13 angle_014 pyr_3210 e_gap ave") 
             return var(matrix_0, matrix_1, matrix_2, matrix_3, matrix_4, matrix_5, matrix_6, matrix_7, matrix_8, matrix_9, matrix_10, matrix_11, matrix_12, matrix_14)
@@ -1760,7 +1740,7 @@ class Population:
     def write_csvs(self):
         var  = self.read_db()
         for value in var._fields:
-        #for value in ["p_c0", "p_c1", "pop"]:
+        #for value in ["pop"]:
             print("Writhing csv files:", value)
             t, m = self.get_all_var(getattr(var, value))
             dct = {'time': t}
@@ -1783,6 +1763,9 @@ if __name__=="__main__":
     time = sys.argv[2]
     popu = Population(skip, time)
     popu.write_csvs()
+    #popu.skip_traj()
+    #popu.update_traj_ok()
+    #popu.new_traj_ok()
     #popu.plot_population_pop_c()
     #popu.plot_population_adi()
     #popu.plot_dihedral_hops_time()
