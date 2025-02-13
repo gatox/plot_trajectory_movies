@@ -32,7 +32,7 @@ def pote_traj():
 def md_steps():
     with open("prop.inp", 'r') as prop:
         line = next((line for line in prop if "mdsteps" in line), None)
-    return int(np.ceil(int(line.split()[2]) / 2)) if line else None
+    return int(np.ceil(int(line.split()[2]) / 2) + 1) if line else None
 
 def new_traj_ok():
     mdsteps = md_steps()
