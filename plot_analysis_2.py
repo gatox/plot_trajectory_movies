@@ -145,7 +145,7 @@ class Population:
     def md_steps(self):
         prop = self.read_prop()
         if self.time_max == 100:
-            return int(np.ceil(prop.mdsteps/2))
+            return int(np.ceil(prop.mdsteps/2) + 1)
         else:
             return prop.mdsteps
 
