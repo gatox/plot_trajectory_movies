@@ -41,8 +41,8 @@ class PlotComb:
 
     def filter_files(self, folder):
         file_1, nan_traj, val_traj, all_traj = self._filter_cv_files(os.path.join(folder,"dis_r25.dat")) #NH
-        file_2, , , = self._filter_cv_files(os.path.join(folder,"dis_r13.dat")) #CH
-        file_3, , , = self._filter_cv_files(os.path.join(folder,"dis_r14.dat")) #CH
+        file_2, nan_traj, val_traj, all_traj = self._filter_cv_files(os.path.join(folder,"dis_r13.dat")) #CH
+        file_3, nan_traj, val_traj, all_traj = self._filter_cv_files(os.path.join(folder,"dis_r14.dat")) #CH
         result = []
         for elem in file_1:
             if elem in file_2 and elem in file_3:
@@ -88,7 +88,7 @@ class PlotComb:
             # Compute valid trajectories without NaN values
         valid_trajs_no_nan = list(set(all_trajs) - set(nan_trajs))
 
-        return traj_2_l, nan_trajs, valid_trajs_no_nan, all_traj
+        return traj_2_l, nan_trajs, valid_trajs_no_nan, all_trajs
 
     def read_prop(self, fssh):
         #LVC
@@ -1548,15 +1548,13 @@ class PlotComb:
         plt.savefig("number_of_hops_4.png", bbox_inches='tight')
         plt.close()
 
-    def plot_1d_histogram(self,xms_caspt2,sa_casscf,sa_oo_vqe,n_bins=8):
-        hop_0_10, hop_0_01 = self.get_histogram_hops(xms_caspt2)
+    def plot_1d_histogram(self,sa_casscf,sa_oo_vqe,n_bins=8):
         hop_1_10, hop_1_01 = self.get_histogram_hops(sa_casscf)
         hop_2_10,hop_2_01 = self.get_histogram_hops(sa_oo_vqe)
         plt.rcParams['font.size'] = self.fs_rcParams
         plt.xlim([self.t_0, self.t_max])
         bins = [x for x in range(self.t_0, self.t_max+1,int(self.t_max/n_bins))]
         hops_l = [r"$S_1$ $\rightarrow$ $S_0$",r"$S_0$ $\rightarrow$ $S_1$"]
-        plt.hist(hop_0_10, bins = bins, ec = self.colors[0], label=self.labels[0] ,fc='none', lw=2)
         plt.hist(hop_1_10, bins = bins, ec = self.colors[1], label=self.labels[1] ,fc='none', lw=2)
         plt.hist(hop_2_10, bins = bins, ec = self.colors[2], label=self.labels[2] ,fc='none', lw=2)
         plt.ylabel(f'Number of Hops, {hops_l[0]}', fontweight = 'bold', fontsize = 16) 
@@ -1568,11 +1566,18 @@ class PlotComb:
 
     def get_histogram_hops(self, folder):
         pop_name = os.path.join(folder,"pop.dat")
+        e_gap_name = os.path.join(folder,"e_gap.dat")
+        e_gap = read_csv(e_gap_name)
         pop = read_csv(pop_name)
+        filter_2 = self.filter_files(folder)
+
+        ene_d = e_gap[filter_2].to_numpy() 
+        hop = pop[filter_2].to_numpy() 
+        mdsteps,trajs = hop.shape 
+
         time = pop['time']
         time = time.to_numpy()
-        hop = pop.to_numpy()[:,1:] # removing time column
-        mdsteps,trajs = hop.shape 
+
         hop_10 = []
         hop_01 = []
         for j in range(1,mdsteps):   #time_steps 
@@ -1635,8 +1640,7 @@ class PlotComb:
             for i in range(trajs):          #trajectories
                 ene = ene_d[j,i] 
                 if hop[j-1,i]==1 and hop[j,i]==0:
-                    #hop_10.append(abs(ene))
-                    hop_10.append(j)
+                    hop_10.append(abs(ene))
                     if parameter == "dihe_2014.dat" and ene < 0:
                         hop_10_hnch_lower.append(ene)
                     elif parameter == "dihe_2014.dat" and ene > 0:
@@ -2056,13 +2060,13 @@ if __name__=="__main__":
     lower_2_a = "True"
     out = PlotComb(t_0, t_max, lower_2_a)
     #out.plot_population_adi(index,xms_caspt2,sa_casscf,sa_oo_vqe)
-    #out.plot_1d_histogram(xms_caspt2,sa_casscf,sa_oo_vqe, 8)
+    out.plot_1d_histogram(sa_casscf,sa_oo_vqe, 8)
     #out.plot_1d_histogram_2_plots(xms_caspt2,sa_casscf,sa_oo_vqe, 17)
     #out.plot_1d_histogram_2_plots_samen(xms_caspt2,sa_casscf,sa_oo_vqe, 8)
     #out.plot_1d_histogram_2_plots_samen_energy(xms_caspt2,sa_casscf,sa_oo_vqe, 20)
     #out.plot_1d_histogram_2_plots_energy(xms_caspt2,sa_casscf,sa_oo_vqe, 31)
     ##out.plot_1d_curves(xms_caspt2,sa_casscf,sa_oo_vqe)
-    out.plot_1d_curves_time(xms_caspt2,sa_casscf,sa_oo_vqe)
+    ##out.plot_1d_curves_time(xms_caspt2,sa_casscf,sa_oo_vqe)
     #out.plot_1d_histogram_4_plots_S1_S0(xms_caspt2,sa_casscf,sa_oo_vqe)
     #out.print_stat(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_torsion_ave(xms_caspt2, sa_casscf, sa_oo_vqe)
