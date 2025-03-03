@@ -1611,37 +1611,6 @@ class PlotComb:
         plt.close()
 
 
-    def plot_violin_time_vs_energy_separate(self, sa_casscf, sa_oo_vqe):
-        # Get hopping time and energy data
-        hop_cas, time_cas = self.get_histogram_hops(sa_casscf)
-        hop_vqe, time_vqe = self.get_histogram_hops(sa_oo_vqe)
-    
-        # Create DataFrames
-        df_cas = pandas.DataFrame({'Energy Gap (eV)': hop_cas, 'Time (fs)': time_cas, 'Method': 'SA-CASSCF'})
-        df_vqe = pandas.DataFrame({'Energy Gap (eV)': hop_vqe, 'Time (fs)': time_vqe, 'Method': 'SA-OO-VQE'})
-    
-        # Define figure
-        fig, axes = plt.subplots(1, 2, figsize=(12, 5), sharey=True)
-    
-        # Plot SA-CASSCF
-        sns.violinplot(x="Energy Gap (eV)", y="Time (fs)", data=df_cas, ax=axes[0], color="orange", inner="quartiles")
-        axes[0].set_title('SA-CASSCF', fontsize=16)
-        axes[0].set_xlabel('Energy Gap (eV)', fontweight='bold', fontsize=14)
-        axes[0].set_ylabel('Time (fs)', fontweight='bold', fontsize=14)
-    
-        # Plot SA-OO-VQE
-        sns.violinplot(x="Energy Gap (eV)", y="Time (fs)", data=df_vqe, ax=axes[1], color="green", inner="quartiles")
-        axes[1].set_title('SA-OO-VQE', fontsize=16)
-        axes[1].set_xlabel('Energy Gap (eV)', fontweight='bold', fontsize=14)
-    
-        plt.suptitle('Time Distribution vs Energy Gap', fontsize=18, fontweight='bold')
-    
-        plt.savefig("violin_time_vs_energy_gap_separate.pdf", bbox_inches='tight')
-        plt.savefig("violin_time_vs_energy_gap_separate.png", bbox_inches='tight')
-        plt.close()
-
-
-
     def plot_time_vs_energy(self, sa_casscf, sa_oo_vqe):
         # Get hopping time and energy data
         hop_1_10, time_1_10 = self.get_histogram_hops(sa_casscf)
@@ -2163,8 +2132,7 @@ if __name__=="__main__":
     out = PlotComb(t_0, t_max, lower_2_a)
     #out.plot_population_adi(index,xms_caspt2,sa_casscf,sa_oo_vqe)
     #out.plot_1d_histogram(sa_casscf,sa_oo_vqe)
-    #out.plot_time_vs_energy_separate(sa_casscf,sa_oo_vqe)
-    out.plot_violin_time_vs_energy_separate(sa_casscf,sa_oo_vqe)
+    out.plot_time_vs_energy_separate(sa_casscf,sa_oo_vqe)
     #out.plot_1d_histogram_2_plots(xms_caspt2,sa_casscf,sa_oo_vqe, 17)
     #out.plot_1d_histogram_2_plots_samen(xms_caspt2,sa_casscf,sa_oo_vqe, 8)
     #out.plot_1d_histogram_2_plots_samen_energy(xms_caspt2,sa_casscf,sa_oo_vqe, 20)
