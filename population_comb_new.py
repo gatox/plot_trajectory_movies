@@ -7,9 +7,10 @@ from scipy.optimize import curve_fit
 import numpy as np
 import sys
 import csv
-
+import pandas
 from scipy.interpolate import make_interp_spline
 from pandas import (read_csv, DataFrame)
+import seaborn as sns
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 from collections import (namedtuple, Counter)
@@ -41,8 +42,8 @@ class PlotComb:
 
     def filter_files(self, folder):
         file_1, nan_traj, val_traj, all_traj = self._filter_cv_files(os.path.join(folder,"dis_r25.dat")) #NH
-        file_2, , , = self._filter_cv_files(os.path.join(folder,"dis_r13.dat")) #CH
-        file_3, , , = self._filter_cv_files(os.path.join(folder,"dis_r14.dat")) #CH
+        file_2, nan_traj, val_traj, all_traj = self._filter_cv_files(os.path.join(folder,"dis_r13.dat")) #CH
+        file_3, nan_traj, val_traj, all_traj = self._filter_cv_files(os.path.join(folder,"dis_r14.dat")) #CH
         result = []
         for elem in file_1:
             if elem in file_2 and elem in file_3:
@@ -88,7 +89,7 @@ class PlotComb:
             # Compute valid trajectories without NaN values
         valid_trajs_no_nan = list(set(all_trajs) - set(nan_trajs))
 
-        return traj_2_l, nan_trajs, valid_trajs_no_nan, all_traj
+        return traj_2_l, nan_trajs, valid_trajs_no_nan, all_trajs
 
     def read_prop(self, fssh):
         #LVC
@@ -1548,41 +1549,116 @@ class PlotComb:
         plt.savefig("number_of_hops_4.png", bbox_inches='tight')
         plt.close()
 
-    def plot_1d_histogram(self,xms_caspt2,sa_casscf,sa_oo_vqe,n_bins=8):
-        hop_0_10, hop_0_01 = self.get_histogram_hops(xms_caspt2)
-        hop_1_10, hop_1_01 = self.get_histogram_hops(sa_casscf)
-        hop_2_10,hop_2_01 = self.get_histogram_hops(sa_oo_vqe)
+    def plot_1d_histogram(self,sa_casscf,sa_oo_vqe):
+        hop_1_10, time_1_10 = self.get_histogram_hops(sa_casscf)
+        hop_2_10, time_1_10 = self.get_histogram_hops(sa_oo_vqe)
         plt.rcParams['font.size'] = self.fs_rcParams
-        plt.xlim([self.t_0, self.t_max])
-        bins = [x for x in range(self.t_0, self.t_max+1,int(self.t_max/n_bins))]
-        hops_l = [r"$S_1$ $\rightarrow$ $S_0$",r"$S_0$ $\rightarrow$ $S_1$"]
-        plt.hist(hop_0_10, bins = bins, ec = self.colors[0], label=self.labels[0] ,fc='none', lw=2)
-        plt.hist(hop_1_10, bins = bins, ec = self.colors[1], label=self.labels[1] ,fc='none', lw=2)
-        plt.hist(hop_2_10, bins = bins, ec = self.colors[2], label=self.labels[2] ,fc='none', lw=2)
-        plt.ylabel(f'Number of Hops, {hops_l[0]}', fontweight = 'bold', fontsize = 16) 
-        plt.xlabel('Time (fs)', fontweight = 'bold', fontsize = 16) 
+        #plt.xlim([self.t_0, self.t_max])
+        #plt.hist(hop_1_10, bins = self.bins.ene, ec = self.colors[1], label=self.labels[1] ,fc='none', lw=2)
+        #plt.hist(hop_2_10, bins = self.bins.ene, ec = self.colors[2], label=self.labels[2] ,fc='none', lw=2)
+        bin_centers = 0.5 * (self.bins.ene[:-1] + self.bins.ene[1:])  # Calculate bin centers
+
+        # Compute counts for each method
+        counts_cas, _ = np.histogram(hop_1_10, bins=self.bins.ene)
+        counts_vqe, _ = np.histogram(hop_2_10, bins=self.bins.ene)
+    
+        # Smooth curves
+        x_new = np.linspace(bin_centers[0], bin_centers[-1], 300)
+        cas_smooth = make_interp_spline(bin_centers, counts_cas, k=3)(x_new)
+        vqe_smooth = make_interp_spline(bin_centers, counts_vqe, k=3)(x_new)
+    
+        # Plot
+        plt.plot(x_new, cas_smooth, label=self.labels[1], color=self.colors[1], lw=2)
+        plt.scatter(bin_centers, counts_cas, color=self.colors[1], zorder=5)
+    
+        plt.plot(x_new, vqe_smooth, label=self.labels[2], color=self.colors[2], lw=2)
+        plt.scatter(bin_centers, counts_vqe, color=self.colors[2], zorder=5)
+
+        plt.ylabel(f'Distribution of Hops', fontweight = 'bold', fontsize = 16) 
+        plt.xlabel('Energy Gap (eV)', fontweight = 'bold', fontsize = 16) 
         plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.15), prop={'size': 12}, ncol=3)
         plt.savefig("number_of_hops_time.pdf", bbox_inches='tight')
         plt.savefig("number_of_hops_time.png", bbox_inches='tight')
         plt.close()
 
+    def plot_time_vs_energy_separate(self, sa_casscf, sa_oo_vqe):
+        # Get hopping time and energy data for each method
+        hop_cas, time_cas = self.get_histogram_hops(sa_casscf)
+        hop_vqe, time_vqe = self.get_histogram_hops(sa_oo_vqe)
+    
+        plt.rcParams['font.size'] = self.fs_rcParams
+    
+        # Define figure size
+        fig, axes = plt.subplots(1, 2, figsize=(12, 5), sharey=True)
+    
+        # Plot SA-CASSCF
+        h1 = axes[0].hist2d(hop_cas, time_cas, bins=[self.bins.ene, 30], cmap='Oranges', alpha=0.75)
+        axes[0].set_xlabel('Energy Gap (eV)', fontweight='bold', fontsize=14)
+        axes[0].set_ylabel('Time (fs)', fontweight='bold', fontsize=14)
+        axes[0].set_title('SA-CASSCF', fontsize=16)
+        fig.colorbar(h1[3], ax=axes[0], label="Hopping Count")
+    
+        # Plot SA-OO-VQE
+        h2 = axes[1].hist2d(hop_vqe, time_vqe, bins=[self.bins.ene, 30], cmap='Greens', alpha=0.75)
+        axes[1].set_xlabel('Energy Gap (eV)', fontweight='bold', fontsize=14)
+        axes[1].set_title('SA-OO-VQE', fontsize=16)
+        fig.colorbar(h2[3], ax=axes[1], label="Hopping Count")
+    
+        plt.suptitle('Time Distribution vs Energy Gap', fontsize=18, fontweight='bold')
+    
+        plt.savefig("time_vs_energy_gap_separate.pdf", bbox_inches='tight')
+        plt.savefig("time_vs_energy_gap_separate.png", bbox_inches='tight')
+        plt.close()
+
+
+    def plot_time_vs_energy(self, sa_casscf, sa_oo_vqe):
+        # Get hopping time and energy data
+        hop_1_10, time_1_10 = self.get_histogram_hops(sa_casscf)
+        hop_2_10, time_2_10 = self.get_histogram_hops(sa_oo_vqe)
+    
+        plt.rcParams['font.size'] = self.fs_rcParams
+    
+        # Create 2D Histogram (Heatmap)
+        plt.figure(figsize=(8, 6))
+        plt.hist2d(hop_1_10, time_1_10, bins=[self.bins.ene, 30], cmap='Blues', alpha=0.6, label=self.labels[1])
+        plt.hist2d(hop_2_10, time_2_10, bins=[self.bins.ene, 30], cmap='Greens', alpha=0.6, label=self.labels[2])
+    
+        plt.colorbar(label='Hopping Count')
+        plt.ylabel('Time (fs)', fontweight='bold', fontsize=16)
+        plt.xlabel('Energy Gap (eV)', fontweight='bold', fontsize=16)
+        plt.title('Time Distribution vs Energy Gap')
+        plt.legend()
+        
+        plt.savefig("time_vs_energy_gap.pdf", bbox_inches='tight')
+        plt.savefig("time_vs_energy_gap.png", bbox_inches='tight')
+        plt.close()
+
     def get_histogram_hops(self, folder):
         pop_name = os.path.join(folder,"pop.dat")
+        e_gap_name = os.path.join(folder,"e_gap.dat")
+        e_gap = read_csv(e_gap_name)
         pop = read_csv(pop_name)
+        filter_2 = self.filter_files(folder)
+
+        ene_d = e_gap[filter_2].to_numpy() 
+        hop = pop[filter_2].to_numpy() 
+        mdsteps,trajs = hop.shape 
+
         time = pop['time']
         time = time.to_numpy()
-        hop = pop.to_numpy()[:,1:] # removing time column
-        mdsteps,trajs = hop.shape 
+
         hop_10 = []
-        hop_01 = []
+        time_10 = []
         for j in range(1,mdsteps):   #time_steps 
             for i in range(trajs):          #trajectories
+                #x = time[j]
+                #ene = ene_d[j,i]
                 x = time[j]
+                ene = ene_d[j,i]
                 if hop[j-1,i]==1 and hop[j,i]==0:
-                    hop_10.append(x)
-                elif hop[j-1,i]==0 and hop[j,i]==1:
-                    hop_01.append(x)
-        return hop_10, hop_01
+                    hop_10.append(ene)
+                    time_10.append(x)
+        return hop_10, time_10
 
     def get_histogram_qy(self, folder, state):
         pop_name = os.path.join(folder,"pop.dat")
@@ -1635,8 +1711,7 @@ class PlotComb:
             for i in range(trajs):          #trajectories
                 ene = ene_d[j,i] 
                 if hop[j-1,i]==1 and hop[j,i]==0:
-                    #hop_10.append(abs(ene))
-                    hop_10.append(j)
+                    hop_10.append(abs(ene))
                     if parameter == "dihe_2014.dat" and ene < 0:
                         hop_10_hnch_lower.append(ene)
                     elif parameter == "dihe_2014.dat" and ene > 0:
@@ -2056,13 +2131,14 @@ if __name__=="__main__":
     lower_2_a = "True"
     out = PlotComb(t_0, t_max, lower_2_a)
     #out.plot_population_adi(index,xms_caspt2,sa_casscf,sa_oo_vqe)
-    #out.plot_1d_histogram(xms_caspt2,sa_casscf,sa_oo_vqe, 8)
+    #out.plot_1d_histogram(sa_casscf,sa_oo_vqe)
+    out.plot_time_vs_energy_separate(sa_casscf,sa_oo_vqe)
     #out.plot_1d_histogram_2_plots(xms_caspt2,sa_casscf,sa_oo_vqe, 17)
     #out.plot_1d_histogram_2_plots_samen(xms_caspt2,sa_casscf,sa_oo_vqe, 8)
     #out.plot_1d_histogram_2_plots_samen_energy(xms_caspt2,sa_casscf,sa_oo_vqe, 20)
     #out.plot_1d_histogram_2_plots_energy(xms_caspt2,sa_casscf,sa_oo_vqe, 31)
     ##out.plot_1d_curves(xms_caspt2,sa_casscf,sa_oo_vqe)
-    out.plot_1d_curves_time(xms_caspt2,sa_casscf,sa_oo_vqe)
+    ##out.plot_1d_curves_time(xms_caspt2,sa_casscf,sa_oo_vqe)
     #out.plot_1d_histogram_4_plots_S1_S0(xms_caspt2,sa_casscf,sa_oo_vqe)
     #out.print_stat(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_torsion_ave(xms_caspt2, sa_casscf, sa_oo_vqe)
