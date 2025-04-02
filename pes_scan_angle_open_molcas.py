@@ -63,24 +63,24 @@ def rotate_bend(coords, idx_C, idx_N, idx_H, angle):
 
 
 # Define bending angle scan parameters
-bending_angles = np.arange(0, 181, 10)  # 0° to 180° in 10° steps
+bending_angles = np.arange(-80, 81, 10)  # 10° to 170° in 10° steps
 
 for angle in bending_angles:
     # Rotate molecule
     new_atoms, bending_angle = rotate_bend(atoms, idx_C, idx_N, idx_H, angle)
     
     # Write new .xyz file
-    xyz_filename = f"CH2NH_{angle}.xyz"
+    xyz_filename = f"CH2NH_{angle+90}.xyz"
     with open(xyz_filename, "w") as xyz_file:
-        xyz_file.write(f"{len(new_atoms)}\nCH2NH torsion angle scan: {angle} degrees\n")
+        xyz_file.write(f"{len(new_atoms)}\nCH2NH torsion angle scan: {angle+90} degrees\n")
         for atom in new_atoms:
             xyz_file.write(f"{atom[0]} {atom[1]:.8f} {atom[2]:.8f} {atom[3]:.8f}\n")
     
     # Generate OpenMolcas input file
-    input_filename = f"ene_grad_nacs_{angle}.input"
+    input_filename = f"ene_grad_nacs_{angle+90}.input"
     with open(input_filename, "w") as f:
         f.write(f"""&GATEWAY
-Title= CH2NH PES Scan - Torsion {angle}°
+Title= CH2NH PES Scan - Torsion {angle+90}°
 Coord= {xyz_filename}
 Basis= cc-pvdz
 Group= NoSym
