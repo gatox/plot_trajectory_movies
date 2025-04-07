@@ -1604,7 +1604,7 @@ class PlotComb:
         axes[1].set_title('SA-OO-VQE', fontsize=16)
         fig.colorbar(h2[3], ax=axes[1], label="Hopping Count")
     
-        plt.suptitle('Time Distribution vs Energy Gap', fontsize=18, fontweight='bold')
+        #plt.suptitle('Time Distribution vs Energy Gap', fontsize=18, fontweight='bold')
     
         plt.savefig("time_vs_energy_gap_separate.pdf", bbox_inches='tight')
         plt.savefig("time_vs_energy_gap_separate.png", bbox_inches='tight')
@@ -2119,7 +2119,8 @@ if __name__=="__main__":
     #paths
     xms_caspt2 = "../xms_caspt2"
     sa_oo_vqe = "../sa_oo_vqe"
-    sa_casscf = "../sa_casscf"
+    #sa_casscf = "../sa_casscf"
+    sa_casscf = "../other_sa_casscf"
     #noise_sa_oo_vqe_050 = "../noise_sa_oo_vqe_050"
     #noise_sa_oo_vqe_025 = "../noise_sa_oo_vqe_025"
     #noise_sa_oo_vqe_012 = "../noise_sa_oo_vqe_012"
@@ -2145,7 +2146,7 @@ if __name__=="__main__":
     #out.plot_torsion_ave_qy(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_population_adi_fitted(sa_casscf)
     #out.plot_population_adi_fitted(sa_oo_vqe)
-    #out.plot_av_popu_torsion_bend(xms_caspt2, sa_casscf, sa_oo_vqe)
+    ##out.plot_av_popu_torsion_bend(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_variance_noise(noise_sa_oo_vqe)
     #out.plot_av_popu_noise(noise_sa_oo_vqe)
     ##noise
@@ -2156,8 +2157,8 @@ if __name__=="__main__":
     #out.plot_av_popu_diff_ene(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_one_method_av_popu_diff_ene(method)
     #out.get_torsion_qy_ave(xms_caspt2)
-    #out.get_torsion_qy_ave(sa_oo_vqe)
-    #out.get_torsion_qy_ave(sa_casscf)
+    ##out.get_torsion_qy_ave(sa_oo_vqe)
+    ##out.get_torsion_qy_ave(sa_casscf)
     #out.get_torsion_qy_ave_2(xms_caspt2)
     #out.get_torsion_qy_ave_2(sa_oo_vqe)
     #out.get_torsion_qy_ave_2(sa_casscf)
