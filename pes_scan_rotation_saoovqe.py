@@ -3,6 +3,7 @@ import numpy as np
 from saoovqe import SAOOVQE
 from jinja2 import Template #build templates
 from Bio.PDB.vectors import (Vector, calc_dihedral, calc_angle)
+from pysurf.system import Molecule 
 
 
 #geometry in units bohr
@@ -132,8 +133,40 @@ class GeoPara:
         nacs.update({(1,0):-np.array(self.nacs)})
         return nacs
 
+    def print_input_files(atoms, idx1, idx2, idx3, idx4, tosion_angles):
+        for angle in torsion_angles:
+            # Rotate molecule
+            new_atoms = rotate_torsion(atoms, idx1, idx2, idx3, idx4, angle)
+    
+            # Generate input file
+            input_filename = f"ene_grad_nacs_{angle+90}.input"
+            with open(input_filename, "w") as f:
+                f.write(f"units    Angstrom\n")
+                f.write(f"{chg} {mult}\n")
+                for atom in new_atoms:
+                    f.write(f"{atom[0]} {atom[1]:.8f} {atom[2]:.8f} {atom[3]:.8f}\n")
+                f.write(f"symmetry c1\n")
+                f.write(f"nocom\n")
+                f.write(f"noreorient\n")
+
 if __name__=='__main__':
     imput = sys.argv[1]
     result = GeoPara()
     result.get_angle_dihe_pyr(imput)
+
+    # CI CH2NH coordinates (atomic symbol, x, y, z)
+    atoms = [
+        ["N",  0.291124387, -0.234814432,  0.082917480],
+        ["C", -0.034946007, -0.071025849,  1.392596482],
+        ["H",  0.003949762, -0.919203484,  2.070158087],
+        ["H", -0.093975620,  0.928125232,  1.814758706],
+        ["H", -0.544237201, -0.357943347, -0.487333226]
+    ]
+    # Define bending angle scan parameters
+    bending_angles = np.arange(-80, 81, 10)  # 10° to 170° in 10° steps
+
+    # Define the indices for the torsion angle 3-1-2-5 (zero-based index)
+    idx1, idx2, idx3, idx4 = 2, 0, 1, 4  # H-C-N-H
+
+    print_input_files(atoms, idx_C, idx_N, idx_H, bending_angles)
     result.do_saoovqe()
