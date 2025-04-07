@@ -2,6 +2,7 @@ import sys
 import numpy as np
 from saoovqe import SAOOVQE
 from jinja2 import Template #build templates
+from scipy.spatial.transform import Rotation as R
 from Bio.PDB.vectors import (Vector, calc_dihedral, calc_angle)
 from pysurf.system import Molecule 
 
@@ -133,10 +134,36 @@ class GeoPara:
         nacs.update({(1,0):-np.array(self.nacs)})
         return nacs
 
-    def print_input_files(atoms, idx1, idx2, idx3, idx4, tosion_angles):
+    def rotate_torsion(self, coords, idx1, idx2, idx3, idx4, angle):
+        atoms = coords
+        """ Rotate the dihedral angle around the axis passing through idx2 and idx3. """
+        p1, p2, p3, p4 = np.array(coords[idx1][1:]), np.array(coords[idx2][1:]), np.array(coords[idx3][1:]), np.array(coords[idx4][1:])
+        
+        # Define rotation axis (from atom 2 to atom 3)
+        axis = (p3 - p2)
+        axis /= np.linalg.norm(axis)  # Normalize
+        
+        # Translate system so p3 is at origin
+        translated_coords = np.array([np.array(c[1:]) - p3 for c in coords])
+        
+        # Apply rotation to p4 (and all atoms connected to p4)
+        rotation = R.from_rotvec(np.radians(angle) * axis)  # Rotation matrix
+        for i in range(len(coords)):
+            if i in {idx4}:  # Rotate only atom 4 (rigid scan)
+                translated_coords[i] = rotation.apply(translated_coords[i])
+        
+        # Translate back
+        new_coords = translated_coords + p3
+        
+        # Reconstruct the coordinates list
+        new_atoms = [[atoms[i][0], *new_coords[i]] for i in range(len(coords))]
+        
+        return new_atoms
+
+    def print_input_files(self, chg, mult, atoms, idx1, idx2, idx3, idx4, torsion_angles):
         for angle in torsion_angles:
             # Rotate molecule
-            new_atoms = rotate_torsion(atoms, idx1, idx2, idx3, idx4, angle)
+            new_atoms = self.rotate_torsion(atoms, idx1, idx2, idx3, idx4, angle)
     
             # Generate input file
             input_filename = f"ene_grad_nacs_{angle+90}.input"
@@ -150,10 +177,6 @@ class GeoPara:
                 f.write(f"noreorient\n")
 
 if __name__=='__main__':
-    imput = sys.argv[1]
-    result = GeoPara()
-    result.get_angle_dihe_pyr(imput)
-
     # CI CH2NH coordinates (atomic symbol, x, y, z)
     atoms = [
         ["N",  0.291124387, -0.234814432,  0.082917480],
@@ -163,10 +186,10 @@ if __name__=='__main__':
         ["H", -0.544237201, -0.357943347, -0.487333226]
     ]
     # Define bending angle scan parameters
-    bending_angles = np.arange(-80, 81, 10)  # 10° to 170° in 10° steps
+    torsion_angles = np.arange(-80, 81, 10)  # 10° to 170° in 10° steps
 
     # Define the indices for the torsion angle 3-1-2-5 (zero-based index)
     idx1, idx2, idx3, idx4 = 2, 0, 1, 4  # H-C-N-H
 
-    print_input_files(atoms, idx_C, idx_N, idx_H, bending_angles)
-    result.do_saoovqe()
+    result = GeoPara()
+    result.print_input_files(0,1, atoms, idx1, idx2, idx3, idx4, torsion_angles)
