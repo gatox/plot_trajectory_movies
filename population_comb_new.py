@@ -1686,19 +1686,19 @@ class PlotComb:
 
     def get_histogram_hops_energy(self, folder, parameter):
         if "xms_caspt2" in folder:
-            print("Average values for xms_caspt2")
+            print("Average values for xms_caspt2 (No considering for this manuscript)")
         if "sa_casscf" in folder:
             print("Average values for sa_casscf")
         if "sa_oo_vqe" in folder:
             print("Average values for sa_oo_vqe")
-        e_gap_name = os.path.join(folder,parameter)
+        para_name = os.path.join(folder,parameter)
         pop_name = os.path.join(folder,"pop.dat")
-        e_gap = read_csv(e_gap_name)
+        param = read_csv(para_name)
         pop = read_csv(pop_name)
         filter_2 = self.filter_files(folder)
         #hop = pop.to_numpy()[:,1:] # removing time column
-        #ene_d = e_gap.to_numpy()[:,1:] # removing time column
-        ene_d = e_gap[filter_2].to_numpy() 
+        #ene_d = param.to_numpy()[:,1:] # removing time column
+        param_d = param[filter_2].to_numpy() 
         hop = pop[filter_2].to_numpy() 
         mdsteps,trajs = hop.shape 
         hop_10 = []
@@ -1709,23 +1709,23 @@ class PlotComb:
         hop_10_pyr = []
         for j in range(1,mdsteps):   #time_steps 
             for i in range(trajs):          #trajectories
-                ene = ene_d[j,i] 
+                par = param_d[j,i] 
                 if hop[j-1,i]==1 and hop[j,i]==0:
-                    hop_10.append(abs(ene))
-                    if parameter == "dihe_2014.dat" and ene < 0:
-                        hop_10_hnch_lower.append(ene)
-                    elif parameter == "dihe_2014.dat" and ene > 0:
-                        hop_10_hnch_upper.append(ene)
+                    hop_10.append(abs(par))
+                    if parameter == "dihe_2014.dat" and par < 0:
+                        hop_10_hnch_lower.append(par)
+                    elif parameter == "dihe_2014.dat" and par > 0:
+                        hop_10_hnch_upper.append(par)
                     elif parameter == "angle_014.dat":
-                        hop_10_hnc.append(ene)
+                        hop_10_hnc.append(par)
                     elif parameter == "pyr_3210.dat":
-                        hop_10_pyr.append(ene)
+                        hop_10_pyr.append(par)
                 elif hop[j-1,i]==0 and hop[j,i]==1:
-                    hop_01.append(ene)
+                    hop_01.append(par)
                     #if parameter == "angle_014.dat":
-                    #    hop_10_hnc.append(ene)
+                    #    hop_10_hnc.append(par)
                     #elif parameter == "pyr_3210.dat":
-                    #    hop_10_pyr.append(abs(ene))
+                    #    hop_10_pyr.append(abs(par))
         if parameter in ["dihe_2014.dat"]:
             print(f"Average hnch < 0:", sum(hop_10_hnch_lower)/len(hop_10_hnch_lower))
             print(f"Average hnch > 0:", sum(hop_10_hnch_upper)/len(hop_10_hnch_upper))
@@ -2133,18 +2133,18 @@ if __name__=="__main__":
     out = PlotComb(t_0, t_max, lower_2_a)
     #out.plot_population_adi(index,xms_caspt2,sa_casscf,sa_oo_vqe)
     #out.plot_1d_histogram(sa_casscf,sa_oo_vqe)
-    out.plot_time_vs_energy_separate(sa_casscf,sa_oo_vqe)
+    #out.plot_time_vs_energy_separate(sa_casscf,sa_oo_vqe)
     #out.plot_1d_histogram_2_plots(xms_caspt2,sa_casscf,sa_oo_vqe, 17)
     #out.plot_1d_histogram_2_plots_samen(xms_caspt2,sa_casscf,sa_oo_vqe, 8)
     #out.plot_1d_histogram_2_plots_samen_energy(xms_caspt2,sa_casscf,sa_oo_vqe, 20)
     #out.plot_1d_histogram_2_plots_energy(xms_caspt2,sa_casscf,sa_oo_vqe, 31)
-    ##out.plot_1d_curves(xms_caspt2,sa_casscf,sa_oo_vqe)
+    out.plot_1d_curves(xms_caspt2,sa_casscf,sa_oo_vqe)
     ##out.plot_1d_curves_time(xms_caspt2,sa_casscf,sa_oo_vqe)
     #out.plot_1d_histogram_4_plots_S1_S0(xms_caspt2,sa_casscf,sa_oo_vqe)
-    #out.print_stat(xms_caspt2, sa_casscf, sa_oo_vqe)
+    out.print_stat(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_torsion_ave(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_torsion_ave_qy(xms_caspt2, sa_casscf, sa_oo_vqe)
-    #out.plot_population_adi_fitted(sa_casscf)
+    ##out.plot_population_adi_fitted(sa_casscf)
     #out.plot_population_adi_fitted(sa_oo_vqe)
     ##out.plot_av_popu_torsion_bend(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_variance_noise(noise_sa_oo_vqe)
