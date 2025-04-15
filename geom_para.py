@@ -136,4 +136,4 @@ if __name__=='__main__':
     imput = sys.argv[1]
     result = GeoPara()
     result.get_angle_dihe_pyr(imput)
-    result.do_saoovqe()
+    #result.do_saoovqe()
