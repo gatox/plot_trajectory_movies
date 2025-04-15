@@ -24,8 +24,8 @@ class PlotComb:
         self.ev = 27.211324570273 
         self.fs = 0.02418884254
         self.aa = 0.5291772105638411 
-        self.fs_rcParams = '10'
-        self.f_size = '11'
+        self.fs_rcParams = '11'
+        self.f_size = '12'
         self.t_0 = t_0
         self.colors = plt.rcParams['axes.prop_cycle'].by_key()['color'][:3] 
         self.n_colors = [self.colors[2],"purple","gold","olive","blue"] 
@@ -2150,16 +2150,16 @@ class PlotComb:
         freq_eV_pos_cas, avg_spectrum_cas = self._fft_NH_avg(sa_casscf)
         freq_eV_pos_vqe, avg_spectrum_vqe = self._fft_NH_avg(sa_oo_vqe)
         # Plot
-        plt.figure(figsize=(10, 6))
         plt.rcParams['font.size'] = self.fs_rcParams
+        plt.figure(figsize=(7, 5))
         plt.plot(freq_eV_pos_cas, avg_spectrum_cas, color=self.colors[1], linewidth=2, label=self.labels[1])
         plt.plot(freq_eV_pos_vqe, avg_spectrum_vqe, color=self.colors[2], linewidth=2, label=self.labels[2])
         # Highlight N-H stretch region
         p_nh = plt.axvspan(0.41, 0.43, color='blue', alpha=0.4)
-        l1 = plt.legend([p_nh], [r'Exp. N–H stretch: 0.42 $\pm$ 0.01 eV'], prop={'size': 12}, loc='upper right', frameon=False)
+        l1 = plt.legend([p_nh], [r'Exp. N–H stretch:' "\n" '0.42 $\pm$ 0.01 eV'], prop={'size': 13}, loc='upper right', frameon=False)
         #plt.axvspan(0.075, 0.085, color='blue', alpha=0.15, label='N–H Bend')
         # put legend on first subplot
-        plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.1), prop={'size': 12}, ncol=2)
+        plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.12), prop={'size': 13}, ncol=2)
         plt.xlabel("Frequency (eV)", fontweight = 'bold', fontsize =self.f_size)
         plt.ylabel("Normalized Amplitude (arb.units)", fontweight = 'bold', fontsize =self.f_size)
         plt.xlim(0, 1.0)
