@@ -15,6 +15,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 from collections import (namedtuple, Counter)
 from pysurf.database import PySurfDB
+from scipy.fft import fft, fftfreq
 
 class PlotComb:
 
@@ -1205,7 +1206,7 @@ class PlotComb:
         ax2.plot(time_3, noise_3, color = self.n_colors[3], label = r"$\sigma^2$=1.0e-06", lw=2)
         ax2.plot(time_4, noise_4, color = self.n_colors[4], label = r"$\sigma^2$=1.0e-05", lw=2)
         ax2r = ax2.twinx()
-        ax2r.set_ylim([-2.37, 2.37])
+        ax2r.set_ylim([-0.6, 4.67])
         ax2r.yaxis.set_major_locator(ticker.MultipleLocator(0.3))
         ax2r.tick_params(labelsize=self.fs_rcParams)
         ## Plot the standard deviation (shaded area)
@@ -1226,7 +1227,7 @@ class PlotComb:
         ax2.plot(time_2, self.linear_total_energy(time_2, a_2, b_2), '--', color = "red", label=f"$\Delta T.E. = {a_2:.5f}t {'+' if b_2 >= 0 else ''}{b_2:.5f}$")
         ax2.plot(time_3, self.linear_total_energy(time_3, a_3, b_3), '--', color = "brown", label=f"$\Delta T.E. = {a_3:.5f}t {'+' if b_3 >= 0 else ''}{b_3:.5f}$")
         ax2.plot(time_4, self.linear_total_energy(time_4, a_4, b_4), '--', color = "magenta", label=f"$\Delta T.E. = {a_4:.5f}t {'+' if b_4 >= 0 else ''}{b_4:.5f}$")
-        ax2.set_ylim([-2.37, 2.37])
+        ax2.set_ylim([-0.6, 4.67])
         ax2.set_xlim([0,100])
         ax2.yaxis.set_major_locator(ticker.MultipleLocator(0.3))
         ax2.set_ylabel('$\mathbf{\Delta\ Total\ Energy\ (eV)}$', fontsize=self.f_size)
@@ -2113,6 +2114,65 @@ class PlotComb:
         plt.savefig("population_adi_comb_S%i.png" %index, bbox_inches='tight')
         plt.close()
 
+    def _fft_NH_avg(self, folder):
+        file = os.path.join(folder, "dis_r25.dat")
+        filter_2 = self.filter_files(folder)
+
+        df = pandas.read_csv(file)
+        time_fs = df['time'].values
+        time_s = time_fs * 1e-15
+        dt = time_s[1] - time_s[0]
+        N = len(time_s)
+        freq = fftfreq(N, d=dt)
+        freq_eV = freq * 4.135667696e-15
+
+        spectra = []
+        for col in filter_2:
+            if col not in df.columns:
+                continue
+            signal = df[col].values * 1e-10
+            signal_centered = signal - np.mean(signal)
+            spectrum = np.abs(fft(signal_centered)) / N
+            spectra.append(spectrum[:N//2])  # Positive freq only
+
+        if len(spectra) == 0:
+            print("No valid trajectories found.")
+            return
+
+        spectra = np.array(spectra)
+        avg_spectrum = np.mean(spectra, axis=0)
+        avg_spectrum /= np.max(avg_spectrum)  # Normalize to 1
+
+        freq_eV_pos = freq_eV[:N//2]
+        return freq_eV_pos, avg_spectrum
+
+    def plot_fft_NH_avg(self,sa_casscf,sa_oo_vqe):
+        freq_eV_pos_cas, avg_spectrum_cas = self._fft_NH_avg(sa_casscf)
+        freq_eV_pos_vqe, avg_spectrum_vqe = self._fft_NH_avg(sa_oo_vqe)
+        # Plot
+        plt.figure(figsize=(10, 6))
+        plt.rcParams['font.size'] = self.fs_rcParams
+        plt.plot(freq_eV_pos_cas, avg_spectrum_cas, color=self.colors[1], linewidth=2, label=self.labels[1])
+        plt.plot(freq_eV_pos_vqe, avg_spectrum_vqe, color=self.colors[2], linewidth=2, label=self.labels[2])
+        # Highlight N-H stretch region
+        p_nh = plt.axvspan(0.41, 0.43, color='blue', alpha=0.4)
+        l1 = plt.legend([p_nh], [r'Exp. N–H stretch: 0.42 $\pm$ 0.01 eV'], prop={'size': 12}, loc='upper right', frameon=False)
+        #plt.axvspan(0.075, 0.085, color='blue', alpha=0.15, label='N–H Bend')
+        # put legend on first subplot
+        plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.1), prop={'size': 12}, ncol=2)
+        plt.xlabel("Frequency (eV)", fontweight = 'bold', fontsize =self.f_size)
+        plt.ylabel("Normalized Amplitude (arb.units)", fontweight = 'bold', fontsize =self.f_size)
+        plt.xlim(0, 1.0)
+        plt.ylim(0, 1.05)
+        # Add l1 as a separate artist to the axes
+        plt.gca().add_artist(l1)
+        plt.savefig(f"fft_avg_NH.pdf", bbox_inches='tight')
+        plt.savefig(f"fft_avg_NH.png", bbox_inches='tight')
+        plt.close()
+
+
+         
+
 if __name__=="__main__":
     #state
     index = 1 
@@ -2138,10 +2198,10 @@ if __name__=="__main__":
     #out.plot_1d_histogram_2_plots_samen(xms_caspt2,sa_casscf,sa_oo_vqe, 8)
     #out.plot_1d_histogram_2_plots_samen_energy(xms_caspt2,sa_casscf,sa_oo_vqe, 20)
     #out.plot_1d_histogram_2_plots_energy(xms_caspt2,sa_casscf,sa_oo_vqe, 31)
-    out.plot_1d_curves(xms_caspt2,sa_casscf,sa_oo_vqe)
+    #out.plot_1d_curves(xms_caspt2,sa_casscf,sa_oo_vqe)
     ##out.plot_1d_curves_time(xms_caspt2,sa_casscf,sa_oo_vqe)
     #out.plot_1d_histogram_4_plots_S1_S0(xms_caspt2,sa_casscf,sa_oo_vqe)
-    out.print_stat(xms_caspt2, sa_casscf, sa_oo_vqe)
+    #out.print_stat(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_torsion_ave(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_torsion_ave_qy(xms_caspt2, sa_casscf, sa_oo_vqe)
     ##out.plot_population_adi_fitted(sa_casscf)
@@ -2149,11 +2209,11 @@ if __name__=="__main__":
     ##out.plot_av_popu_torsion_bend(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_variance_noise(noise_sa_oo_vqe)
     #out.plot_av_popu_noise(noise_sa_oo_vqe)
-    ##noise
-    #for i in ["007","012","025","050"]:
-    #    folder = "../noise_sa_oo_vqe_" + i
-    #    out.plot_av_popu_torsion_noise(folder)
-    ##noise
+    #noise
+    ##for i in ["007","012","025","050"]:
+    ##    folder = "../noise_sa_oo_vqe_" + i
+    ##    out.plot_av_popu_torsion_noise(folder)
+    #noise
     #out.plot_av_popu_diff_ene(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_one_method_av_popu_diff_ene(method)
     #out.get_torsion_qy_ave(xms_caspt2)
@@ -2168,3 +2228,4 @@ if __name__=="__main__":
     ##out.energy_diff_slope_vs_dt_curve()
     ##out.plot_1d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 7)
     ##out.plot_2d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 7)
+    out.plot_fft_NH_avg(sa_casscf,sa_oo_vqe)
