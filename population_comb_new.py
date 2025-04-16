@@ -380,7 +380,8 @@ class PlotComb:
                     if k == 'time' or k not in filter_2:
                         continue
                     if val != 'nan':  # Only consider valid (non-'nan') values
-                        para_vals.append(abs(float(val)))
+                        #para_vals.append(abs(float(val)))
+                        para_vals.append(float(val))
                 
                 if len(para_vals) > 0:  # If we have valid para values
                     ave_para.append(np.mean(para_vals))  # Compute average
@@ -1056,7 +1057,7 @@ class PlotComb:
         time_1, population_1 = self.get_popu_adi(sa_casscf,os.path.join(sa_casscf,"pop.dat"))
         time_2, population_2 = self.get_popu_adi(sa_oo_vqe,os.path.join(sa_oo_vqe,"pop.dat"))
         #diff_ene
-        d_ene = self._para(xms_caspt2,sa_casscf,sa_oo_vqe,"etot.dat")
+        d_ene = self._para(sa_casscf,sa_oo_vqe,"etot.dat")
 
         plt.rcParams['font.size'] = self.fs_rcParams
         fig = plt.figure(figsize=(6,14))
@@ -1064,9 +1065,9 @@ class PlotComb:
         gs = gridspec.GridSpec(4, 1, height_ratios=[1,1,1,1])
         # the 1st subplot
         ax0 = plt.subplot(gs[0])
-        ax0.plot(time_0,np.array(population_0)[:,1], label = self.labels[0], lw=2)
-        ax0.plot(time_1,np.array(population_1)[:,1], label = self.labels[1], lw=2)
-        ax0.plot(time_2,np.array(population_2)[:,1], label = self.labels[2], lw=2)
+        #ax0.plot(time_0,np.array(population_0)[:,1], label = self.labels[0], lw=2)
+        ax0.plot(time_1,np.array(population_1)[:,1], label = self.labels[1], color = self.colors[1], lw=2)
+        ax0.plot(time_2,np.array(population_2)[:,1], label = self.labels[2], color = self.colors[2], lw=2)
         ax0r = ax0.twinx()
         ax0r.set_ylim([-0.05, 1.05])
         ax0r.tick_params(labelsize=self.fs_rcParams)
@@ -1077,21 +1078,23 @@ class PlotComb:
             
         # the 2nd subplot
         ax1 = plt.subplot(gs[1], sharex = ax0)
-        ax1.plot(d_ene.t_xms,d_ene.av_xms, lw=2)
-        ax1.plot(d_ene.t_cas,d_ene.av_cas, lw=2)
-        ax1.plot(d_ene.t_vqe,d_ene.av_vqe, lw=2)
+        #ax1.plot(d_ene.t_xms,d_ene.av_xms, lw=2)
+        ax1.plot(d_ene.t_cas,d_ene.av_cas, color = self.colors[1], lw=2)
+        ax1.plot(d_ene.t_vqe,d_ene.av_vqe, color = self.colors[2], lw=2)
         ax1r = ax1.twinx()
-        ax1r.set_ylim([-0.05, 1])
+        ax1r.set_ylim([-0.5, 1])
         ax1r.yaxis.set_major_locator(ticker.MultipleLocator(0.3))
         ax1r.tick_params(labelsize=self.fs_rcParams)
         # Plot the standard deviation (shaded area)
-        ax1.fill_between(d_ene.t_xms, np.array(d_ene.av_xms) - np.array(d_ene.std_xms),
-                         np.array(d_ene.av_xms) + np.array(d_ene.std_xms), alpha=0.3, linestyle='-.', edgecolor=self.colors[0])
-        ax1.fill_between(d_ene.t_cas, np.array(d_ene.av_cas) - np.array(d_ene.std_cas),
-                         np.array(d_ene.av_cas) + np.array(d_ene.std_cas), alpha=0.3, linestyle='--', edgecolor=self.colors[1])
-        ax1.fill_between(d_ene.t_vqe, np.array(d_ene.av_vqe) - np.array(d_ene.std_vqe),
-                         np.array(d_ene.av_vqe) + np.array(d_ene.std_vqe), alpha=0.3, linestyle=':', edgecolor=self.colors[2])
-        ax1.set_ylim([-0.05, 1])
+        ##ax1.fill_between(d_ene.t_xms, np.array(d_ene.av_xms) - np.array(d_ene.std_xms),
+        ##                 np.array(d_ene.av_xms) + np.array(d_ene.std_xms), alpha=0.3, linestyle='-.', edgecolor=self.colors[0])
+        #ax1.fill_between(d_ene.t_cas, np.array(d_ene.av_cas) - np.array(d_ene.std_cas),
+        #                 np.array(d_ene.av_cas) + np.array(d_ene.std_cas), alpha=0.3, linestyle='--', edgecolor=self.colors[1])
+        #ax1.fill_between(d_ene.t_vqe, np.array(d_ene.av_vqe) - np.array(d_ene.std_vqe),
+        #                 np.array(d_ene.av_vqe) + np.array(d_ene.std_vqe), alpha=0.3, linestyle=':', edgecolor=self.colors[2])
+        # Guide line in black color at 0
+        ax1.axhline(y=0.0, color='black', linestyle='--', linewidth=1.5)
+        ax1.set_ylim([-0.5, 1])
         ax1.yaxis.set_major_locator(ticker.MultipleLocator(0.3))
         ax1.set_ylabel('$\mathbf{\Delta\ Total\ Energy\ (eV)}$', fontsize=self.f_size)
         ax1.set_xlabel('Time (fs)', fontweight = 'bold', fontsize =self.f_size)
@@ -2214,7 +2217,7 @@ if __name__=="__main__":
     ##    folder = "../noise_sa_oo_vqe_" + i
     ##    out.plot_av_popu_torsion_noise(folder)
     #noise
-    #out.plot_av_popu_diff_ene(xms_caspt2, sa_casscf, sa_oo_vqe)
+    out.plot_av_popu_diff_ene(xms_caspt2, sa_casscf, sa_oo_vqe)
     #out.plot_one_method_av_popu_diff_ene(method)
     #out.get_torsion_qy_ave(xms_caspt2)
     ##out.get_torsion_qy_ave(sa_oo_vqe)
@@ -2228,4 +2231,4 @@ if __name__=="__main__":
     ##out.energy_diff_slope_vs_dt_curve()
     ##out.plot_1d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 7)
     ##out.plot_2d_histogram_QY_time(xms_caspt2,sa_casscf,sa_oo_vqe, 7)
-    out.plot_fft_NH_avg(sa_casscf,sa_oo_vqe)
+    ##out.plot_fft_NH_avg(sa_casscf,sa_oo_vqe)
