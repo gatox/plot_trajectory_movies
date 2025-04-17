@@ -348,7 +348,7 @@ if __name__ == '__main__':
     #results = ["etot", "dis_r12", "dis_r25", "dis_r14", "dis_r13", "angle_014", "pyr_3210"]
     #results = ["dihe_3014", "dihe_2014", "etot", "dis_r12", "dis_r25", "dis_r14", "dis_r13", "angle_014", "pyr_3210"]
     #results = ["etot"]
-    results = ["dihe_3014", "dihe_2014"]
+    results = ["dis_r12", "dis_r25", "dis_r14", "dis_r13", "angle_014", "pyr_3210","dihe_3014", "dihe_2014"]
     traj_plots(results, "traj")
     #traj_plots(results, label)
     #_no_density_three_plots("pyr_3210","angle_014","dihe_2014")
