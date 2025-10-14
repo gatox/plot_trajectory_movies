@@ -20,14 +20,17 @@ class PlotsH2:
         self.ev = 27.211324570273
         self.aa = 0.529177208
         self.fs_rcParams = '20'
-        self.colors = plt.rcParams['axes.prop_cycle'].by_key()['color'][:4]
-        self.markers = list(Line2D.filled_markers)[:8]
+        self.colors = plt.rcParams['axes.prop_cycle'].by_key()['color'][:8]
+        self.markers = list(Line2D.filled_markers)
         #self.titles = ["Noisless","Noise/Conv_Tol: 1.0e-2","Noise/Conv_Tol: 1.0e-3", "Noise/Conv_Tol: 1.0e-4"]
-        self.titles = ["Noisless","Noise/Conv_Tol: 1.0e-2","Real/Conv_Tol: 1.0e-2"]
+        #self.titles = ["Noisless","Noise/Conv_Tol: 1.0e-2","Real/Conv_Tol: 1.0e-2"]
         self.shots = 1000
         #self.global_title = f"H2_dynamics/STO-3G/PNOF4/{self.shots}_shots/AER/IBM_pittsburgh/Opt_lvel=3"
-        self.global_title = f"H2_dynamics/STO-3G/PNOF4/{self.shots}_shots"
-        
+        #self.global_title = f"H2_dynamics/STO-3G/PNOF4/{self.shots}_shots"
+        self.global_title = f"H2_dynamics/STO-3G/PNOF4/Opt_circuits"
+        self.titles = ["adam","sgd","slsqp","l-bfgs-b","spsa"]
+        self.col = 3
+
     def read_db(self, output):
         db = PySurfDB.load_database(output, read_only=True)
         time = db["time"][0:]*self.fs
@@ -58,15 +61,15 @@ class PlotsH2:
             title = self.titles[i % len(self.titles)]
 
             ax.plot(crd, vel / 1e-3, color=color, linestyle='--', label=title)
-            ax.scatter(crd[0], vel[0] / 1e-3, color='r', marker=self.markers[2*i], s=40)
-            ax.scatter(crd[-1], vel[-1] / 1e-3, color='g', marker=self.markers[2*i + 1], s=40)
+            ax.scatter(crd[0], vel[0] / 1e-3, color='r', marker=self.markers[(2*i) % len(self.markers)], s=40)
+            ax.scatter(crd[-1], vel[-1] / 1e-3, color='g', marker=self.markers[(2*i + 1) % len(self.markers)], s=40)
 
         ax.set_xlabel('Position (a.u.)', fontweight='bold', fontsize=16)
         ax.set_ylabel('Velocity (a.u.)', fontweight='bold', fontsize=16)
         ax.text(0.0, 1.0, "1e-3", transform=ax.transAxes, ha='left', va='bottom', fontsize=12)
         plt.title(self.global_title, y=1.2)
         ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.195),
-                prop={'size': 12}, ncol=2, frameon=False)
+                prop={'size': 12}, ncol=self.col, frameon=False)
 
         fig.savefig(f"post_vel_h2_3_{self.shots}_shots.pdf", bbox_inches='tight')
         plt.close(fig)
@@ -128,7 +131,7 @@ class PlotsH2:
             loc='upper center',
             bbox_to_anchor=(0.5, 1.19),
             prop={'size': 12},
-            ncol=2,
+            ncol=self.col,
             frameon=False
         )
         plt.savefig(f"time_etotal_h2_3_{self.shots}_shots.pdf", bbox_inches='tight')
@@ -175,7 +178,7 @@ class PlotsH2:
             loc='upper center',
             bbox_to_anchor=(0.5, 1.19),
             prop={'size': 12},
-            ncol=2,
+            ncol=self.col,
             frameon=False
         )
         plt.title(self.global_title, y=1.2)
