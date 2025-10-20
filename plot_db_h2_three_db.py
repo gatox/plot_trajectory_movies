@@ -20,7 +20,7 @@ class PlotsH2:
         self.ev = 27.211324570273
         self.aa = 0.529177208
         self.fs_rcParams = '20'
-        self.colors = plt.rcParams['axes.prop_cycle'].by_key()['color'][:8]
+        self.colors = plt.rcParams['axes.prop_cycle'].by_key()['color'][:10]
         self.markers = list(Line2D.filled_markers)
         #self.titles = ["Noisless","Noise/Conv_Tol: 1.0e-2","Noise/Conv_Tol: 1.0e-3", "Noise/Conv_Tol: 1.0e-4"]
         #self.titles = ["Noisless","Noise/Conv_Tol: 1.0e-2","Real/Conv_Tol: 1.0e-2"]
@@ -28,8 +28,8 @@ class PlotsH2:
         #self.global_title = f"H2_dynamics/STO-3G/PNOF4/{self.shots}_shots/AER/IBM_pittsburgh/Opt_lvel=3"
         #self.global_title = f"H2_dynamics/STO-3G/PNOF4/{self.shots}_shots"
         self.global_title = f"H2_dynamics/STO-3G/PNOF4/Opt_circuits"
-        self.titles = ["adam","sgd","slsqp","l-bfgs-b","spsa","cobyla"]
-        self.col = 3
+        self.titles = ["adam","sgd","slsqp","l-bfgs-b","spsa","cobyla","cmaes"]
+        self.col = 4
 
     def read_db(self, output):
         db = PySurfDB.load_database(output, read_only=True)
