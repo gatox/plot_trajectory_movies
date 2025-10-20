@@ -28,7 +28,7 @@ class PlotsH2:
         #self.global_title = f"H2_dynamics/STO-3G/PNOF4/{self.shots}_shots/AER/IBM_pittsburgh/Opt_lvel=3"
         #self.global_title = f"H2_dynamics/STO-3G/PNOF4/{self.shots}_shots"
         self.global_title = f"H2_dynamics/STO-3G/PNOF4/Opt_circuits"
-        self.titles = ["adam","sgd","slsqp","l-bfgs-b","spsa"]
+        self.titles = ["adam","sgd","slsqp","l-bfgs-b","spsa","cobyla"]
         self.col = 3
 
     def read_db(self, output):
