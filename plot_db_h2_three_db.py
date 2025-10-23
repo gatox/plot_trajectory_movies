@@ -23,13 +23,13 @@ class PlotsH2:
         self.colors = plt.rcParams['axes.prop_cycle'].by_key()['color'][:10]
         self.markers = list(Line2D.filled_markers)
         #self.titles = ["Noisless","Noise/Conv_Tol: 1.0e-2","Noise/Conv_Tol: 1.0e-3", "Noise/Conv_Tol: 1.0e-4"]
-        #self.titles = ["Noisless","Noise/Conv_Tol: 1.0e-2","Real/Conv_Tol: 1.0e-2"]
+        self.titles = ["Noisless","Noise/Conv_Tol: 1.0e-2 (SGD/1000)","Real/Conv_Tol: 1.0e-2 (SDG/1000)", "Real/Conv_Tol: 1.0e-3 (ADAM/10000)"]
         self.shots = 1000
         #self.global_title = f"H2_dynamics/STO-3G/PNOF4/{self.shots}_shots/AER/IBM_pittsburgh/Opt_lvel=3"
         #self.global_title = f"H2_dynamics/STO-3G/PNOF4/{self.shots}_shots"
-        self.global_title = f"H2_dynamics/STO-3G/PNOF4/Opt_circuits"
-        self.titles = ["adam","sgd","slsqp","l-bfgs-b","spsa","cobyla","cmaes"]
-        self.col = 4
+        self.global_title = f"H2_dynamics/STO-3G/PNOF4/"
+        #self.titles = ["adam","sgd","slsqp","l-bfgs-b","spsa","cobyla","cmaes"]
+        self.col = 2
 
     def read_db(self, output):
         db = PySurfDB.load_database(output, read_only=True)
@@ -68,10 +68,11 @@ class PlotsH2:
         ax.set_ylabel('Velocity (a.u.)', fontweight='bold', fontsize=16)
         ax.text(0.0, 1.0, "1e-3", transform=ax.transAxes, ha='left', va='bottom', fontsize=12)
         plt.title(self.global_title, y=1.2)
-        ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.195),
+        ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.2),
                 prop={'size': 12}, ncol=self.col, frameon=False)
 
-        fig.savefig(f"post_vel_h2_3_{self.shots}_shots.pdf", bbox_inches='tight')
+        #fig.savefig(f"post_vel_h2_3_{self.shots}_shots.pdf", bbox_inches='tight')
+        fig.savefig(f"post_vel_h2.pdf", bbox_inches='tight')
         plt.close(fig)
 
     
@@ -129,12 +130,13 @@ class PlotsH2:
         plt.title(self.global_title, y=1.2)
         plt.legend(
             loc='upper center',
-            bbox_to_anchor=(0.5, 1.19),
+            bbox_to_anchor=(0.5, 1.2),
             prop={'size': 12},
             ncol=self.col,
             frameon=False
         )
-        plt.savefig(f"time_etotal_h2_3_{self.shots}_shots.pdf", bbox_inches='tight')
+        #plt.savefig(f"time_etotal_h2_3_{self.shots}_shots.pdf", bbox_inches='tight')
+        plt.savefig(f"time_etotal_h2.pdf", bbox_inches='tight')
         plt.close()
         
     # def plot_time_total_energy(self, output):
@@ -176,13 +178,14 @@ class PlotsH2:
         plt.xlim([0, 10])
         plt.legend(
             loc='upper center',
-            bbox_to_anchor=(0.5, 1.19),
+            bbox_to_anchor=(0.5, 1.2),
             prop={'size': 12},
             ncol=self.col,
             frameon=False
         )
         plt.title(self.global_title, y=1.2)
-        plt.savefig(f"time_parameter_h2_3_{self.shots}_shots.pdf", bbox_inches='tight')
+        #plt.savefig(f"time_parameter_h2_3_{self.shots}_shots.pdf", bbox_inches='tight')
+        plt.savefig(f"time_parameter_h2.pdf", bbox_inches='tight')
         plt.close()
 
 
