@@ -38,24 +38,24 @@ class WritePlotOptCirc:
         # ===============================
         summary = {}
 
-        for opt_method in optimizers:
+        
             print(f"\n=== Testing {opt_method.upper()} ===")
 
             cal = NOFVQE(
                 xyz_file,
-                functional=functional,
-                conv_tol=conv_tol,
-                init_param=init_param,
-                basis=basis,
-                max_iterations=max_iterations,
-                opt_circ=opt_method,
-                gradient=gradient,
-                d_shift=d_shift,
-                C_MO=C_MO,
-                dev=dev,
-                n_shots=n_shots,
-                optimization_level=optimization_level,
-                resilience_level=resilience_level,
+                functional=self.functional,
+                conv_tol=self.conv_tol,
+                init_param=self.init_param,
+                basis=self.basis,
+                max_iterations=self.max_iterations,
+                opt_circ=self.optimizer,
+                gradient=self.gradient,
+                d_shift=self.d_shift,
+                C_MO=self.C_MO,
+                dev=self.dev,
+                n_shots=self.n_shots,
+                optimization_level=self.optimization_level,
+                resilience_level=self.resilience_level,
             )
 
             crds = cal.crd
