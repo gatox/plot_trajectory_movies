@@ -24,12 +24,12 @@ class PlotsH2:
         self.markers = list(Line2D.filled_markers)
         #self.titles = ["Noisless","Noise/Conv_Tol: 1.0e-2","Noise/Conv_Tol: 1.0e-3", "Noise/Conv_Tol: 1.0e-4"]
         # self.titles = ["Noisless","Noise/Conv_Tol: 1.0e-2 (SGD/1000)","Real/Conv_Tol: 1.0e-2 (SDG/1000)", "Real/Conv_Tol: 1.0e-3 (ADAM/10000)"]
-        self.titles = ["Simulator/Conv_Tol: 1.0e-7","Real/Conv_Tol: 1.0e-2 (SGD/1000)","Real/Conv_Tol: 1.0e-3 (ADAM/10000)","Hybrid_Ene_Param/Conv_Tol: 1.0e-3 (SLSQP/10000)","Hybrid_Ene/Conv_Tol: 1.0e-7 (SLSQP/10000)"]
+        self.titles = ["Simulator/Conv_Tol: 1.0e-7","Real/Conv_Tol:1.0e-2/Res_Lev:0(SGD/1000)","Real/Conv_Tol:1.0e-3/Res_Lev:0(ADAM/10000)","Hybrid_Ene_Param/Conv_Tol:1.0e-3/Res_Lev:0(SLSQP/10000)","Hybrid_Ene/Conv_Tol:1.0e-7/Res_Lev:0(SLSQP/10000)","Hybrid_Ene/Conv_Tol:1.0e-7/Res_Lev:2(SLSQP/10000)"]
         #self.titles = ["Simulator/Conv_Tol: 1.0e-7","Hybrid_Ene/Conv_Tol: 1.0e-7 (SLSQP/10000)"]
         self.shots = 10000
         #self.global_title = f"H2_dynamics/STO-3G/PNOF4/{self.shots}_shots/AER/IBM_pittsburgh/Opt_lvel=3"
         #self.global_title = f"H2_dynamics/STO-3G/PNOF4/{self.shots}_shots"
-        self.global_title = f"H2_dynamics/STO-3G/PNOF4/Opt_Level_3"
+        self.global_title = f"H2_dynamics/STO-3G/PNOF/Opt_Level_3"
         #self.titles = ["adam","sgd","slsqp","l-bfgs-b","spsa","cobyla","cmaes"]
         self.col = 2
         self.y = 1.3
