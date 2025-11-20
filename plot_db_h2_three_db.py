@@ -21,11 +21,13 @@ class PlotsH2:
         self.aa = 0.529177208
         self.fs_rcParams = '20'
         self.colors = plt.rcParams['axes.prop_cycle'].by_key()['color'][:10]
+        self.colors = [self.colors[0], self.colors[3], self.colors[4]]
         self.markers = list(Line2D.filled_markers)
         #self.titles = ["Noisless","Noise/Conv_Tol: 1.0e-2","Noise/Conv_Tol: 1.0e-3", "Noise/Conv_Tol: 1.0e-4"]
         # self.titles = ["Noisless","Noise/Conv_Tol: 1.0e-2 (SGD/1000)","Real/Conv_Tol: 1.0e-2 (SDG/1000)", "Real/Conv_Tol: 1.0e-3 (ADAM/10000)"]
         self.titles = ["Simulator/Conv_Tol: 1.0e-7","Real/Conv_Tol:1.0e-2/Res_Lev:0(SGD/1000)","Real/Conv_Tol:1.0e-3/Res_Lev:0(ADAM/10000)","Hybrid_Ene_Param/Conv_Tol:1.0e-3/Res_Lev:0(SLSQP/10000)","Hybrid_Ene/Conv_Tol:1.0e-7/Res_Lev:0(SLSQP/10000)","Hybrid_Ene/Conv_Tol:1.0e-7/Res_Lev:2(SLSQP/10000)"]
         #self.titles = ["Simulator/Conv_Tol: 1.0e-7","Hybrid_Ene/Conv_Tol: 1.0e-7 (SLSQP/10000)"]
+        self.titles = [""]
         self.shots = 10000
         #self.global_title = f"H2_dynamics/STO-3G/PNOF4/{self.shots}_shots/AER/IBM_pittsburgh/Opt_lvel=3"
         #self.global_title = f"H2_dynamics/STO-3G/PNOF4/{self.shots}_shots"
@@ -47,10 +49,10 @@ class PlotsH2:
             dimer.append(float(m[atom_2][2])-float(m[atom_1][2]))
         return dimer
 
-    def plot_pos_vel_3db(self, *outputs):
+    def plot_pos_vel(self, *outputs):
         """
         Plot position vs velocity for 1–4 (or more) database outputs.
-        Example: self.plot_pos_vel_3db(output_1, output_2, output_3)
+        Example: self.plot_pos_vel(output_1, output_2, output_3)
         """
         fig, ax = plt.subplots()
 
@@ -63,101 +65,73 @@ class PlotsH2:
             color = self.colors[i % len(self.colors)]
             title = self.titles[i % len(self.titles)]
 
-            ax.plot(crd, vel / 1e-3, color=color, linestyle='--', label=title)
+            ax.plot(crd, vel / 1e-3, color=color, linestyle='--', label=title, lw =2)
             ax.scatter(crd[0], vel[0] / 1e-3, color='r', marker=self.markers[(2*i) % len(self.markers)], s=40)
             ax.scatter(crd[-1], vel[-1] / 1e-3, color='g', marker=self.markers[(2*i + 1) % len(self.markers)], s=40)
 
         ax.set_xlabel('Position (a.u.)', fontweight='bold', fontsize=16)
         ax.set_ylabel('Velocity (a.u.)', fontweight='bold', fontsize=16)
         ax.text(0.0, 1.0, "1e-3", transform=ax.transAxes, ha='left', va='bottom', fontsize=12)
-        plt.title(self.global_title, y=self.y)
-        ax.legend(loc='upper center', bbox_to_anchor=(0.5, self.y),
-                prop={'size': 12}, ncol=self.col, frameon=False)
+        #plt.title(self.global_title, y=self.y)
+        # ax.legend(loc='upper center', bbox_to_anchor=(0.5, self.y),
+        #         prop={'size': 12}, ncol=self.col, frameon=False)
 
         #fig.savefig(f"post_vel_h2_3_{self.shots}_shots.pdf", bbox_inches='tight')
+        plt.xlim([1.0, 2.05])
         fig.savefig(f"post_vel_h2.pdf", bbox_inches='tight')
         plt.close(fig)
 
-    
-    # def plot_pos_vel(self, output):
-    #     db, _ = self.read_db(output)
-    #     fig, ax = plt.subplots()
-    #     crd = np.array(self.dis_two_atmos(db["crd"], 0, 1))
-    #     vel = np.array(self.dis_two_atmos(db["veloc"], 0, 1))
-    #     # # Convert velocity to momentum (multiply by H mass in a.u.)
-    #     # m_H = 1837.15258739092  # hydrogen atom mass in a.u.
-    #     # mom = vel * m_H
-    #     ax.plot(crd, vel / 1e-3, color='blue')
-    #     ax.scatter(crd[0], vel[0] / 1e-3, color='r', s=40, label='Initial point')
-    #     ax.scatter(crd[-1], vel[-1] / 1e-3, color='g', s=40, label='Final point')
-
-    #     ax.set_xlabel('Position (a.u.)', fontweight='bold', fontsize=16)
-    #     ax.set_ylabel('Velocity (a.u.)', fontweight='bold', fontsize=16)
-
-    #     # Add scaling factor note for velocity axis
-    #     ax.text(
-    #         0.0, 1.0, "1e-3",
-    #         transform=ax.transAxes,  # relative to axes coords
-    #         ha='left', va='bottom',
-    #         fontsize=12
-    #     )
-    #     ax.legend()
-    #     fig.savefig("post_vel_h2.pdf", bbox_inches='tight')
-    #     plt.close(fig)
-
-    def plot_time_total_energy_3db(self, *outputs):
+    def plot_time_total_energy(self, *outputs):
         """
         Plot total time vs energy for 1–4 (or more) database outputs.
-        Example: self.plot_time_total_energy_3db(output_1, output_2, output_3)
+        Example: self.plot_time_total_energy(output_1, output_2, output_3)
         """
         plt.figure()
 
         for i, output in enumerate(outputs):
             db, time = self.read_db(output)
             etot = np.array(list(db["etot"]), dtype=float)
+            rel_etot = (etot - etot[0]) / 1e-3
             color = self.colors[i % len(self.colors)]
             label = self.titles[i % len(self.titles)]
+            min_index = np.argmin(rel_etot)
+            max_index = np.argmax(rel_etot)
+            print(f"Min value of total energy for {output}: {rel_etot.min()} (mHa)")
+            print(f"Max value of total energy for {output}: {rel_etot.max()} (mHa)")
+            print(f"Time for the min of total energy for {output}: {time[min_index][0]} (fs) in md_step {min_index}")
+            print(f"Time for the max of total energy for {output}: {time[max_index][0]} (fs) in md_step {max_index}")
 
             plt.plot(
                 time,
-                (etot - etot[0]) / 1e-3,
+                rel_etot,
                 color=color,
                 linestyle='--' if i > 0 else '-',
-                label=label
+                label=label,
+                lw =2
             )
 
         plt.axhline(0, linestyle=':', c='black')
         plt.xlabel('Time (fs)', fontweight='bold', fontsize=16)
         plt.ylabel(r'$\Delta$ Total Energy (mHa)', fontweight='bold', fontsize=16)
         plt.xlim([0, 10])
-        plt.title(self.global_title, y=self.y)
-        plt.legend(
-            loc='upper center',
-            bbox_to_anchor=(0.5, self.y),
-            prop={'size': 12},
-            ncol=self.col,
-            frameon=False
-        )
+        plt.ylim([-6.4, 6.4])
+        #plt.title(self.global_title, y=self.y)
+        # plt.legend(
+        #     loc='upper center',
+        #     bbox_to_anchor=(0.5, self.y),
+        #     prop={'size': 12},
+        #     ncol=self.col,
+        #     frameon=False
+        # )
         #plt.savefig(f"time_etotal_h2_3_{self.shots}_shots.pdf", bbox_inches='tight')
         plt.savefig(f"time_etotal_h2.pdf", bbox_inches='tight')
         plt.close()
         
-    # def plot_time_total_energy(self, output):
-    #     db, time = self.read_db(output) 
-    #     etot = np.array(list(db["etot"]), dtype=float)
-    #     plt.plot(time,(etot-etot[0])/1e-3,color='blue',label = '') 
-    #     plt.axhline(0,linestyle=':', c = 'black')
-    #     plt.xlabel('Time (fs)', fontweight = 'bold', fontsize = 16)
-    #     plt.ylabel(r'$\Delta$ Total Energy (mHa)', fontweight = 'bold', fontsize = 16)
-    #     plt.xlim([0, 10])
-    #     plt.savefig("time_etotal_h2.pdf", bbox_inches='tight')
-    #     plt.close()
-
-    def plot_time_parameter_3db(self, *outputs):
+    def plot_time_parameter(self, *outputs):
         """
         Plot the evolution of 'parameter' vs Time for 1–4 (or more) database outputs.
         Example:
-            self.plot_time_parameter_3db(output_1, output_2, output_3)
+            self.plot_time_parameter(output_1, output_2, output_3)
         """
         plt.figure()
 
@@ -173,35 +147,106 @@ class PlotsH2:
                 parameter,
                 color=color,
                 linestyle='--' if i > 0 else '-',
-                label=label
+                label=label,
+                lw =2
             )
 
         plt.xlabel('Time (fs)', fontweight='bold', fontsize=16)
         plt.ylabel(r'Optimal $\boldsymbol{\theta}$', fontweight='bold', fontsize=16)
         plt.xlim([0, 10])
-        plt.legend(
-            loc='upper center',
-            bbox_to_anchor=(0.5, self.y),
-            prop={'size': 12},
-            ncol=self.col,
-            frameon=False
-        )
-        plt.title(self.global_title, y=self.y)
+        # plt.legend(
+        #     loc='upper center',
+        #     bbox_to_anchor=(0.5, self.y),
+        #     prop={'size': 12},
+        #     ncol=self.col,
+        #     frameon=False
+        # )
+        #plt.title(self.global_title, y=self.y)
         #plt.savefig(f"time_parameter_h2_3_{self.shots}_shots.pdf", bbox_inches='tight')
         plt.savefig(f"time_parameter_h2.pdf", bbox_inches='tight')
         plt.close()
 
+    def plot_time_distance(self, *outputs):
+        """
+        Plot the evolution of 'crd' vs Time for 1–4 (or more) database outputs.
+        Example:
+            self.plot_time_distance(output_1, output_2, output_3)
+        """
+        plt.figure()
 
+        for i, output in enumerate(outputs):
+            db, time = self.read_db(output)
+            crd = np.array(self.dis_two_atmos(db["crd"], 0, 1))
+            min_index = np.argmin(crd)
+            print(f"Min value of position for {output}: {crd.min()} (a.u.)")
+            print(f"Time for the min of position for {output}: {time[min_index][0]} (fs) in md_step {min_index}")
+            print(f"Difference between initial position and after a cycle at same position: {crd[0]- crd[62]} (a.u.)")
+
+            color = self.colors[i % len(self.colors)]
+            label = self.titles[i % len(self.titles)]
+
+            plt.plot(
+                time,
+                crd,
+                color=color,
+                linestyle='--' if i > 0 else '-',
+                label=label,
+                lw =2
+            )
+
+        plt.xlabel('Time (fs)', fontweight='bold', fontsize=16)
+        plt.ylabel('Position (a.u.)', fontweight='bold', fontsize=16)
+        plt.xlim([0, 10])
+        # plt.legend(
+        #     loc='upper center',
+        #     bbox_to_anchor=(0.5, self.y),
+        #     prop={'size': 12},
+        #     ncol=self.col,
+        #     frameon=False
+        # )
+        #plt.title(self.global_title, y=self.y)
+        #plt.savefig(f"time_distance_h2_3_{self.shots}_shots.pdf", bbox_inches='tight')
+        plt.savefig(f"time_distance_h2.pdf", bbox_inches='tight')
+        plt.close()
         
-    # def plot_time_parameter(self, output):
-    #     db, time = self.read_db(output)
-    #     parameter = np.array(list(db["parameter"]), dtype=float)
-    #     plt.plot(time,parameter,color='blue',label = '') 
-    #     plt.xlabel('Time (fs)', fontweight = 'bold', fontsize = 16)
-    #     plt.ylabel(r'Optimal $\boldsymbol{\theta}$', fontweight = 'bold', fontsize=16)
-    #     plt.xlim([0, 10])
-    #     plt.savefig("time_parameter_h2.pdf", bbox_inches='tight')
-    #     plt.close()
+    def plot_time_gs_energy(self, *outputs):
+        """
+        Plot the evolution of 'crd' vs Time for 1–4 (or more) database outputs.
+        Example:
+            self.plot_time_distance(output_1, output_2, output_3)
+        """
+        plt.figure()
+
+        for i, output in enumerate(outputs):
+            db, time = self.read_db(output)
+            ene_gs = np.array(list(db["energy"]), dtype=float)
+
+            color = self.colors[i % len(self.colors)]
+            label = self.titles[i % len(self.titles)]
+
+            plt.plot(
+                time,
+                ene_gs,
+                color=color,
+                linestyle='--' if i > 0 else '-',
+                label=label,
+                lw =2
+            )
+
+        plt.xlabel('Time (fs)', fontweight='bold', fontsize=16)
+        plt.ylabel('GS Energy (Ha)', fontweight='bold', fontsize=16)
+        plt.xlim([0, 10])
+        # plt.legend(
+        #     loc='upper center',
+        #     bbox_to_anchor=(0.5, self.y),
+        #     prop={'size': 12},
+        #     ncol=self.col,
+        #     frameon=False
+        # )
+        #plt.title(self.global_title, y=self.y)
+        #plt.savefig(f"time_distance_h2_3_{self.shots}_shots.pdf", bbox_inches='tight')
+        plt.savefig(f"time_gs_energy_h2.pdf", bbox_inches='tight')
+        plt.close()
 
 if __name__ == "__main__":
     # Collect all database arguments after the script name
@@ -214,8 +259,10 @@ if __name__ == "__main__":
     picture = PlotsH2()
 
     # Call all plotting functions with variable number of arguments
-    picture.plot_pos_vel_3db(*db_files)
-    picture.plot_time_total_energy_3db(*db_files)
-    picture.plot_time_parameter_3db(*db_files)
+    picture.plot_pos_vel(*db_files)
+    picture.plot_time_total_energy(*db_files)
+    picture.plot_time_parameter(*db_files)
+    picture.plot_time_distance(*db_files)
+    picture.plot_time_gs_energy(*db_files)
 
     
