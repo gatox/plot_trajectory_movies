@@ -108,5 +108,5 @@ for k, v in summary.items():
 #     for k, v in summary.items():
 #         writer.writerow([k, v["final_energy"], v["iterations"], v["time_sec"]])
 
-if __name__ == "__main__":
+#if __name__ == "__main__":
 

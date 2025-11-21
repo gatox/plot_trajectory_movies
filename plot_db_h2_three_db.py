@@ -25,9 +25,10 @@ class PlotsH2:
         self.markers = list(Line2D.filled_markers)
         #self.titles = ["Noisless","Noise/Conv_Tol: 1.0e-2","Noise/Conv_Tol: 1.0e-3", "Noise/Conv_Tol: 1.0e-4"]
         # self.titles = ["Noisless","Noise/Conv_Tol: 1.0e-2 (SGD/1000)","Real/Conv_Tol: 1.0e-2 (SDG/1000)", "Real/Conv_Tol: 1.0e-3 (ADAM/10000)"]
-        self.titles = ["Simulator/Conv_Tol: 1.0e-7","Real/Conv_Tol:1.0e-2/Res_Lev:0(SGD/1000)","Real/Conv_Tol:1.0e-3/Res_Lev:0(ADAM/10000)","Hybrid_Ene_Param/Conv_Tol:1.0e-3/Res_Lev:0(SLSQP/10000)","Hybrid_Ene/Conv_Tol:1.0e-7/Res_Lev:0(SLSQP/10000)","Hybrid_Ene/Conv_Tol:1.0e-7/Res_Lev:2(SLSQP/10000)"]
+        #self.titles = ["Simulator/Conv_Tol: 1.0e-7","Real/Conv_Tol:1.0e-2/Res_Lev:0(SGD/1000)","Real/Conv_Tol:1.0e-3/Res_Lev:0(ADAM/10000)","Hybrid_Ene_Param/Conv_Tol:1.0e-3/Res_Lev:0(SLSQP/10000)","Hybrid_Ene/Conv_Tol:1.0e-7/Res_Lev:0(SLSQP/10000)","Hybrid_Ene/Conv_Tol:1.0e-7/Res_Lev:2(SLSQP/10000)"]
         #self.titles = ["Simulator/Conv_Tol: 1.0e-7","Hybrid_Ene/Conv_Tol: 1.0e-7 (SLSQP/10000)"]
-        self.titles = [""]
+        self.titles = ["Ref","ResLev0","ResLev2"]
+        #self.titles = ["Simulator/Conv_Tol: 1.0e-7","Hybrid_Ene/Conv_Tol:1.0e-7/Res_Lev:0(SLSQP/10000)","Hybrid_Ene/Conv_Tol:1.0e-7/Res_Lev:2(SLSQP/10000)"]
         self.shots = 10000
         #self.global_title = f"H2_dynamics/STO-3G/PNOF4/{self.shots}_shots/AER/IBM_pittsburgh/Opt_lvel=3"
         #self.global_title = f"H2_dynamics/STO-3G/PNOF4/{self.shots}_shots"
@@ -48,6 +49,21 @@ class PlotsH2:
         for i,m in enumerate(data):
             dimer.append(float(m[atom_2][2])-float(m[atom_1][2]))
         return dimer
+    
+    def rdm1_from_triangle(self, tri_vec, norb):
+        """
+        Convert a flattened upper-triangular RDM (including diagonal)
+        into a full symmetric norb×norb matrix.
+        """
+        rdm = np.zeros((norb, norb))
+        idx = 0
+        for i in range(norb):
+            for j in range(i, norb):
+                rdm[i, j] = tri_vec[idx]
+                rdm[j, i] = tri_vec[idx]  # symmetric
+                idx += 1
+        return rdm
+
 
     def plot_pos_vel(self, *outputs):
         """
@@ -114,7 +130,7 @@ class PlotsH2:
         plt.xlabel('Time (fs)', fontweight='bold', fontsize=16)
         plt.ylabel(r'$\Delta$ Total Energy (mHa)', fontweight='bold', fontsize=16)
         plt.xlim([0, 10])
-        plt.ylim([-6.4, 6.4])
+        #plt.ylim([-6.4, 6.4])
         #plt.title(self.global_title, y=self.y)
         # plt.legend(
         #     loc='upper center',
@@ -211,9 +227,9 @@ class PlotsH2:
         
     def plot_time_gs_energy(self, *outputs):
         """
-        Plot the evolution of 'crd' vs Time for 1–4 (or more) database outputs.
+        Plot the evolution of 'gs_energy' vs Time for 1–4 (or more) database outputs.
         Example:
-            self.plot_time_distance(output_1, output_2, output_3)
+            self.plot_time_gs_energy(output_1, output_2, output_3)
         """
         plt.figure()
 
@@ -248,6 +264,81 @@ class PlotsH2:
         plt.savefig(f"time_gs_energy_h2.pdf", bbox_inches='tight')
         plt.close()
 
+    def plot_avg_rdm1(self, *outputs):
+        """
+        First output is taken as the reference.
+        Remaining outputs are QC results.
+        Usage:
+            self.plot_avg_rdm1(ref_db, qc_db1, qc_db2, ...)
+        """
+
+        # -------------------
+        # Split inputs
+        # -------------------
+        reference_output = outputs[0]
+        qc_outputs = outputs[1:]
+
+        # --- Read reference ---
+        db_ref, _ = self.read_db(reference_output)
+        rdm_ref_list = [np.array(r) for r in db_ref["rdm1_opt"]]
+
+        # Determine number of orbitals
+        tri_len = len(rdm_ref_list[0])
+        norb = int((np.sqrt(8*tri_len + 1) - 1) / 2)  # invert n(n+1)/2
+
+        # Build reference full matrices
+        rdm_ref_full = np.array([
+            self.rdm1_from_triangle(r, norb) for r in rdm_ref_list
+        ])
+        avg_ref = rdm_ref_full.mean(axis=0)
+
+        # ---- Plot reference ----
+        plt.figure()
+        plt.imshow(avg_ref)
+        plt.colorbar()
+        plt.xticks(range(norb))
+        plt.yticks(range(norb))
+        plt.title("Averaged 1-RDM (Reference)")
+        plt.savefig("avg_rdm1_reference.pdf", bbox_inches='tight')
+        plt.close()
+
+
+        # -------- Process QC outputs ---------
+        for i, output in enumerate(qc_outputs):
+            db_qc, _ = self.read_db(output)
+            rdm_qc_list = [np.array(r) for r in db_qc["rdm1_opt"]]
+
+            rdm_qc_full = np.array([
+                self.rdm1_from_triangle(r, norb) for r in rdm_qc_list
+            ])
+            avg_qc = rdm_qc_full.mean(axis=0)
+
+            label = self.titles[i % len(self.titles)]
+
+            # --- Plot QC RDM ---
+            plt.figure()
+            plt.imshow(avg_qc)
+            plt.colorbar()
+            plt.xticks(range(norb))
+            plt.yticks(range(norb))
+            plt.title(f"Averaged 1-RDM ({label})")
+            plt.savefig(f"avg_rdm1_{label}.pdf", bbox_inches='tight')
+            plt.close()
+
+            # --- Plot QC - reference difference ---
+            diff = avg_qc - avg_ref
+
+            plt.figure()
+            plt.imshow(diff)
+            plt.colorbar()
+            plt.xticks(range(norb))
+            plt.yticks(range(norb))
+            plt.title(f"RDM1 Difference: {label} - Reference")
+            plt.savefig(f"rdm1_diff_{label}_vs_reference.pdf", bbox_inches='tight')
+            plt.close()
+
+
+
 if __name__ == "__main__":
     # Collect all database arguments after the script name
     db_files = sys.argv[1:]  # e.g. python script.py db1.db db2.db db3.db
@@ -259,10 +350,13 @@ if __name__ == "__main__":
     picture = PlotsH2()
 
     # Call all plotting functions with variable number of arguments
-    picture.plot_pos_vel(*db_files)
-    picture.plot_time_total_energy(*db_files)
-    picture.plot_time_parameter(*db_files)
-    picture.plot_time_distance(*db_files)
-    picture.plot_time_gs_energy(*db_files)
+    # picture.plot_pos_vel(*db_files)
+    # picture.plot_time_total_energy(*db_files)
+    # picture.plot_time_parameter(*db_files)
+    # picture.plot_time_distance(*db_files)
+    # picture.plot_time_gs_energy(*db_files)
 
+
+    # NEW function
+    picture.plot_avg_rdm1(*db_files)
     
