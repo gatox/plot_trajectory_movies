@@ -21,13 +21,13 @@ class PlotsH2:
         self.aa = 0.529177208
         self.fs_rcParams = '20'
         self.colors = plt.rcParams['axes.prop_cycle'].by_key()['color'][:10]
-        self.colors = [self.colors[0], self.colors[3], self.colors[4]]
+        #self.colors = [self.colors[0], self.colors[3], self.colors[4]]
         self.markers = list(Line2D.filled_markers)
         #self.titles = ["Noisless","Noise/Conv_Tol: 1.0e-2","Noise/Conv_Tol: 1.0e-3", "Noise/Conv_Tol: 1.0e-4"]
         # self.titles = ["Noisless","Noise/Conv_Tol: 1.0e-2 (SGD/1000)","Real/Conv_Tol: 1.0e-2 (SDG/1000)", "Real/Conv_Tol: 1.0e-3 (ADAM/10000)"]
         #self.titles = ["Simulator/Conv_Tol: 1.0e-7","Real/Conv_Tol:1.0e-2/Res_Lev:0(SGD/1000)","Real/Conv_Tol:1.0e-3/Res_Lev:0(ADAM/10000)","Hybrid_Ene_Param/Conv_Tol:1.0e-3/Res_Lev:0(SLSQP/10000)","Hybrid_Ene/Conv_Tol:1.0e-7/Res_Lev:0(SLSQP/10000)","Hybrid_Ene/Conv_Tol:1.0e-7/Res_Lev:2(SLSQP/10000)"]
         #self.titles = ["Simulator/Conv_Tol: 1.0e-7","Hybrid_Ene/Conv_Tol: 1.0e-7 (SLSQP/10000)"]
-        self.titles = ["Ref","ResLev0","ResLev2"]
+        self.titles = ["Ref","ResLev0","ResLev1","ResLev2"]
         #self.titles = ["Simulator/Conv_Tol: 1.0e-7","Hybrid_Ene/Conv_Tol:1.0e-7/Res_Lev:0(SLSQP/10000)","Hybrid_Ene/Conv_Tol:1.0e-7/Res_Lev:2(SLSQP/10000)"]
         self.shots = 10000
         #self.global_title = f"H2_dynamics/STO-3G/PNOF4/{self.shots}_shots/AER/IBM_pittsburgh/Opt_lvel=3"
@@ -350,11 +350,11 @@ if __name__ == "__main__":
     picture = PlotsH2()
 
     # Call all plotting functions with variable number of arguments
-    # picture.plot_pos_vel(*db_files)
-    # picture.plot_time_total_energy(*db_files)
-    # picture.plot_time_parameter(*db_files)
-    # picture.plot_time_distance(*db_files)
-    # picture.plot_time_gs_energy(*db_files)
+    picture.plot_pos_vel(*db_files)
+    picture.plot_time_total_energy(*db_files)
+    picture.plot_time_parameter(*db_files)
+    picture.plot_time_distance(*db_files)
+    picture.plot_time_gs_energy(*db_files)
 
 
     # NEW function
