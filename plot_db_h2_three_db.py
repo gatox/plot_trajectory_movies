@@ -352,11 +352,11 @@ if __name__ == "__main__":
     # Call all plotting functions with variable number of arguments
     picture.plot_pos_vel(*db_files)
     picture.plot_time_total_energy(*db_files)
-    picture.plot_time_parameter(*db_files)
+    #picture.plot_time_parameter(*db_files)
     picture.plot_time_distance(*db_files)
     picture.plot_time_gs_energy(*db_files)
 
 
     # NEW function
-    picture.plot_avg_rdm1(*db_files)
+    #picture.plot_avg_rdm1(*db_files)
     
