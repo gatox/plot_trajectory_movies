@@ -263,6 +263,45 @@ class PlotsH2:
         #plt.savefig(f"time_distance_h2_3_{self.shots}_shots.pdf", bbox_inches='tight')
         plt.savefig(f"time_gs_energy_h2.pdf", bbox_inches='tight')
         plt.close()
+        
+    def plot_position_gs_energy(self, *outputs):
+        """
+        Plot the evolution of 'gs_energy' vs Time for 1–4 (or more) database outputs.
+        Example:
+            self.plot_time_gs_energy(output_1, output_2, output_3)
+        """
+        plt.figure()
+
+        for i, output in enumerate(outputs):
+            db, _ = self.read_db(output)
+            ene_gs = np.array(list(db["energy"]), dtype=float)
+            crd = np.array(self.dis_two_atmos(db["crd"], 0, 1))
+            color = self.colors[i % len(self.colors)]
+            label = self.titles[i % len(self.titles)]
+
+            plt.plot(
+                crd,
+                ene_gs,
+                color=color,
+                linestyle='--' if i > 0 else '-',
+                label=label,
+                lw =2
+            )
+
+        plt.xlabel('Position (a.u.)', fontweight='bold', fontsize=16)
+        plt.ylabel('GS Energy (Ha)', fontweight='bold', fontsize=16)
+        plt.xlim([0, 10])
+        # plt.legend(
+        #     loc='upper center',
+        #     bbox_to_anchor=(0.5, self.y),
+        #     prop={'size': 12},
+        #     ncol=self.col,
+        #     frameon=False
+        # )
+        #plt.title(self.global_title, y=self.y)
+        #plt.savefig(f"time_distance_h2_3_{self.shots}_shots.pdf", bbox_inches='tight')
+        plt.savefig(f"time_gs_energy_h2.pdf", bbox_inches='tight')
+        plt.close()
 
     def plot_avg_rdm1(self, *outputs):
         """
