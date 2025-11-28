@@ -290,7 +290,7 @@ class PlotsH2:
 
         plt.xlabel('Position (a.u.)', fontweight='bold', fontsize=16)
         plt.ylabel('GS Energy (Ha)', fontweight='bold', fontsize=16)
-        plt.xlim([0, 10])
+        #plt.xlim([0, 10])
         # plt.legend(
         #     loc='upper center',
         #     bbox_to_anchor=(0.5, self.y),
@@ -300,7 +300,7 @@ class PlotsH2:
         # )
         #plt.title(self.global_title, y=self.y)
         #plt.savefig(f"time_distance_h2_3_{self.shots}_shots.pdf", bbox_inches='tight')
-        plt.savefig(f"time_gs_energy_h2.pdf", bbox_inches='tight')
+        plt.savefig(f"distance_gs_energy_h2.pdf", bbox_inches='tight')
         plt.close()
 
     def plot_avg_rdm1(self, *outputs):
@@ -394,6 +394,7 @@ if __name__ == "__main__":
     #picture.plot_time_parameter(*db_files)
     picture.plot_time_distance(*db_files)
     picture.plot_time_gs_energy(*db_files)
+    picture.plot_position_gs_energy(*db_files)
 
 
     # NEW function
