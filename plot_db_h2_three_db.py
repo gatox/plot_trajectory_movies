@@ -36,6 +36,7 @@ class PlotsH2:
         #self.titles = ["adam","sgd","slsqp","l-bfgs-b","spsa","cobyla","cmaes"]
         self.col = 2
         self.y = 1.3
+        self.bohr_to_ang = 0.52917721092
 
     def read_db(self, output):
         db = PySurfDB.load_database(output, read_only=True)
@@ -48,6 +49,14 @@ class PlotsH2:
         dimer = []
         for i,m in enumerate(data):
             dimer.append(float(m[atom_2][2])-float(m[atom_1][2]))
+        return dimer
+    
+    def dis_two_atmos_grad(self, data, atom_1, atom_2):
+        atom_1 = int(atom_1)
+        atom_2 = int(atom_2)
+        dimer = []
+        for i,m in enumerate(data):
+            dimer.append(float(m[0][atom_2][2])-float(m[0][atom_1][2]))
         return dimer
     
     def rdm1_from_triangle(self, tri_vec, norb):
@@ -63,39 +72,6 @@ class PlotsH2:
                 rdm[j, i] = tri_vec[idx]  # symmetric
                 idx += 1
         return rdm
-
-
-    def plot_pos_vel(self, *outputs):
-        """
-        Plot position vs velocity for 1–4 (or more) database outputs.
-        Example: self.plot_pos_vel(output_1, output_2, output_3)
-        """
-        fig, ax = plt.subplots()
-
-        for i, output in enumerate(outputs):
-            db, _ = self.read_db(output)
-            crd = np.array(self.dis_two_atmos(db["crd"], 0, 1))
-            vel = np.array(self.dis_two_atmos(db["veloc"], 0, 1))
-
-            # Use modular indexing for colors/titles/markers if needed
-            color = self.colors[i % len(self.colors)]
-            title = self.titles[i % len(self.titles)]
-
-            ax.plot(crd, vel / 1e-3, color=color, linestyle='--', label=title, lw =2)
-            ax.scatter(crd[0], vel[0] / 1e-3, color='r', marker=self.markers[(2*i) % len(self.markers)], s=40)
-            ax.scatter(crd[-1], vel[-1] / 1e-3, color='g', marker=self.markers[(2*i + 1) % len(self.markers)], s=40)
-
-        ax.set_xlabel('Position (a.u.)', fontweight='bold', fontsize=16)
-        ax.set_ylabel('Velocity (a.u.)', fontweight='bold', fontsize=16)
-        ax.text(0.0, 1.0, "1e-3", transform=ax.transAxes, ha='left', va='bottom', fontsize=12)
-        #plt.title(self.global_title, y=self.y)
-        # ax.legend(loc='upper center', bbox_to_anchor=(0.5, self.y),
-        #         prop={'size': 12}, ncol=self.col, frameon=False)
-
-        #fig.savefig(f"post_vel_h2_3_{self.shots}_shots.pdf", bbox_inches='tight')
-        plt.xlim([1.0, 2.05])
-        fig.savefig(f"post_vel_h2.pdf", bbox_inches='tight')
-        plt.close(fig)
 
     def plot_time_total_energy(self, *outputs):
         """
@@ -270,7 +246,8 @@ class PlotsH2:
         Example:
             self.plot_time_gs_energy(output_1, output_2, output_3)
         """
-        plt.figure()
+
+        fig, ax1 = plt.subplots()
 
         for i, output in enumerate(outputs):
             db, _ = self.read_db(output)
@@ -279,7 +256,7 @@ class PlotsH2:
             color = self.colors[i % len(self.colors)]
             label = self.titles[i % len(self.titles)]
 
-            plt.plot(
+            ax1.plot(
                 crd,
                 ene_gs,
                 color=color,
@@ -287,10 +264,21 @@ class PlotsH2:
                 label=label,
                 lw =2
             )
+            
+        # Lower x-axis (Bohr / a.u.)
+        ax1.set_xlabel("Position (a.u.)", fontweight="bold", fontsize=16)
 
-        plt.xlabel('Position (a.u.)', fontweight='bold', fontsize=16)
-        plt.ylabel('GS Energy (Ha)', fontweight='bold', fontsize=16)
-        #plt.xlim([0, 10])
+        # Left y-axis
+        ax1.set_ylabel("GS Energy (Ha)", fontweight="bold", fontsize=16)
+
+        # Upper x-axis (Angstrom)
+        ax2 = ax1.twiny()
+        ax2.set_xlim(ax1.get_xlim())
+        ticks_bohr = ax1.get_xticks()
+        ax2.set_xticks(ticks_bohr)
+        ax2.set_xticklabels(np.round(ticks_bohr * self.bohr_to_ang, 2))
+        ax2.set_xlabel("Position (Å)", fontweight="bold", fontsize=16)
+        #plt.ylim([-1.14, -1.11])
         # plt.legend(
         #     loc='upper center',
         #     bbox_to_anchor=(0.5, self.y),
@@ -302,9 +290,218 @@ class PlotsH2:
         #plt.savefig(f"time_distance_h2_3_{self.shots}_shots.pdf", bbox_inches='tight')
         plt.savefig(f"distance_gs_energy_h2.pdf", bbox_inches='tight')
         plt.close()
+        
+    def plot_position_force(self, *outputs):
+        """
+        Plot the evolution of 'position' vs forces for 1–4 (or more) database outputs.
+        Example:
+            self.plot_position_forces(output_1, output_2, output_3)
+        """
+        fig, ax1 = plt.subplots()
+
+        for i, output in enumerate(outputs):
+            db, _ = self.read_db(output)
+            force = -np.array(self.dis_two_atmos_grad(db["gradient"], 0, 1))
+            crd = np.array(self.dis_two_atmos(db["crd"], 0, 1))
+            color = self.colors[i % len(self.colors)]
+            label = self.titles[i % len(self.titles)]
+
+            ax1.plot(
+                crd,
+                force,
+                color=color,
+                linestyle='--' if i > 0 else '-',
+                label=label,
+                lw =2
+            )
+
+        # Lower x-axis
+        ax1.set_xlabel("Position (a.u.)", fontweight="bold", fontsize=16)
+
+        # Left y-axis (Ha/Bohr)
+        ax1.set_ylabel("Force (Ha/Bohr)", fontweight="bold", fontsize=16)
+
+        # Right y-axis (Ha/Å)
+        ax2 = ax1.twinx()
+        ax2.set_ylabel("Force (Ha/Å)", fontweight="bold", fontsize=16)
+        ax2.set_ylim(ax1.get_ylim()[0] / self.bohr_to_ang, ax1.get_ylim()[1] / self.bohr_to_ang)
+
+        # Upper x-axis (Å)
+        ax3 = ax1.twiny()
+        ax3.set_xlim(ax1.get_xlim())
+        ticks_bohr = ax1.get_xticks()
+        ax3.set_xticks(ticks_bohr)
+        ax3.set_xticklabels(np.round(ticks_bohr * self.bohr_to_ang, 2))
+        ax3.set_xlabel("Position (Å)", fontweight="bold", fontsize=16)
+        #plt.ylim([-0.19, 1.5])
+        # plt.legend(
+        #     loc='upper center',
+        #     bbox_to_anchor=(0.5, self.y),
+        #     prop={'size': 12},
+        #     ncol=self.col,
+        #     frameon=False
+        # )
+        #plt.title(self.global_title, y=self.y)
+        #plt.savefig(f"time_distance_h2_3_{self.shots}_shots.pdf", bbox_inches='tight')
+        # after you read db and make crd and force arrays:
+        crd_min, crd_max = crd.min(), crd.max()
+        print(f"crd (a.u.): min={crd_min:.6f}, max={crd_max:.6f}")
+        print(f"crd (Å):  min={crd_min*self.bohr_to_ang:.6f}, max={crd_max*self.bohr_to_ang:.6f}")
+
+        force_min, force_max = force.min(), force.max()
+        print(f"force (Ha/Bohr): min={force_min:.6e}, max={force_max:.6e}")
+        print(f"force (Ha/Å):   min={force_min/self.bohr_to_ang:.6e}, max={force_max/self.bohr_to_ang:.6e}")
+        plt.savefig(f"distance_force_1_h2.pdf", bbox_inches='tight')
+        plt.close()
+        
+    def plot_pos_vel(self, *outputs):
+        """
+        Plot position vs velocity for 1–4 (or more) database outputs.
+        Example: self.plot_pos_vel(output_1, output_2, output_3)
+        """
+        fig, ax = plt.subplots()
+
+        for i, output in enumerate(outputs):
+            db, _ = self.read_db(output)
+            crd = np.array(self.dis_two_atmos(db["crd"], 0, 1))
+            vel = np.array(self.dis_two_atmos(db["veloc"], 0, 1))
+
+            # Use modular indexing for colors/titles/markers if needed
+            color = self.colors[i % len(self.colors)]
+            title = self.titles[i % len(self.titles)]
+            
+            crd = crd
+            vel = vel/1e-3
+            
+            ax.plot(crd, vel, color=color, linestyle='--', label=title, lw =2)
+            ax.scatter(crd[0], vel[0], color='r', marker=self.markers[(2*i) % len(self.markers)], s=40)
+            ax.scatter(crd[-1], vel[-1], color='g', marker=self.markers[(2*i + 1) % len(self.markers)], s=40)
+
+        ax.set_xlabel('Position (a.u.)', fontweight='bold', fontsize=16)
+        ax.set_ylabel('Velocity (a.u.)', fontweight='bold', fontsize=16)
+        ax.text(0.0, 1.0, "1e-3", transform=ax.transAxes, ha='left', va='bottom', fontsize=12)
+        #plt.title(self.global_title, y=self.y)
+        # ax.legend(loc='upper center', bbox_to_anchor=(0.5, self.y),
+        #         prop={'size': 12}, ncol=self.col, frameon=False)
+
+        #fig.savefig(f"post_vel_h2_3_{self.shots}_shots.pdf", bbox_inches='tight')
+        fig.savefig(f"post_vel_h2_au.pdf", bbox_inches='tight')
+        plt.close(fig)
+        
+    def plot_position_gs_energy_ang(self, *outputs):
+
+        fig, ax1 = plt.subplots()
+
+        for i, output in enumerate(outputs):
+            db, _ = self.read_db(output)
+            ene_gs = np.array(list(db["energy"]), dtype=float)
+            crd = np.array(self.dis_two_atmos(db["crd"], 0, 1))
+            color = self.colors[i % len(self.colors)]
+            label = self.titles[i % len(self.titles)]
+
+            # Only keep the region matching the paper
+            crd = crd* self.bohr_to_ang
+
+            ax1.plot(
+                crd,
+                ene_gs,
+                color=color,
+                linestyle='--' if i > 0 else '-',
+                label=label,
+                lw=2
+            )
+
+        # Lower x-axis (Bohr)
+        ax1.set_xlabel("Position (Å)", fontweight="bold", fontsize=16)
+        ax1.set_ylabel("GS Energy (Ha)", fontweight="bold", fontsize=16)
+
+        plt.savefig("distance_gs_energy_h2_ang.pdf", bbox_inches="tight")
+        plt.close()
+
+    def plot_position_force_ang(self, *outputs):
+
+        fig, ax1 = plt.subplots()
+
+        for i, output in enumerate(outputs):
+            db, _ = self.read_db(output)
+            force = -np.array(self.dis_two_atmos_grad(db["gradient"], 0, 1))
+            crd = np.array(self.dis_two_atmos(db["crd"], 0, 1))
+            color = self.colors[i % len(self.colors)]
+            label = self.titles[i % len(self.titles)]
+
+            crd = crd* self.bohr_to_ang
+            force = force* self.bohr_to_ang
+
+            ax1.plot(
+                crd,
+                force,
+                color=color,
+                linestyle='--' if i > 0 else '-',
+                label=label,
+                lw=2
+            )
+
+        # Lower x-axis (Å)
+        ax1.set_xlabel("Position (Å)", fontweight="bold", fontsize=16)
+
+        # Left y-axis (Ha/Å)
+        ax1.set_ylabel("Force (Ha/Å)", fontweight="bold", fontsize=16)
+
+        plt.savefig("distance_force_h2_ang.pdf", bbox_inches="tight")
+        plt.close()
+
+            
+    def plot_time_relative_energies(self, *outputs):
+        """
+        Plot relative Total, Potential, and Kinetic energies in three stacked
+        subplots with no vertical spacing. Only the bottom plot has axis labels.
+        """
+
+        fig, axs = plt.subplots(3, 1, figsize=(8, 10), sharex=True)
+        plt.subplots_adjust(hspace=0.0)   # no space between subplots
+
+        for i, output in enumerate(outputs):
+            db, time = self.read_db(output)
+
+            # ----- UPDATE THIS PART TO MATCH YOUR DB FORMAT -----
+            e_tot = np.array(list(db["etot"]), dtype=float)
+            e_pot = np.array(list(db["epot"]), dtype=float)
+            e_kin = np.array(list(db["ekin"]), dtype=float)
+            # -----------------------------------------------------
+
+            # relative values
+            rel_tot = (e_tot - e_tot[0])/ 1e-3
+            rel_pot = e_pot #- e_pot[0]
+            rel_kin = e_kin #- e_kin[0]
+
+            color = self.colors[i % len(self.colors)]
+            label = self.titles[i % len(self.titles)]
+
+            # Plot each on its subplot
+            axs[0].plot(time, rel_tot, color=color, lw=2, label=label)
+            axs[1].plot(time, rel_pot, color=color, lw=2)
+            axs[2].plot(time, rel_kin, color=color, lw=2)
+
+        # Titles on left side
+        # axs[0].set_ylabel("ΔE_tot (mHa)", fontsize=14, fontweight='bold')
+        # axs[0].set_ylim(-6,6)
+        # axs[1].set_ylabel("ΔE_pot (Ha)", fontsize=14, fontweight='bold')
+        # axs[2].set_ylabel("ΔE_kin (Ha)", fontsize=14, fontweight='bold')
+        axs[0].set_ylabel("ΔE_tot (mHa)", fontsize=14, fontweight='bold')
+        axs[0].set_ylim(-1.6,1.6)
+        axs[1].set_ylabel("E_pot (Ha)", fontsize=14, fontweight='bold')
+        axs[2].set_ylabel("E_kin (Ha)", fontsize=14, fontweight='bold')
+
+        # Only bottom has X-label
+        axs[2].set_xlabel("Time (fs)", fontsize=16, fontweight='bold')
+        # Legend only on the top subplot
+        axs[0].legend(frameon=False, fontsize=12)
+
+        fig.savefig("relative_energies.pdf", bbox_inches='tight')
+        plt.close()
 
     def plot_avg_rdm1(self, *outputs):
-        """
+        """ 
         First output is taken as the reference.
         Remaining outputs are QC results.
         Usage:
@@ -377,7 +574,6 @@ class PlotsH2:
             plt.close()
 
 
-
 if __name__ == "__main__":
     # Collect all database arguments after the script name
     db_files = sys.argv[1:]  # e.g. python script.py db1.db db2.db db3.db
@@ -389,12 +585,14 @@ if __name__ == "__main__":
     picture = PlotsH2()
 
     # Call all plotting functions with variable number of arguments
+    # picture.plot_time_total_energy(*db_files)
+    # picture.plot_time_distance(*db_files)
+    # picture.plot_time_gs_energy(*db_files)
     picture.plot_pos_vel(*db_files)
-    picture.plot_time_total_energy(*db_files)
-    #picture.plot_time_parameter(*db_files)
-    picture.plot_time_distance(*db_files)
-    picture.plot_time_gs_energy(*db_files)
-    picture.plot_position_gs_energy(*db_files)
+    picture.plot_position_gs_energy_ang(*db_files)
+    picture.plot_position_force_ang(*db_files)
+    picture.plot_time_relative_energies(*db_files)
+    picture.plot_time_parameter(*db_files)
 
 
     # NEW function
