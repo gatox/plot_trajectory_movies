@@ -27,7 +27,8 @@ class PlotsH2:
         # self.titles = ["Noisless","Noise/Conv_Tol: 1.0e-2 (SGD/1000)","Real/Conv_Tol: 1.0e-2 (SDG/1000)", "Real/Conv_Tol: 1.0e-3 (ADAM/10000)"]
         #self.titles = ["Simulator/Conv_Tol: 1.0e-7","Real/Conv_Tol:1.0e-2/Res_Lev:0(SGD/1000)","Real/Conv_Tol:1.0e-3/Res_Lev:0(ADAM/10000)","Hybrid_Ene_Param/Conv_Tol:1.0e-3/Res_Lev:0(SLSQP/10000)","Hybrid_Ene/Conv_Tol:1.0e-7/Res_Lev:0(SLSQP/10000)","Hybrid_Ene/Conv_Tol:1.0e-7/Res_Lev:2(SLSQP/10000)"]
         #self.titles = ["Simulator/Conv_Tol: 1.0e-7","Hybrid_Ene/Conv_Tol: 1.0e-7 (SLSQP/10000)"]
-        self.titles = ["Ref","ResLev0","ResLev1","ResLev2"]
+        #self.titles = [r"$X_0:\ 2\ Bohr$",r"$X_0:\ 1\ Bohr$",r"$X_0:\ 1.13\ Bohr$", r"$X_0:\ 1.95\ Bohr$"]
+        self.titles = [r"NOFVQE; $X_0:\ 0.6\ \AA$ (1.13 Bohr)", r"VQE; $X_0:\ 0.6\ \AA$ (1.13 Bohr)"]
         #self.titles = ["Simulator/Conv_Tol: 1.0e-7","Hybrid_Ene/Conv_Tol:1.0e-7/Res_Lev:0(SLSQP/10000)","Hybrid_Ene/Conv_Tol:1.0e-7/Res_Lev:2(SLSQP/10000)"]
         self.shots = 10000
         #self.global_title = f"H2_dynamics/STO-3G/PNOF4/{self.shots}_shots/AER/IBM_pittsburgh/Opt_lvel=3"
@@ -138,7 +139,8 @@ class PlotsH2:
                 time,
                 parameter,
                 color=color,
-                linestyle='--' if i > 0 else '-',
+                linestyle='-',
+                #linestyle='--' if i > 0 else '-',
                 label=label,
                 lw =2
             )
@@ -146,13 +148,13 @@ class PlotsH2:
         plt.xlabel('Time (fs)', fontweight='bold', fontsize=16)
         plt.ylabel(r'Optimal $\boldsymbol{\theta}$', fontweight='bold', fontsize=16)
         plt.xlim([0, 10])
-        # plt.legend(
-        #     loc='upper center',
-        #     bbox_to_anchor=(0.5, self.y),
-        #     prop={'size': 12},
-        #     ncol=self.col,
-        #     frameon=False
-        # )
+        plt.legend(
+            loc='upper center',
+            bbox_to_anchor=(0.5, self.y),
+            prop={'size': 12},
+            ncol=self.col,
+            frameon=False
+        )
         #plt.title(self.global_title, y=self.y)
         #plt.savefig(f"time_parameter_h2_3_{self.shots}_shots.pdf", bbox_inches='tight')
         plt.savefig(f"time_parameter_h2.pdf", bbox_inches='tight')
@@ -291,67 +293,132 @@ class PlotsH2:
         plt.savefig(f"distance_gs_energy_h2.pdf", bbox_inches='tight')
         plt.close()
         
-    def plot_position_force(self, *outputs):
+    def plot_position_force_energy(self, *outputs):
         """
         Plot the evolution of 'position' vs forces for 1–4 (or more) database outputs.
         Example:
             self.plot_position_forces(output_1, output_2, output_3)
         """
-        fig, ax1 = plt.subplots()
-
+        fig, axs = plt.subplots(3, 1, figsize=(8, 10), sharex=True)
+        plt.subplots_adjust(hspace=0.0)   # no space between subplots
+        pot_min_1 = +np.inf
+        pot_max_1 = -np.inf
+        pot_min_2 = +np.inf
+        pot_max_2 = -np.inf
+        
         for i, output in enumerate(outputs):
             db, _ = self.read_db(output)
+            
             force = -np.array(self.dis_two_atmos_grad(db["gradient"], 0, 1))
             crd = np.array(self.dis_two_atmos(db["crd"], 0, 1))
+            vel = np.array(self.dis_two_atmos(db["veloc"], 0, 1))
+            ene_gs = np.array(list(db["energy"]), dtype=float)
             color = self.colors[i % len(self.colors)]
             label = self.titles[i % len(self.titles)]
-
-            ax1.plot(
-                crd,
-                force,
-                color=color,
-                linestyle='--' if i > 0 else '-',
-                label=label,
-                lw =2
-            )
-
-        # Lower x-axis
-        ax1.set_xlabel("Position (a.u.)", fontweight="bold", fontsize=16)
+            
+            vel = vel/1e-3
+            axs[0].plot(crd, vel, color=color, linestyle='--', label=label, lw =2)
+            axs[0].scatter(crd[0], vel[0], color=color, marker='o', s=40)
+            axs[0].scatter(crd[-1], vel[-1], color=color, marker='s', s=40)
+            axs[1].plot(crd, ene_gs, color=color, linestyle='--', lw =2)
+            axs[1].scatter(crd[0], ene_gs[0], color=color, marker='o', s=40)
+            axs[1].scatter(crd[-1], ene_gs[-1], color=color, marker='s', s=40)
+            axs[2].plot(crd, force, color=color, linestyle='--', lw =2)
+            axs[2].scatter(crd[0], force[0], color=color, marker='o', s=40)
+            axs[2].scatter(crd[-1], force[-1], color=color, marker='s', s=40)
+            # update global min/max
+            pot_min_1 = min(pot_min_1, ene_gs.min())
+            pot_max_1 = max(pot_max_1, ene_gs.max())
+            pot_min_2 = min(pot_min_2, force.min())
+            pot_max_2 = max(pot_max_2, force.max())
+            
+        #axs[1].set_ylim(-1.146,-1.075)
+        pad_1 = 0.1 * (pot_max_1 - pot_min_1)
+        axs[1].set_ylim(pot_min_1 - pad_1, pot_max_1 + pad_1)
+        pad_2 = 0.1 * (pot_max_2 - pot_min_2)
+        axs[2].set_ylim(pot_min_2 - pad_2, pot_max_2 + pad_2)
+        axs[0].text(0.0, 1.0, "1e-3", transform=axs[0].transAxes, ha='left', va='bottom', fontsize=12)
+        axs[0].set_ylabel("Velocity (a.u.)", fontweight="bold", fontsize=16)
+        axs[1].set_ylabel(r"$\bf{E_{pot}}$ (Ha)", fontweight="bold", fontsize=16)
+        axs[2].set_ylabel("Force (Ha/Bohr)", fontweight="bold", fontsize=16)
+        axs[2].set_xlabel("Position (a.u.)", fontweight="bold", fontsize=16)
 
         # Left y-axis (Ha/Bohr)
-        ax1.set_ylabel("Force (Ha/Bohr)", fontweight="bold", fontsize=16)
-
-        # Right y-axis (Ha/Å)
-        ax2 = ax1.twinx()
-        ax2.set_ylabel("Force (Ha/Å)", fontweight="bold", fontsize=16)
-        ax2.set_ylim(ax1.get_ylim()[0] / self.bohr_to_ang, ax1.get_ylim()[1] / self.bohr_to_ang)
-
-        # Upper x-axis (Å)
-        ax3 = ax1.twiny()
-        ax3.set_xlim(ax1.get_xlim())
-        ticks_bohr = ax1.get_xticks()
-        ax3.set_xticks(ticks_bohr)
-        ax3.set_xticklabels(np.round(ticks_bohr * self.bohr_to_ang, 2))
-        ax3.set_xlabel("Position (Å)", fontweight="bold", fontsize=16)
-        #plt.ylim([-0.19, 1.5])
-        # plt.legend(
-        #     loc='upper center',
-        #     bbox_to_anchor=(0.5, self.y),
-        #     prop={'size': 12},
-        #     ncol=self.col,
-        #     frameon=False
-        # )
+        
+        axs[0].legend(
+            loc='upper center',
+            bbox_to_anchor=(0.5, self.y),
+            prop={'size': 12},
+            ncol=self.col,
+            frameon=False
+        )
         #plt.title(self.global_title, y=self.y)
-        #plt.savefig(f"time_distance_h2_3_{self.shots}_shots.pdf", bbox_inches='tight')
-        # after you read db and make crd and force arrays:
-        crd_min, crd_max = crd.min(), crd.max()
-        print(f"crd (a.u.): min={crd_min:.6f}, max={crd_max:.6f}")
-        print(f"crd (Å):  min={crd_min*self.bohr_to_ang:.6f}, max={crd_max*self.bohr_to_ang:.6f}")
+        plt.savefig(f"distance_force_energy_h2_au.pdf", bbox_inches='tight')
+        plt.close()
+        
+    def plot_position_force_energy_ang(self, *outputs):
+        """
+        Plot the evolution of 'position' vs forces for 1–4 (or more) database outputs.
+        Example:
+            self.plot_position_forces(output_1, output_2, output_3)
+        """
+        fig, axs = plt.subplots(3, 1, figsize=(8, 10), sharex=True)
+        plt.subplots_adjust(hspace=0.0)   # no space between subplots
+        pot_min_1 = +np.inf
+        pot_max_1 = -np.inf
+        pot_min_2 = +np.inf
+        pot_max_2 = -np.inf
+        
+        for i, output in enumerate(outputs):
+            db, _ = self.read_db(output)
+            
+            force = -np.array(self.dis_two_atmos_grad(db["gradient"], 0, 1))
+            crd = np.array(self.dis_two_atmos(db["crd"], 0, 1))
+            vel = np.array(self.dis_two_atmos(db["veloc"], 0, 1))
+            ene_gs = np.array(list(db["energy"]), dtype=float)
+            color = self.colors[i % len(self.colors)]
+            label = self.titles[i % len(self.titles)]
+            
+            vel = vel/1e-3
+            crd = crd* self.bohr_to_ang
+            force = force* self.bohr_to_ang
+            axs[0].plot(crd, vel, color=color, linestyle='--', label=label, lw =2)
+            axs[0].scatter(crd[0], vel[0], color=color, marker='o', s=40)
+            axs[0].scatter(crd[-1], vel[-1], color=color, marker='s', s=40)
+            axs[1].plot(crd, ene_gs, color=color, linestyle='--', lw =2)
+            axs[1].scatter(crd[0], ene_gs[0], color=color, marker='o', s=40)
+            axs[1].scatter(crd[-1], ene_gs[-1], color=color, marker='s', s=40)
+            axs[2].plot(crd, force, color=color, linestyle='--', lw =2)
+            axs[2].scatter(crd[0], force[0], color=color, marker='o', s=40)
+            axs[2].scatter(crd[-1], force[-1], color=color, marker='s', s=40)
+            # update global min/max
+            pot_min_1 = min(pot_min_1, ene_gs.min())
+            pot_max_1 = max(pot_max_1, ene_gs.max())
+            pot_min_2 = min(pot_min_2, force.min())
+            pot_max_2 = max(pot_max_2, force.max())
+            
+        #axs[1].set_ylim(-1.146,-1.075)
+        pad_1 = 0.1 * (pot_max_1 - pot_min_1)
+        axs[1].set_ylim(pot_min_1 - pad_1, pot_max_1 + pad_1)
+        pad_2 = 0.1 * (pot_max_2 - pot_min_2)
+        axs[2].set_ylim(pot_min_2 - pad_2, pot_max_2 + pad_2)
+        axs[0].text(0.0, 1.0, "1e-3", transform=axs[0].transAxes, ha='left', va='bottom', fontsize=12)
+        axs[0].set_ylabel("Velocity (a.u.)", fontweight="bold", fontsize=16)
+        axs[1].set_ylabel(r"$\bf{E_{pot}}$ (Ha)", fontweight="bold", fontsize=16)
+        axs[2].set_ylabel("Force (Ha/Å)", fontweight="bold", fontsize=16)
+        axs[2].set_xlabel("Position (Å)", fontweight="bold", fontsize=16)
 
-        force_min, force_max = force.min(), force.max()
-        print(f"force (Ha/Bohr): min={force_min:.6e}, max={force_max:.6e}")
-        print(f"force (Ha/Å):   min={force_min/self.bohr_to_ang:.6e}, max={force_max/self.bohr_to_ang:.6e}")
-        plt.savefig(f"distance_force_1_h2.pdf", bbox_inches='tight')
+        # Left y-axis (Ha/Bohr)
+        
+        axs[0].legend(
+            loc='upper center',
+            bbox_to_anchor=(0.5, self.y),
+            prop={'size': 12},
+            ncol=self.col,
+            frameon=False
+        )
+        #plt.title(self.global_title, y=self.y)
+        plt.savefig(f"distance_force_energy_h2_ang.pdf", bbox_inches='tight')
         plt.close()
         
     def plot_pos_vel(self, *outputs):
@@ -374,15 +441,15 @@ class PlotsH2:
             vel = vel/1e-3
             
             ax.plot(crd, vel, color=color, linestyle='--', label=title, lw =2)
-            ax.scatter(crd[0], vel[0], color='r', marker=self.markers[(2*i) % len(self.markers)], s=40)
-            ax.scatter(crd[-1], vel[-1], color='g', marker=self.markers[(2*i + 1) % len(self.markers)], s=40)
+            ax.scatter(crd[0], vel[0], color='black', marker='o', s=40)
+            ax.scatter(crd[-1], vel[-1], color='black', marker='s', s=40)
 
         ax.set_xlabel('Position (a.u.)', fontweight='bold', fontsize=16)
         ax.set_ylabel('Velocity (a.u.)', fontweight='bold', fontsize=16)
         ax.text(0.0, 1.0, "1e-3", transform=ax.transAxes, ha='left', va='bottom', fontsize=12)
         #plt.title(self.global_title, y=self.y)
-        # ax.legend(loc='upper center', bbox_to_anchor=(0.5, self.y),
-        #         prop={'size': 12}, ncol=self.col, frameon=False)
+        ax.legend(loc='upper center', bbox_to_anchor=(0.5, self.y),
+                 prop={'size': 12}, ncol=self.col, frameon=False)
 
         #fig.savefig(f"post_vel_h2_3_{self.shots}_shots.pdf", bbox_inches='tight')
         fig.savefig(f"post_vel_h2_au.pdf", bbox_inches='tight')
@@ -459,7 +526,11 @@ class PlotsH2:
 
         fig, axs = plt.subplots(3, 1, figsize=(8, 10), sharex=True)
         plt.subplots_adjust(hspace=0.0)   # no space between subplots
-
+        # subplot 2 global range tracking
+        pot_min_1 = +np.inf
+        pot_max_1 = -np.inf
+        pot_min_2 = +np.inf
+        pot_max_2 = -np.inf
         for i, output in enumerate(outputs):
             db, time = self.read_db(output)
 
@@ -478,25 +549,43 @@ class PlotsH2:
             label = self.titles[i % len(self.titles)]
 
             # Plot each on its subplot
-            axs[0].plot(time, rel_tot, color=color, lw=2, label=label)
-            axs[1].plot(time, rel_pot, color=color, lw=2)
-            axs[2].plot(time, rel_kin, color=color, lw=2)
-
+            axs[0].plot(time, rel_tot, color=color, linestyle='-', lw=2, label=label)
+            axs[1].plot(time, rel_pot, color=color, linestyle='-', lw=2)
+            axs[2].plot(time, rel_kin, color=color, linestyle='-', lw=2)
+            # update global min/max
+            pot_min_1 = min(pot_min_1, rel_pot.min())
+            pot_max_1 = max(pot_max_1, rel_pot.max())
+            pot_min_2 = min(pot_min_2, rel_kin.min())
+            pot_max_2 = max(pot_max_2, rel_kin.max())
         # Titles on left side
         # axs[0].set_ylabel("ΔE_tot (mHa)", fontsize=14, fontweight='bold')
         # axs[0].set_ylim(-6,6)
         # axs[1].set_ylabel("ΔE_pot (Ha)", fontsize=14, fontweight='bold')
         # axs[2].set_ylabel("ΔE_kin (Ha)", fontsize=14, fontweight='bold')
-        axs[0].set_ylabel("ΔE_tot (mHa)", fontsize=14, fontweight='bold')
-        axs[0].set_ylim(-1.6,1.6)
-        axs[1].set_ylabel("E_pot (Ha)", fontsize=14, fontweight='bold')
-        axs[2].set_ylabel("E_kin (Ha)", fontsize=14, fontweight='bold')
-
+        # reference lines on chemical accuracy: 1.6x10e-3 Ha (1kcal/mol)
+        chem_low  = -1.6
+        chem_high =  1.6
+        axs[0].hlines(y=chem_low, xmin=time[0], xmax=time[-1], linestyle='--', linewidth=1.5, color='black')
+        axs[0].hlines(y=chem_high, xmin=time[0], xmax=time[-1], linestyle='--', linewidth=1.5, color='black')
+        axs[0].set_ylabel(r"$\boldsymbol{\Delta} \bf{E_{tot}}$ (mHa)", fontsize=14, fontweight='bold')
+        axs[0].set_ylim(-2.6,2.6)
+        axs[1].set_ylabel(r"$\bf{E_{pot}}$ (Ha)", fontsize=14, fontweight='bold')
+        pad_1 = 0.1 * (pot_max_1 - pot_min_1)
+        axs[1].set_ylim(pot_min_1 - pad_1, pot_max_1 + pad_1)
+        axs[2].set_ylabel(r"$\bf{E_{kin}}$ (Ha)", fontsize=14, fontweight='bold')
+        pad_2 = 0.1 * (pot_max_2 - pot_min_2)
+        axs[2].set_ylim(pot_min_2 - pad_2, pot_max_2 + pad_2)
         # Only bottom has X-label
         axs[2].set_xlabel("Time (fs)", fontsize=16, fontweight='bold')
         # Legend only on the top subplot
-        axs[0].legend(frameon=False, fontsize=12)
-
+        #axs[0].legend(frameon=False, fontsize=12)
+        axs[0].legend(
+            loc='upper center',
+            bbox_to_anchor=(0.5, self.y),
+            prop={'size': 12},
+            ncol=self.col,
+            frameon=False
+        )
         fig.savefig("relative_energies.pdf", bbox_inches='tight')
         plt.close()
 
@@ -588,11 +677,13 @@ if __name__ == "__main__":
     # picture.plot_time_total_energy(*db_files)
     # picture.plot_time_distance(*db_files)
     # picture.plot_time_gs_energy(*db_files)
-    picture.plot_pos_vel(*db_files)
-    picture.plot_position_gs_energy_ang(*db_files)
-    picture.plot_position_force_ang(*db_files)
+    # picture.plot_pos_vel(*db_files)
+    picture.plot_position_force_energy(*db_files)
+    # picture.plot_position_gs_energy_ang(*db_files)
+    # picture.plot_position_force_ang(*db_files)
     picture.plot_time_relative_energies(*db_files)
-    picture.plot_time_parameter(*db_files)
+    picture.plot_position_force_energy_ang(*db_files)
+    #picture.plot_time_parameter(*db_files)
 
 
     # NEW function
