@@ -137,13 +137,30 @@ class PlotsH2:
 
             plt.plot(
                 time,
-                parameter,
+                parameter[:,0],
                 color=color,
                 linestyle='-',
                 #linestyle='--' if i > 0 else '-',
                 label=label,
                 lw =2
             )
+        
+            # # parameter shape = (N_steps, N_parameters)
+            # n_params = parameter.shape[1]
+
+            # for p in range(n_params):
+            #     color = self.colors[(i * n_params + p) % len(self.colors)]
+            #     label = f"{self.titles[i]} [p{p}]"
+
+            #     plt.plot(
+            #         time,
+            #         parameter[:, p],
+            #         color=color,
+            #         linestyle='-',
+            #         lw=2,
+            #         label=label
+            #     )
+
 
         plt.xlabel('Time (fs)', fontweight='bold', fontsize=16)
         plt.ylabel(r'Optimal $\boldsymbol{\theta}$', fontweight='bold', fontsize=16)
@@ -683,9 +700,9 @@ if __name__ == "__main__":
     # picture.plot_position_force_ang(*db_files)
     picture.plot_time_relative_energies(*db_files)
     picture.plot_position_force_energy_ang(*db_files)
-    #picture.plot_time_parameter(*db_files)
+    picture.plot_time_parameter(*db_files)
 
 
     # NEW function
-    #picture.plot_avg_rdm1(*db_files)
+    picture.plot_avg_rdm1(*db_files)
     
