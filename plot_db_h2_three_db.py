@@ -44,20 +44,50 @@ class PlotsH2:
         time = db["time"][0:]*self.fs
         return db, time
     
-    def dis_two_atmos(self, data, atom_1, atom_2):
+    def dis_two_atmos(self, data, atom_1, atom_2, project=True):
         atom_1 = int(atom_1)
         atom_2 = int(atom_2)
         dimer = []
-        for i,m in enumerate(data):
-            dimer.append(float(m[atom_2][2])-float(m[atom_1][2]))
+        R_hat_prev = None
+        for i, m in enumerate(data):
+            if project:
+                # Relative vector
+                R = np.array(m[atom_2], dtype=float) - np.array(m[atom_1], dtype=float)
+                norm = np.linalg.norm(R)
+                if norm < 1e-12:
+                    if R_hat_prev is None:
+                        dimer.append(np.nan)
+                        continue
+                    R_hat = R_hat_prev
+                else:
+                    R_hat = R / norm
+                    R_hat_prev = R_hat
+                dimer.append(np.dot(R, R_hat))
+            else:
+                dimer.append(float(m[atom_2][2])-float(m[atom_1][2]))
         return dimer
     
-    def dis_two_atmos_grad(self, data, atom_1, atom_2):
+    def dis_two_atmos_grad(self, data, atom_1, atom_2, project=True):
         atom_1 = int(atom_1)
         atom_2 = int(atom_2)
         dimer = []
+        R_hat_prev = None
         for i,m in enumerate(data):
-            dimer.append(float(m[0][atom_2][2])-float(m[0][atom_1][2]))
+            if project:
+                # Relative vector
+                R = np.array(m[0][atom_2], dtype=float) - np.array(m[0][atom_1], dtype=float)
+                norm = np.linalg.norm(R)
+                if norm < 1e-12:
+                    if R_hat_prev is None:
+                        dimer.append(np.nan)
+                        continue
+                    R_hat = R_hat_prev
+                else:
+                    R_hat = R / norm
+                    R_hat_prev = R_hat
+                dimer.append(np.dot(R, R_hat))
+            else:
+                dimer.append(float(m[0][atom_2][2])-float(m[0][atom_1][2]))
         return dimer
     
     def rdm1_from_triangle(self, tri_vec, norb):
@@ -704,5 +734,5 @@ if __name__ == "__main__":
 
 
     # NEW function
-    picture.plot_avg_rdm1(*db_files)
+    #picture.plot_avg_rdm1(*db_files)
     
