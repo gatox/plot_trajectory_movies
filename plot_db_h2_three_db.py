@@ -44,50 +44,60 @@ class PlotsH2:
         time = db["time"][0:]*self.fs
         return db, time
     
-    def dis_two_atmos(self, data, atom_1, atom_2, project=True):
+    def _distance(self, data, atom_1, atom_2):
         atom_1 = int(atom_1)
         atom_2 = int(atom_2)
         dimer = []
-        R_hat_prev = None
-        for i, m in enumerate(data):
-            if project:
-                # Relative vector
-                R = np.array(m[atom_2], dtype=float) - np.array(m[atom_1], dtype=float)
-                norm = np.linalg.norm(R)
-                if norm < 1e-12:
-                    if R_hat_prev is None:
-                        dimer.append(np.nan)
-                        continue
-                    R_hat = R_hat_prev
-                else:
-                    R_hat = R / norm
-                    R_hat_prev = R_hat
-                dimer.append(np.dot(R, R_hat))
-            else:
-                dimer.append(float(m[atom_2][2])-float(m[atom_1][2]))
+        for m in data:
+            R = np.array(m[atom_2], dtype=float) - np.array(m[atom_1], dtype=float)
+            norm = np.linalg.norm(R)
+            dimer.append(norm)
+        return dimer
+        
+    
+    def dis_two_atmos(self, data, atom_1, atom_2):
+        atom_1 = int(atom_1)
+        atom_2 = int(atom_2)
+        dimer = []
+        # Reference bond vector R1
+        R1= np.array(data[1][atom_2], dtype=float) - np.array(data[1][atom_1], dtype=float)
+        # print("Second Initial values:",R1)
+        # norm1 = np.linalg.norm(R1)
+        # print("norm:",norm1)
+        # Reference bond vector R0
+
+        for m in data:
+            R = np.array(m[atom_2], dtype=float) - np.array(m[atom_1], dtype=float)
+            norm = np.linalg.norm(R)
+
+            # if norm < 1e-12:
+            #     dimer.append(np.nan)
+            #     continue
+
+            cos_theta = np.dot(R1, R)
+            sign = np.sign(cos_theta) #if cos_theta != 0 else 1.0
+
+            dimer.append(norm * sign)
         return dimer
     
-    def dis_two_atmos_grad(self, data, atom_1, atom_2, project=True):
+    def dis_two_atmos_grad(self, data, atom_1, atom_2):
         atom_1 = int(atom_1)
         atom_2 = int(atom_2)
         dimer = []
-        R_hat_prev = None
-        for i,m in enumerate(data):
-            if project:
-                # Relative vector
-                R = np.array(m[0][atom_2], dtype=float) - np.array(m[0][atom_1], dtype=float)
-                norm = np.linalg.norm(R)
-                if norm < 1e-12:
-                    if R_hat_prev is None:
-                        dimer.append(np.nan)
-                        continue
-                    R_hat = R_hat_prev
-                else:
-                    R_hat = R / norm
-                    R_hat_prev = R_hat
-                dimer.append(np.dot(R, R_hat))
-            else:
-                dimer.append(float(m[0][atom_2][2])-float(m[0][atom_1][2]))
+        R1= np.array(data[1][0][atom_2], dtype=float) - np.array(data[1][0][atom_1], dtype=float)
+
+        for m in data:
+            R = np.array(m[0][atom_2], dtype=float) - np.array(m[0][atom_1], dtype=float)
+            norm = np.linalg.norm(R)
+
+            # if norm < 1e-12:
+            #     dimer.append(np.nan)
+            #     continue
+
+            cos_theta = np.dot(R1, R)
+            sign = np.sign(cos_theta*10e3) #if cos_theta != 0 else 1.0
+
+            dimer.append(norm * sign)
         return dimer
     
     def rdm1_from_triangle(self, tri_vec, norb):
@@ -217,7 +227,7 @@ class PlotsH2:
 
         for i, output in enumerate(outputs):
             db, time = self.read_db(output)
-            crd = np.array(self.dis_two_atmos(db["crd"], 0, 1))
+            crd = np.array(self._distance(db["crd"], 0, 1))
             min_index = np.argmin(crd)
             print(f"Min value of position for {output}: {crd.min()} (a.u.)")
             print(f"Time for the min of position for {output}: {time[min_index][0]} (fs) in md_step {min_index}")
@@ -237,7 +247,7 @@ class PlotsH2:
 
         plt.xlabel('Time (fs)', fontweight='bold', fontsize=16)
         plt.ylabel('Position (a.u.)', fontweight='bold', fontsize=16)
-        plt.xlim([0, 10])
+        #plt.xlim([0, 10])
         # plt.legend(
         #     loc='upper center',
         #     bbox_to_anchor=(0.5, self.y),
@@ -247,7 +257,7 @@ class PlotsH2:
         # )
         #plt.title(self.global_title, y=self.y)
         #plt.savefig(f"time_distance_h2_3_{self.shots}_shots.pdf", bbox_inches='tight')
-        plt.savefig(f"time_distance_h2.pdf", bbox_inches='tight')
+        plt.savefig(f"time_distance.pdf", bbox_inches='tight')
         plt.close()
         
     def plot_time_gs_energy(self, *outputs):
@@ -357,7 +367,7 @@ class PlotsH2:
             db, _ = self.read_db(output)
             
             force = -np.array(self.dis_two_atmos_grad(db["gradient"], 0, 1))
-            crd = np.array(self.dis_two_atmos(db["crd"], 0, 1))
+            crd = np.array(self._distance(db["crd"], 0, 1))
             vel = np.array(self.dis_two_atmos(db["veloc"], 0, 1))
             ene_gs = np.array(list(db["energy"]), dtype=float)
             color = self.colors[i % len(self.colors)]
@@ -722,14 +732,14 @@ if __name__ == "__main__":
 
     # Call all plotting functions with variable number of arguments
     # picture.plot_time_total_energy(*db_files)
-    # picture.plot_time_distance(*db_files)
+    picture.plot_time_distance(*db_files)
     # picture.plot_time_gs_energy(*db_files)
     # picture.plot_pos_vel(*db_files)
     picture.plot_position_force_energy(*db_files)
     # picture.plot_position_gs_energy_ang(*db_files)
     # picture.plot_position_force_ang(*db_files)
     picture.plot_time_relative_energies(*db_files)
-    picture.plot_position_force_energy_ang(*db_files)
+    #picture.plot_position_force_energy_ang(*db_files)
     picture.plot_time_parameter(*db_files)
 
 
