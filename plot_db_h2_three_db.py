@@ -736,7 +736,7 @@ if __name__ == "__main__":
     # picture.plot_time_gs_energy(*db_files)
     # picture.plot_pos_vel(*db_files)
     picture.plot_position_force_energy(*db_files)
-    # picture.plot_position_gs_energy_ang(*db_files)
+    picture.plot_position_gs_energy_ang(*db_files)
     # picture.plot_position_force_ang(*db_files)
     picture.plot_time_relative_energies(*db_files)
     #picture.plot_position_force_energy_ang(*db_files)
