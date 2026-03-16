@@ -28,7 +28,8 @@ class PlotsH2:
         #self.titles = ["Simulator/Conv_Tol: 1.0e-7","Real/Conv_Tol:1.0e-2/Res_Lev:0(SGD/1000)","Real/Conv_Tol:1.0e-3/Res_Lev:0(ADAM/10000)","Hybrid_Ene_Param/Conv_Tol:1.0e-3/Res_Lev:0(SLSQP/10000)","Hybrid_Ene/Conv_Tol:1.0e-7/Res_Lev:0(SLSQP/10000)","Hybrid_Ene/Conv_Tol:1.0e-7/Res_Lev:2(SLSQP/10000)"]
         #self.titles = ["Simulator/Conv_Tol: 1.0e-7","Hybrid_Ene/Conv_Tol: 1.0e-7 (SLSQP/10000)"]
         #self.titles = [r"$X_0:\ 2\ Bohr$",r"$X_0:\ 1\ Bohr$",r"$X_0:\ 1.13\ Bohr$", r"$X_0:\ 1.95\ Bohr$"]
-        self.titles = [r"NOFVQE; $X_0:\ 0.6\ \AA$ (1.13 Bohr)", r"VQE; $X_0:\ 0.6\ \AA$ (1.13 Bohr)"]
+        X0 = 4 
+        self.titles = [fr"NOFVQE; $X_0:\ {X0}$ Bohr", r"VQE; $X_0:\ 0.6\ \AA$ (1.13 Bohr)"]
         #self.titles = ["Simulator/Conv_Tol: 1.0e-7","Hybrid_Ene/Conv_Tol:1.0e-7/Res_Lev:0(SLSQP/10000)","Hybrid_Ene/Conv_Tol:1.0e-7/Res_Lev:2(SLSQP/10000)"]
         self.shots = 10000
         #self.global_title = f"H2_dynamics/STO-3G/PNOF4/{self.shots}_shots/AER/IBM_pittsburgh/Opt_lvel=3"
