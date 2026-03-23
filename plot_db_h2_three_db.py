@@ -29,8 +29,10 @@ class PlotsH2:
         #self.titles = ["Simulator/Conv_Tol: 1.0e-7","Hybrid_Ene/Conv_Tol: 1.0e-7 (SLSQP/10000)"]
         #self.titles = [r"$X_0:\ 2\ Bohr$",r"$X_0:\ 1\ Bohr$",r"$X_0:\ 1.13\ Bohr$", r"$X_0:\ 1.95\ Bohr$"]
         X0 = 4 
-        self.titles = [fr"NOFVQE; $X_0:\ {X0}$ Bohr", r"VQE; $X_0:\ 0.6\ \AA$ (1.13 Bohr)"]
-        #self.titles = ["Simulator/Conv_Tol: 1.0e-7","Hybrid_Ene/Conv_Tol:1.0e-7/Res_Lev:0(SLSQP/10000)","Hybrid_Ene/Conv_Tol:1.0e-7/Res_Lev:2(SLSQP/10000)"]
+        #self.titles = [fr"NOFVQE; $X_0:\ {X0}$ Bohr", r"VQE; $X_0:\ 0.6\ \AA$ (1.13 Bohr)"]
+        #self.titles = ["Simulator/Conv_Tol: 1.0e-7","Hybrid_Ene/Conv_Tol:1.0e-7/Res_Lev:0(SLSQP/10000)","Hybrid_Ene/Conv_Tol:1.0e-7/Res_Lev:1(SLSQP/10000)","Hybrid_Ene/Conv_Tol:1.0e-7/Res_Lev:2(SLSQP/10000)"]
+        self.titles = ["Simulator","Res. Level.:0","Res. Level.:1","Res. Level.:2"]
+
         self.shots = 10000
         #self.global_title = f"H2_dynamics/STO-3G/PNOF4/{self.shots}_shots/AER/IBM_pittsburgh/Opt_lvel=3"
         #self.global_title = f"H2_dynamics/STO-3G/PNOF4/{self.shots}_shots"
@@ -375,13 +377,14 @@ class PlotsH2:
             label = self.titles[i % len(self.titles)]
             
             vel = vel/1e-3
-            axs[0].plot(crd, vel, color=color, linestyle='--', label=label, lw =2)
+            #axs[0].plot(crd, vel, color=color, linestyle='--', label=label, lw =2)
+            axs[0].plot(crd, vel, color=color, linestyle='--', lw =2)
             axs[0].scatter(crd[0], vel[0], color=color, marker='o', s=40)
             axs[0].scatter(crd[-1], vel[-1], color=color, marker='s', s=40)
             axs[1].plot(crd, ene_gs, color=color, linestyle='--', lw =2)
             axs[1].scatter(crd[0], ene_gs[0], color=color, marker='o', s=40)
             axs[1].scatter(crd[-1], ene_gs[-1], color=color, marker='s', s=40)
-            axs[2].plot(crd, force, color=color, linestyle='--', lw =2)
+            axs[2].plot(crd, force, color=color, linestyle='--', label=label, lw =2)
             axs[2].scatter(crd[0], force[0], color=color, marker='o', s=40)
             axs[2].scatter(crd[-1], force[-1], color=color, marker='s', s=40)
             # update global min/max
@@ -403,12 +406,21 @@ class PlotsH2:
 
         # Left y-axis (Ha/Bohr)
         
-        axs[0].legend(
-            loc='upper center',
-            bbox_to_anchor=(0.5, self.y),
+        # axs[0].legend(
+        #     loc='upper center',
+        #     bbox_to_anchor=(0.5, self.y),
+        #     prop={'size': 12},
+        #     ncol=self.col,
+        #     frameon=False
+        # )
+        
+        # Inside plot
+        axs[2].legend(
+            loc='upper right',
+            #bbox_to_anchor=(0.5, self.y),
             prop={'size': 12},
-            ncol=self.col,
-            frameon=False
+            #ncol=self.col,
+            #frameon=False
         )
         #plt.title(self.global_title, y=self.y)
         plt.savefig(f"distance_force_energy_h2_au.pdf", bbox_inches='tight')
@@ -626,7 +638,7 @@ class PlotsH2:
         axs[0].hlines(y=chem_low, xmin=time[0], xmax=time[-1], linestyle='--', linewidth=1.5, color='black')
         axs[0].hlines(y=chem_high, xmin=time[0], xmax=time[-1], linestyle='--', linewidth=1.5, color='black')
         axs[0].set_ylabel(r"$\boldsymbol{\Delta} \bf{E_{tot}}$ (mHa)", fontsize=14, fontweight='bold')
-        axs[0].set_ylim(-2.6,2.6)
+        #axs[0].set_ylim(-2.6,2.6)
         axs[1].set_ylabel(r"$\bf{E_{pot}}$ (Ha)", fontsize=14, fontweight='bold')
         pad_1 = 0.1 * (pot_max_1 - pot_min_1)
         axs[1].set_ylim(pot_min_1 - pad_1, pot_max_1 + pad_1)
@@ -637,13 +649,23 @@ class PlotsH2:
         axs[2].set_xlabel("Time (fs)", fontsize=16, fontweight='bold')
         # Legend only on the top subplot
         #axs[0].legend(frameon=False, fontsize=12)
+        # axs[0].legend(
+        #     loc='upper center',
+        #     bbox_to_anchor=(0.5, self.y),
+        #     prop={'size': 12},
+        #     ncol=self.col,
+        #     frameon=False
+        # )
+        
+        # Inside plot
         axs[0].legend(
-            loc='upper center',
-            bbox_to_anchor=(0.5, self.y),
+            loc='upper right',
+            #bbox_to_anchor=(0.5, self.y),
             prop={'size': 12},
-            ncol=self.col,
-            frameon=False
+            #ncol=self.col,
+            #frameon=False
         )
+        
         fig.savefig("relative_energies.pdf", bbox_inches='tight')
         plt.close()
 
@@ -737,7 +759,7 @@ if __name__ == "__main__":
     # picture.plot_time_gs_energy(*db_files)
     # picture.plot_pos_vel(*db_files)
     picture.plot_position_force_energy(*db_files)
-    picture.plot_position_gs_energy_ang(*db_files)
+    #picture.plot_position_gs_energy_ang(*db_files)
     # picture.plot_position_force_ang(*db_files)
     picture.plot_time_relative_energies(*db_files)
     #picture.plot_position_force_energy_ang(*db_files)
