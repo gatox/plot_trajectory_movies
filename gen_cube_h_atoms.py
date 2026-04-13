@@ -1,4 +1,3 @@
-
 class GenCubeHAtoms:
 
     def __init__(self, natoms, distance, charge=0, multiplicity=1):
