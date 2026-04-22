@@ -50,7 +50,7 @@ def extract_distance_from_folder(folder_name: str):
     return float(m.group(1))
 
 
-def compute_pes(base_dir="cube_h2_pynof", save_prefix="pynof_pes", guess=False):
+def compute_pes(base_dir="cube_h2_pynof", save_prefix="pynof_pes", guess=False, hf_only=False):
     """
     Reads all output folders inside base_dir:
       - HF energy vs distance
@@ -108,7 +108,7 @@ def compute_pes(base_dir="cube_h2_pynof", save_prefix="pynof_pes", guess=False):
     hf_energies = hf_energies[idx]
     nof_energies = nof_energies[idx]
     corr_energies = corr_energies[idx]
-
+    
     # Save data table
     if guess:
         
@@ -116,7 +116,14 @@ def compute_pes(base_dir="cube_h2_pynof", save_prefix="pynof_pes", guess=False):
         header = "distance_ang  NOF_energy_Ha"
         np.savetxt(f"{save_prefix}.dat", data_out, header=header, fmt="%.8f")
         
-        return distances, hf_energies, nof_energies, corr_energies
+        return distances, nof_energies
+    elif hf_only:
+        
+        data_out = np.column_stack([distances, hf_energies])
+        header = "distance_ang  NOF_energy_Ha"
+        np.savetxt(f"{save_prefix}.dat", data_out, header=header, fmt="%.8f")
+        
+        return distances, hf_energies
     else:
         data_out = np.column_stack([distances, hf_energies, nof_energies, corr_energies])
         header = "distance_ang  HF_energy_Ha  NOF_energy_Ha  Corr_energy_Ha"
@@ -169,10 +176,62 @@ def plot_pes(data_1, data_2, save_prefix="pes_scan"):
     fig.savefig(f"{save_prefix}.pdf")
     fig.savefig(f"{save_prefix}.eps", format="eps")
     fig.savefig(f"{save_prefix}.png", dpi=300)
+    
+def plot_pes_hf(data_1, data_2, save_prefix="pes_scan_HF"):
+    arr1 = np.loadtxt(data_1)
+    arr2 = np.loadtxt(data_2) #HF
+
+    distances = arr1[:, 0]
+    hf_energies = arr2[:, 1]
+    energies_pynof = arr1[:, 1]
+
+    fig, ax = plt.subplots(figsize=(6, 4.5))
+
+    ax.plot(
+        distances,
+        hf_energies,
+        linestyle="--",
+        marker="o",
+        markersize=5,
+        label=r"HF",
+    )
+    ax.plot(
+        distances,
+        energies_pynof,
+        linestyle="-",
+        marker="s",
+        markersize=5,
+        label=r"PyNOF (PNOF7)",
+    )
+    # ax.plot(
+    #     distances,
+    #     hf_energies,
+    #     linestyle="-",
+    #     marker="^",
+    #     markersize=5,
+    #     label=r"NOF-VQE (PNOF7)",
+    # )
+
+    ax.set_ylim(-32.0,-22.2)
+    ax.set_xlabel(r"Distance ($\mathrm{\AA}$)")
+    ax.set_ylabel(r"Energy (Ha)")
+    ax.legend(frameon=False)
+    ax.tick_params(direction="in", top=True, right=True)
+
+    fig.tight_layout()
+    fig.savefig(f"{save_prefix}.pdf")
+    fig.savefig(f"{save_prefix}.eps", format="eps")
+    fig.savefig(f"{save_prefix}.png", dpi=300)
 
 if __name__ == "__main__":
-    # compute_pes(base_dir="cube_h2_pynof", save_prefix="cube_h2_pynof_pes", guess=True)
+    # compute_pes(base_dir="cube_h4_pynof", save_prefix="cube_h4_pynof_pes", guess=True)
+    # compute_pes(base_dir="cube_h4_pynof_HF_energy", save_prefix="cube_h4_pynof_HF_energy_pes", hf_only=True)
     # compute_pes(base_dir="cube_h2_nofvqe", save_prefix="cube_h2_nofvqe_pes")
-    pynof_data = "cube_h2_pynof_pes.dat"
-    nofvqe_data = "cube_h2_nofvqe_pes.dat" 
-    plot_pes(pynof_data,nofvqe_data)
+    # pynof_data = "cube_h2_pynof_pes.dat"
+    # nofvqe_data = "cube_h2_nofvqe_pes.dat" 
+    # plot_pes(pynof_data,nofvqe_data)
+    pynof_data = "cube_h4_pynof_pes.dat"
+    # nofvqe_data = "cube_h4_nofvqe_pes.dat" 
+    hf_data = "cube_h4_pynof_HF_energy_pes.dat"
+    # plot_pes(pynof_data,nofvqe_data)
+    plot_pes_hf(pynof_data,hf_data)
