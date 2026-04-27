@@ -222,6 +222,53 @@ def plot_pes_hf(data_1, data_2, save_prefix="pes_scan_HF"):
     fig.savefig(f"{save_prefix}.pdf")
     fig.savefig(f"{save_prefix}.eps", format="eps")
     fig.savefig(f"{save_prefix}.png", dpi=300)
+    
+def plot_pes_sim_qc(data_1, data_2, save_prefix="pes_H8_scan_hybrid"):
+    arr1 = np.loadtxt(data_1) #simulation
+    arr2 = np.loadtxt(data_2) #real QC
+
+    distances = arr1[:, 0]
+    hf_energies = arr1[:, 1]
+    sim_nofvqe = arr1[:, 2]
+    qc_nofvqe = arr2[:, 2]
+
+    fig, ax = plt.subplots(figsize=(6, 4.5))
+
+    # ax.plot(
+    #     distances,
+    #     hf_energies,
+    #     linestyle="--",
+    #     marker="o",
+    #     markersize=5,
+    #     label=r"HF",
+    # )
+    ax.plot(
+        distances,
+        sim_nofvqe,
+        linestyle="--",
+        marker="s",
+        markersize=5,
+        label=r"Classical NOF-VQE",
+    )
+    ax.scatter(
+        distances,
+        qc_nofvqe,
+        linestyle="-",
+        marker="o",
+        color="red",
+        s=40,
+        label=r"Quantum NOF-VQE",
+    )
+
+    ax.set_xlabel(r"Distance ($\mathrm{\AA}$)")
+    ax.set_ylabel(r"Energy (Ha)")
+    ax.legend(frameon=True)
+    ax.tick_params(direction="in", top=True, right=True)
+
+    fig.tight_layout()
+    fig.savefig(f"{save_prefix}.pdf")
+    # fig.savefig(f"{save_prefix}.eps", format="eps")
+    # fig.savefig(f"{save_prefix}.png", dpi=300)
 
 if __name__ == "__main__":
     # compute_pes(base_dir="cube_h4_pynof", save_prefix="cube_h4_pynof_pes", guess=True)
@@ -230,8 +277,9 @@ if __name__ == "__main__":
     # pynof_data = "cube_h2_pynof_pes.dat"
     # nofvqe_data = "cube_h2_nofvqe_pes.dat" 
     # plot_pes(pynof_data,nofvqe_data)
-    pynof_data = "cube_h4_pynof_pes.dat"
-    # nofvqe_data = "cube_h4_nofvqe_pes.dat" 
-    hf_data = "cube_h4_pynof_HF_energy_pes.dat"
+    #pynof_data = "cube_h4_pynof_pes.dat"
+    nofvqe_data = "cube_h2_nofvqe_pes.dat" 
+    hybrid_nofvqe_data = "t_0_hybrid_cube_h2_nofvqe_pes.dat"
+    #hf_data = "cube_h4_pynof_HF_energy_pes.dat"
     # plot_pes(pynof_data,nofvqe_data)
-    plot_pes_hf(pynof_data,hf_data)
+    plot_pes_sim_qc(nofvqe_data,hybrid_nofvqe_data)
