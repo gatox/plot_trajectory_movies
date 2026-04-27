@@ -22,15 +22,19 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def extract_energies_from_out(out_file: Path):
+def extract_energies_from_out(out_file: Path, device=None):
     """
     Extract HF, NOF, and correlation energies from a PyNOF output file.
     """
     text = out_file.read_text(encoding="utf-8", errors="ignore")
 
     hf_match = re.search(r"HF Total Energy\s*=\s*([-\d\.Ee+]+)", text)
-    nof_match = re.search(r"Final NOF Total Energy\s*=\s*([-\d\.Ee+]+)", text)
-    corr_match = re.search(r"Correlation Energy\s*=\s*([-\d\.Ee+]+)", text)
+    if device == "hybrid":
+        nof_match = re.search(r"Final NOF Total Energy Q.C.\s*=\s*([-\d\.Ee+]+)", text)
+        corr_match = re.search(r"Correlation Energy Q.C.\s*=\s*([-\d\.Ee+]+)", text)
+    else:
+        nof_match = re.search(r"final nof total energy\s*=\s*([-\d\.ee+]+)", text)
+        corr_match = re.search(r"correlation energy\s*=\s*([-\d\.ee+]+)", text)
 
     hf = float(hf_match.group(1)) if hf_match else None
     nof = float(nof_match.group(1)) if nof_match else None
@@ -50,7 +54,7 @@ def extract_distance_from_folder(folder_name: str):
     return float(m.group(1))
 
 
-def compute_pes(base_dir="cube_h2_pynof", save_prefix="pynof_pes", guess=False, hf_only=False):
+def compute_pes(base_dir="cube_h2_pynof", save_prefix="pynof_pes", guess=False, device=None, hf_only=False):
     """
     Reads all output folders inside base_dir:
       - HF energy vs distance
@@ -83,7 +87,7 @@ def compute_pes(base_dir="cube_h2_pynof", save_prefix="pynof_pes", guess=False, 
             continue
 
         out_file = out_files[0]
-        hf, nof, corr = extract_energies_from_out(out_file)
+        hf, nof, corr = extract_energies_from_out(out_file, device)
 
         if hf is None or corr is None:
             print(f"[WARNING] Could not extract HF energy from {out_file}")
@@ -274,12 +278,16 @@ if __name__ == "__main__":
     # compute_pes(base_dir="cube_h4_pynof", save_prefix="cube_h4_pynof_pes", guess=True)
     # compute_pes(base_dir="cube_h4_pynof_HF_energy", save_prefix="cube_h4_pynof_HF_energy_pes", hf_only=True)
     # compute_pes(base_dir="cube_h2_nofvqe", save_prefix="cube_h2_nofvqe_pes")
-    # pynof_data = "cube_h2_pynof_pes.dat"
-    # nofvqe_data = "cube_h2_nofvqe_pes.dat" 
-    # plot_pes(pynof_data,nofvqe_data)
+    compute_pes(base_dir="t_3_cube_h2_nofvqe", save_prefix="t_3_cube_h2_nofvqe_pes", device="hybrid")
+    #pynof_data = "cube_h2_pynof_pes.dat"
+    #nofvqe_data = "cube_h2_nofvqe_pes.dat" 
+    #plot_pes(pynof_data,nofvqe_data)
     #pynof_data = "cube_h4_pynof_pes.dat"
+    # nofvqe_data = "cube_h4_nofvqe_pes.dat"
     nofvqe_data = "cube_h2_nofvqe_pes.dat" 
     hybrid_nofvqe_data = "t_0_hybrid_cube_h2_nofvqe_pes.dat"
-    #hf_data = "cube_h4_pynof_HF_energy_pes.dat"
+    # hf_data = "cube_h4_pynof_HF_energy_pes.dat"
     # plot_pes(pynof_data,nofvqe_data)
+    plot_pes_hf(pynof_data,hf_data)
     plot_pes_sim_qc(nofvqe_data,hybrid_nofvqe_data)
+
