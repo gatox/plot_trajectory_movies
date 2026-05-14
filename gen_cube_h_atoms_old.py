@@ -1,7 +1,12 @@
 import os
+import re
 import sys
 import contextlib
 import shutil
+
+from pathlib import Path
+
+import numpy as np
 
 ANG_TO_BOHR = 1.8897259886
 
@@ -39,8 +44,44 @@ class GenCubeHAtoms:
                 f.write(f"H {x:.6f} {y:.6f} {z:.6f}\n")
 
         print(f"Written: {filepath} ({n_total} atoms)")
+        
+    def extract_vector_after(self, label, text):
+        """
+        Extract a numpy array following a specified label string.
+        Supports single-line, multi-line, and scientific notation formats.
+        """
+        # Matches label -> optional colon -> optional spaces/newlines -> [...]
+        pattern = rf"{re.escape(label)}\s*:?\s*\[(.*?)\]"
+        
+        # re.DOTALL ensures the expression matches across multiple lines
+        m = re.search(pattern, text, re.DOTALL)
+        if not m:
+            return None
+            
+        # Standardize spacing by replacing newlines with spaces
+        clean_content = m.group(1).replace("\n", " ").strip()
+        
+        # Safely convert whitespace-separated floats into a numpy array
+        return np.fromstring(clean_content, sep=" ")
+        
+    def extract_save_opts_params_ON(self, filename):
+        """
+        Extract and save optimal parameters and occupation numbers from 
+        a nofvqe output file.
+        """
+        base = os.path.splitext(filename)[0]
+        out_file = base + ".out"
+        out_file = Path(out_file)
+        
+        
+        text = out_file.read_text(encoding="utf-8", errors="ignore")
+        raw_n = self.extract_vector_after("n_full RAW", text)
+        sim_n = self.extract_vector_after("Reference simulator occupation vector", text)
+        print(f"Saving n_raw and n_sim from output file in {filename}")
+        np.save("nofvqe_qc_eva_n.npy",raw_n)
+        np.save("nofvqe_sim_n.npy",sim_n)
 
-    def run_pynof(self, filename, pnof, basis):
+    def run_pynof(self, filename, pnof, basis, hf_energy):
         import pynof
         
         base = os.path.splitext(filename)[0]
@@ -70,19 +111,30 @@ class GenCubeHAtoms:
                 p = pynof.param(mol,str(basis))
                 p.ipnof=int(pnof)
                 p.RI = False
-                
-                E,C,gamma,fmiug0 = pynof.compute_energy(mol,p, C=C_MO,n=ON)
+                if hf_energy:
+                    import psi4
+                    psi4.set_options({
+                        'scf__maxiter': 600,
+                        #'scf__guess': 'sad',           # Better starting density than the core Hamiltonian
+                        #'scf__damping_percentage': 40, # Mixes 40% of old density to stop oscillations
+                        'scf__soscf': True             # Second-order converter (slower but much more robust)
+                    })
+                    E = pynof.compute_energy(mol,p,hf_energy=hf_energy)
+                else:
+                    E,C,gamma,fmiug0 = pynof.compute_energy(mol,p, C=C_MO,n=ON)
                 sys.stdout.flush() 
             finally:
                 # Restore the terminal output
                 os.dup2(saved_stdout_fd, original_stdout_fd)
                 os.close(saved_stdout_fd)
         
-    def run_nofvqe(self, filename, pnof, basis, C_MO, init_param):
+    def _run_nofvqe(self, filename, pnof, basis, C_MO, init_param, C_MO_opt=None, n_opt=None, n_raw=None, energy_eval=False):
         from nofvqe import NOFVQE
         
         base = os.path.splitext(filename)[0]
         out_file = base + ".out"
+        if energy_eval:
+            out_file = "eva_" + out_file
         
         # Initial parameters
         functional="pnof"+str(pnof)
@@ -94,9 +146,9 @@ class GenCubeHAtoms:
         opt_circ="slsqp"
         n_shots=10000
         optimization_level=3
-        resilience_level=0
+        resilience_level=2
         pair_double = True
-        cal = NOFVQE(
+        comp = NOFVQE(
                 filename, 
                 functional=functional, 
                 conv_tol=conv_tol, 
@@ -113,7 +165,8 @@ class GenCubeHAtoms:
                 optimization_level=optimization_level,
                 resilience_level=resilience_level,
                     )
-
+        C_opt=None 
+        params_opt=None
         # 1. Redirect the terminal output to that .out file
         with open(out_file, "w") as f:
             # Save original terminal address
@@ -122,31 +175,64 @@ class GenCubeHAtoms:
             try:
                 # Point terminal output to our file
                 os.dup2(f.fileno(), original_stdout_fd)
-                
-                # --- RUN PYNOF ---
-                # Reading xyz file and generating mol file
-                E_min, params_opt, _, _, _, _, _, C_opt, _ = cal.run_nofvqe()
+                # Energy evaluated from Optimal C_MO and ONs
+                if energy_eval:
+                    comp._evaluate_energy(C_MO_opt, n_opt, n_raw)
+                else:
+                    # --- RUN PYNOF ---
+                    # Reading xyz file and generating mol file
+                    E_min, params_opt, _, _, _, _, _, C_opt, _ = comp.run_nofvqe()
                 sys.stdout.flush() 
             finally:
                 # Restore the terminal output
                 os.dup2(saved_stdout_fd, original_stdout_fd)
                 os.close(saved_stdout_fd)
         return C_opt, params_opt
-            
+    
+    def copy_C_MO(self, subfolder_path, obj):
 
+        src = os.path.join(subfolder_path, obj)
+        dst = os.path.join(os.getcwd(), obj)
+
+        print("Source:", src)
+        print("Destination:", dst)
+
+        if os.path.isfile(src):
+            shutil.copy2(src, dst)
+
+        
 if __name__ == "__main__":
+    
+    base_dir = sys.argv[1]
+    sub_dir = None
+    # sub_dir = Path(sub_dir).expanduser()
+    sub_dir = Path(
+        "~/Desktop/Edison/PostDoc_DIPC/cube_h_2/noiseless_cube_h2_nofvqe_sto-3g/noise_sim_0_cube_h2_nofvqe/"
+    ).expanduser()
+    copy_C_MO = False
+    
+    if sub_dir is not None:
+        copy_C_MO =True
+    
     # ---- USER INPUT ----
-    natoms = 4  # number per dimension (Hn cube → nxnxn)
+    natoms = 2  # number per dimension (Hn cube → nxnxn)
     pnof = 7 # type of functional: pnof4 = 4, pnof5 =5 ,pnof7 = 7 and gnof =8
     basis = "sto-3g" # basis set
-    method = "pynof" # Either nofvqe or pynof
+    method = "nofvqe" # Either nofvqe or pynof
+    hf_energy = False # To compute HF energy only with pynof
     
     distances_ang = [
         1.0, 1.125, 1.25, 1.375, 1.5, 1.625, 1.75, 1.875,
         2.0, 2.25, 2.5, 2.75, 3.0, 3.25, 3.5, 3.75, 4.0
     ]
-
-    base_dir = "cube_h"+ str(natoms) + "_" + method
+    
+    number_folder = "noise_sim_0_"
+    
+    if base_dir is None:
+        if hf_energy:
+            base_dir = number_folder + "cube_h"+ str(natoms) + "_" + method + "_HF_energy"
+        else: 
+            base_dir = number_folder + "cube_h"+ str(natoms) + "_" + method
 
     # ---- CREATE BASE DIR ----
     os.makedirs(base_dir, exist_ok=True)
@@ -162,6 +248,8 @@ if __name__ == "__main__":
         # Folder name
         folder_name = f"cube_h_{natoms}_d_{d_ang:.3f}_ang"
         folder_path = os.path.join(base_dir, folder_name)
+        if copy_C_MO:
+            subfolder_path = os.path.join(sub_dir, folder_name)
 
         os.makedirs(folder_path, exist_ok=True)
 
@@ -195,9 +283,25 @@ if __name__ == "__main__":
             # Note: since we are NOW inside 'folder_path', 
             # we use 'file_name' instead of 'file_path'
             if method == "pynof":
-                cal.run_pynof(file_name, pnof, basis)
+                cal.run_pynof(file_name, pnof, basis, hf_energy)
             elif method == "nofvqe":
-                C_MO, init_param = cal.run_nofvqe(file_name, pnof, basis, C_MO, init_param)
+                C_MO_opt = None
+                n_opt = None
+                n_raw = None
+                if os.path.isfile("nofvqe_sim_n.npy") and os.path.isfile("nofvqe_C.npy"):
+                    C_MO_opt = np.load("nofvqe_C.npy")
+                    n_opt = np.load("nofvqe_sim_n.npy")
+                    energy_eval = True
+                    
+                    if os.path.isfile("nofvqe_qc_eva_n.npy"):
+                        n_raw = np.load("nofvqe_qc_eva_n.npy")
+                        
+                else:
+                    
+                    energy_eval = False
+                #cal.extract_save_opts_params_ON(file_name)
+                #cal.copy_C_MO(subfolder_path,"nofvqe_C.npy")
+                C_MO, init_param = cal._run_nofvqe(file_name, pnof, basis, C_MO, init_param, C_MO_opt, n_opt, n_raw, energy_eval)
         finally:
             os.chdir(original_dir)      # Always jump back to the main folder
             
