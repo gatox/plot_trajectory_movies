@@ -4,22 +4,26 @@ from pathlib import Path
 
 import matplotlib as mpl
 
+
 mpl.rcParams.update({
     "font.family": "serif",
-    "mathtext.fontset": "cm",   # Computer Modern-like
+    "mathtext.fontset": "cm",
     "font.serif": ["Computer Modern Roman", "CMU Serif", "DejaVu Serif"],
     "axes.unicode_minus": False,
-    "axes.labelsize": 14,
-    "font.size": 14,
-    "legend.fontsize": 10,
-    "xtick.labelsize": 12,
-    "ytick.labelsize": 12,
-    "lines.linewidth": 2,
-    "axes.linewidth": 1.2,
+    "axes.labelsize": 18,
+    "font.size": 16,
+    "legend.fontsize": 13.5,
+    "xtick.labelsize": 15,
+    "ytick.labelsize": 15,
+    "lines.linewidth": 1.5,
+    "axes.linewidth": 1.5,
     "savefig.bbox": "tight",
 })
+
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
+import matplotlib.lines as mlines
+from scipy.interpolate import make_interp_spline
 
 
 import numpy as np
@@ -108,7 +112,8 @@ def collect_qc_records(base_dirs, device="hybrid_real"):
             if not folder.is_dir():
                 continue
 
-            out_files = list(folder.glob("*.out"))
+            out_files = list(folder.glob("eva_*.out"))
+            print("Records from:",out_files)
             if not out_files:
                 continue
 
@@ -424,7 +429,7 @@ def plot_pes_sim_qc(data_1, data_2, save_prefix="pes_H8_scan_hybrid"):
         linestyle="--",
         marker="s",
         markersize=5,
-        label=r"Classical NOF-VQE",
+        label=r"Noiseless ON-NOF-VQE",
     )
     ax.scatter(
         distances,
@@ -570,19 +575,22 @@ def _load_acceptance_mask(data_qc):
     if analysis.ndim == 1:
         analysis = analysis.reshape(1, -1)
     
+    
     #strict_reference_filter:
     #For diff_n
-    max_diff_n=1
+    max_diff_n=5
     #For abs_diff_E
-    max_abs_diff_e=0.2
+    max_abs_diff_e=5
     return analysis[:, 1].astype(bool) & (analysis[:, 2] < max_abs_diff_e) & (analysis[:, 3] < max_diff_n)
 
 
 def plot_pes_sim_qc_stats(
     data_qc_list,
     save_prefix="pes_H8_scan_hybrid_stats",
-    lower_ylim=(-4.08, -3.70),
-    upper_ylim=(-3.650, -3.150),
+    # lower_ylim=(-4.5, -3.50),
+    # upper_ylim=(-3.650, -3.150),
+    lower_ylim=(-4.05, -3.70),
+    #upper_ylim=(-3.650, -3.150),
 ):
     """
     O'Brien-style stacked discontinuous-energy plot.
@@ -600,10 +608,10 @@ def plot_pes_sim_qc_stats(
 
     Mean/std are computed using postselected QC samples only.
     """
-
     arr_ref = np.loadtxt(data_qc_list[0])
-
+    
     distances = arr_ref[:, 0]
+    hf_energy = arr_ref[:, 1]
 
     if arr_ref.shape[1] >= 5:
         sim_nofvqe = arr_ref[:, 4]
@@ -674,13 +682,53 @@ def plot_pes_sim_qc_stats(
     # Figure: two stacked windows
     # ==========================================================
 
-    fig, (ax_upper, ax_lower) = plt.subplots(
-        2,
-        1,
-        sharex=True,
-        gridspec_kw={'height_ratios': [1, 3]}
-    )
+    # fig, (ax_upper, ax_lower) = plt.subplots(
+    #     2,
+    #     1,
+    #     sharex=True,
+    #     gridspec_kw={'height_ratios': [1, 3]}
+    # )
     
+    fig, ax_lower = plt.subplots(figsize=(9, 5.5))
+    
+    # ==========================================================
+    # Figure: HF energy
+    # ==========================================================
+    
+    x_smooth = np.linspace(distances.min(), distances.max(), 300)
+    spline_hf = make_interp_spline(distances, hf_energy, k=3)
+    y_smooth_hf = spline_hf(x_smooth)
+    # --- Plotting ---
+    ax_lower.scatter(
+        distances,
+        hf_energy,
+        marker="s",
+        color="C2",  # green
+        zorder=5,
+        s=36,        # Use 's' to control marker size if needed
+        label="",  # Keep empty
+    )
+    ax_lower.plot(
+        x_smooth,
+        y_smooth_hf,
+        linestyle="--",
+        zorder=5,
+        linewidth=2.5,  # FIXED: singular 'linewidth' for lines
+        color="C2",  # green
+        label="",  # Keep empty to prevent duplicates
+    )
+
+    # --- Custom Legend Handle ---
+    hf_handle = mlines.Line2D(
+        [],
+        [],
+        color="C2",
+        linestyle="--",
+        linewidth=2.5,  # ADDED: matches your actual plot line thickness
+        marker="s",
+        markersize=6,  # Adjust size to match your scatter plots
+        label=r"HF",
+    )
 
     # ==========================================================
     # Upper panel: discarded high-energy sector only
@@ -692,44 +740,71 @@ def plot_pes_sim_qc_stats(
 
         discarded = ~accepted_all[irun]
 
-        if np.any(discarded):
-            ax_upper.scatter(
-                distances[discarded],
-                qc_energies_all[irun, discarded],
-                s=42,
-                facecolors="none",
-                edgecolors="gray",
-                linewidths=1.2,
-                alpha=0.95,
-                marker="o",
-                label=None,
-                zorder=3,
-            )
+        # if np.any(discarded):
+        #     ax_upper.scatter(
+        #         distances[discarded],
+        #         qc_energies_all[irun, discarded],
+        #         s=42,
+        #         facecolors="none",
+        #         edgecolors="gray",
+        #         linewidths=1.2,
+        #         alpha=0.95,
+        #         marker="o",
+        #         label=None,
+        #         zorder=3,
+        #     )
 
-    ax_upper.set_ylim(*upper_ylim)
-    ax_upper.tick_params(
-        direction="in",
-        top=True,
-        right=True,
-        bottom=False,
-        labelbottom=False,
-    )
-    ax_upper.set_ylabel("")  # no y-label on upper panel
-    ax_upper.yaxis.set_major_formatter(ticker.FormatStrFormatter('%.2f'))
+    # ax_upper.set_ylim(*upper_ylim)
+    # ax_upper.tick_params(
+    #     direction="in",
+    #     top=True,
+    #     right=True,
+    #     bottom=False,
+    #     labelbottom=False,
+    # )
+    # ax_upper.set_ylabel("")  # no y-label on upper panel
+    # ax_upper.yaxis.set_major_formatter(ticker.FormatStrFormatter('%.2f'))
 
     # ==========================================================
     # Lower panel: physical PEC region
     # ==========================================================
 
-    ax_lower.plot(
+    spline = make_interp_spline(distances, sim_nofvqe, k=3)
+    y_smooth = spline(x_smooth)
+    # --- Plotting ---
+    ax_lower.scatter(
         distances,
         sim_nofvqe,
-        linestyle="--",
         marker="s",
-        markersize=5,
-        label=r"Classical NOF-VQE",
+        color="C0",  # blue
         zorder=5,
+        s=36,        # Use 's' to control marker size if needed
+        label="",  # Keep empty
     )
+    ax_lower.plot(
+        x_smooth,
+        y_smooth,
+        linestyle="--",
+        zorder=5,
+        linewidth=2.5,  # FIXED: singular 'linewidth' for lines
+        color="C0",  # blue
+        label="",  # Keep empty to prevent duplicates
+    )
+
+    # --- Custom Legend Handle ---
+    nofvqe_handle = mlines.Line2D(
+        [],
+        [],
+        color="C0",
+        linestyle="--",
+        linewidth=2.5,  # ADDED: matches your actual plot line thickness
+        marker="s",
+        markersize=6,  # Adjust size to match your scatter plots
+        label=r"Noiseless ON-NOF-VQE",
+    )
+
+    # # Pass the custom handle to the legend
+    # ax_lower.legend(handles=[nofvqe_handle])
 
     accepted_label_used = False
     discarded_label_used = False
@@ -743,14 +818,14 @@ def plot_pes_sim_qc_stats(
         ax_lower.scatter(
             distances[accepted],
             qc_energies_all[irun, accepted],
-            s=18,
-            alpha=0.28,
+            s=60,
+            alpha=0.24,
             label=(
                 r"Postselected QC samples"
                 if not accepted_label_used
                 else None
             ),
-            zorder=2,
+            zorder=5,
         )
         accepted_label_used = True
 
@@ -759,10 +834,10 @@ def plot_pes_sim_qc_stats(
             ax_lower.scatter(
                 distances[discarded],
                 qc_energies_all[irun, discarded],
-                s=42,
+                s=60,
                 facecolors="none",
                 edgecolors="gray",
-                linewidths=1.2,
+                linewidths=2,
                 alpha=0.95,
                 marker="o",
                 label=(
@@ -779,9 +854,10 @@ def plot_pes_sim_qc_stats(
         qc_mean[valid_mean],
         yerr=qc_std[valid_mean],
         fmt="o",
-        markersize=5,
+        markersize=8,
         capsize=3,
-        linewidth=1.6,
+        linewidth=2.5,
+        color ="C1", # orange
         label=r"Postselected QC mean",
         zorder=6,
     )
@@ -790,7 +866,22 @@ def plot_pes_sim_qc_stats(
 
     ax_lower.set_xlabel(r"Distance ($\mathrm{\AA}$)")
     ax_lower.set_ylabel(r"Energy (Ha)")
-    ax_lower.legend(frameon=True, loc="best")
+    
+    # Fetch all automatically generated handles and labels from scatter/errorbar
+    existing_handles, existing_labels = ax_lower.get_legend_handles_labels()
+
+    # Combine your custom handle with the existing ones
+    all_handles = [hf_handle] + [nofvqe_handle] + existing_handles
+    all_labels = [hf_handle.get_label()] + [nofvqe_handle.get_label()] + existing_labels
+
+    # Create a single legend containing everything
+    ax_lower.legend(
+        handles=all_handles,
+        labels=all_labels,
+        frameon=True,
+        loc="best"
+    )
+    
     ax_lower.tick_params(direction="in", top=False, right=True)
 
     fig.subplots_adjust(

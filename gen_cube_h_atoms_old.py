@@ -135,6 +135,9 @@ class GenCubeHAtoms:
         out_file = base + ".out"
         if energy_eval:
             out_file = "eva_" + out_file
+            dev = "hybrid_real"
+        else:
+            dev = "simulator"
         
         # Initial parameters
         functional="pnof"+str(pnof)
@@ -142,7 +145,7 @@ class GenCubeHAtoms:
         max_iterations = 200
         gradient="analytics"
         d_shift=1e-4
-        dev="simulator"
+        dev=dev
         opt_circ="slsqp"
         n_shots=10000
         optimization_level=3
@@ -206,9 +209,9 @@ if __name__ == "__main__":
     base_dir = sys.argv[1]
     sub_dir = None
     # sub_dir = Path(sub_dir).expanduser()
-    sub_dir = Path(
-        "~/Desktop/Edison/PostDoc_DIPC/cube_h_2/noiseless_cube_h2_nofvqe_sto-3g/noise_sim_0_cube_h2_nofvqe/"
-    ).expanduser()
+    # sub_dir = Path(
+    #     "~/Desktop/Edison/PostDoc_DIPC/cube_h_2/noiseless_cube_h2_nofvqe_sto-3g/noise_sim_0_cube_h2_nofvqe/"
+    # ).expanduser()
     copy_C_MO = False
     
     if sub_dir is not None:
@@ -301,7 +304,7 @@ if __name__ == "__main__":
                     energy_eval = False
                 #cal.extract_save_opts_params_ON(file_name)
                 #cal.copy_C_MO(subfolder_path,"nofvqe_C.npy")
-                C_MO, init_param = cal._run_nofvqe(file_name, pnof, basis, C_MO, init_param, C_MO_opt, n_opt, n_raw, energy_eval)
+                C_MO, init_param = cal._run_nofvqe(file_name, pnof, basis, C_MO, init_param, C_MO_opt, n_opt, n_raw, energy_eval)      
         finally:
             os.chdir(original_dir)      # Always jump back to the main folder
             
