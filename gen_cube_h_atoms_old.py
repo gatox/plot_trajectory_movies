@@ -218,15 +218,27 @@ if __name__ == "__main__":
         copy_C_MO =True
     
     # ---- USER INPUT ----
-    natoms = 2  # number per dimension (Hn cube → nxnxn)
+    natoms = 4  # number per dimension (Hn cube → nxnxn)
     pnof = 7 # type of functional: pnof4 = 4, pnof5 =5 ,pnof7 = 7 and gnof =8
     basis = "sto-3g" # basis set
     method = "nofvqe" # Either nofvqe or pynof
     hf_energy = False # To compute HF energy only with pynof
     
+    # distances_ang = [
+    #     1.0, 1.125, 1.25, 1.375, 1.5, 1.625, 1.75, 1.875,
+    #     2.0, 2.25, 2.5, 2.75, 3.0, 3.25, 3.5, 3.75, 4.0
+    # ]
+    
+    # distances_ang = [
+    #     4.0, 3.75, 3.5, 3.25 
+    # ]
+    
+    # distances_ang = [
+    #     3.25, 3.5, 3.75, 4.0 
+    # ]
+    
     distances_ang = [
-        1.0, 1.125, 1.25, 1.375, 1.5, 1.625, 1.75, 1.875,
-        2.0, 2.25, 2.5, 2.75, 3.0, 3.25, 3.5, 3.75, 4.0
+        2.75 
     ]
     
     number_folder = "noise_sim_0_"
@@ -291,6 +303,23 @@ if __name__ == "__main__":
                 C_MO_opt = None
                 n_opt = None
                 n_raw = None
+                if not os.path.isfile("nofvqe_sim_n.npy") and os.path.isfile("pynof_C.npy"):
+                    print("")
+                    print("**********************")
+                    print("* Reading C_MO guess *")
+                    print("**********************")
+                    print("")
+                    C_MO = np.load("pynof_C.npy")
+                    energy_eval = False
+                if os.path.isfile("nofvqe_sim_params.npy") and os.path.isfile("nofvqe_C.npy"):
+                    print("")
+                    print("************************************")
+                    print("* Reading C_MO and params as guess *")
+                    print("************************************")
+                    print("")
+                    C_MO = np.load("nofvqe_C.npy")
+                    init_param = np.load("nofvqe_sim_params.npy")
+                    energy_eval = False
                 if os.path.isfile("nofvqe_sim_n.npy") and os.path.isfile("nofvqe_C.npy"):
                     C_MO_opt = np.load("nofvqe_C.npy")
                     n_opt = np.load("nofvqe_sim_n.npy")
