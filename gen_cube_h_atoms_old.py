@@ -90,7 +90,7 @@ class GenCubeHAtoms:
         max_iterations = 200
         gradient="analytics"
         d_shift=1e-4
-        dev="simulator"
+        dev="hybrid_real"
         opt_circ="slsqp"
         n_shots=10000
         optimization_level=3
@@ -139,14 +139,17 @@ if __name__ == "__main__":
     natoms = 4  # number per dimension (Hn cube → nxnxn)
     pnof = 7 # type of functional: pnof4 = 4, pnof5 =5 ,pnof7 = 7 and gnof =8
     basis = "sto-3g" # basis set
-    method = "pynof" # Either nofvqe or pynof
+    method = "nofvqe" # Either nofvqe or pynof
     
     distances_ang = [
         1.0, 1.125, 1.25, 1.375, 1.5, 1.625, 1.75, 1.875,
         2.0, 2.25, 2.5, 2.75, 3.0, 3.25, 3.5, 3.75, 4.0
     ]
 
-    base_dir = "cube_h"+ str(natoms) + "_" + method
+    #number_folder = "noiseless_"
+    number_folder = "t_0_"
+
+    base_dir = number_folder + "cube_h"+ str(natoms) + "_" + method
 
     # ---- CREATE BASE DIR ----
     os.makedirs(base_dir, exist_ok=True)
