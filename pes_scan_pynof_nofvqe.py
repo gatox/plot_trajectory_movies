@@ -293,6 +293,93 @@ def plot_pes_sim_qc(data_1, data_2, save_prefix="pes_H8_scan_hybrid"):
     fig.savefig(f"{save_prefix}.pdf")
     # fig.savefig(f"{save_prefix}.eps", format="eps")
     # fig.savefig(f"{save_prefix}.png", dpi=300)
+    
+def plot_pes_sim_qc_stats(
+    data_sim,
+    data_qc_list,
+    save_prefix="pes_H8_scan_hybrid_stats",
+):
+    """
+    data_sim: simulation .dat file
+    data_qc_list: list of QC .dat files, e.g.
+        [
+            "t_0_hybrid_cube_h2_nofvqe_pes.dat",
+            "t_1_hybrid_cube_h2_nofvqe_pes.dat",
+            "t_2_hybrid_cube_h2_nofvqe_pes.dat",
+        ]
+    """
+
+    arr_sim = np.loadtxt(data_sim)
+
+    distances = arr_sim[:, 0]
+    sim_nofvqe = arr_sim[:, 2]
+
+    qc_energies_all = []
+
+    for data_qc in data_qc_list:
+        arr_qc = np.loadtxt(data_qc)
+
+        # Safety check: make sure distances match
+        if not np.allclose(arr_qc[:, 0], distances):
+            raise ValueError(f"Distances in {data_qc} do not match simulation distances.")
+
+        qc_energies_all.append(arr_qc[:, 2])
+
+    qc_energies_all = np.array(qc_energies_all)  # shape: (n_runs, n_points)
+
+    qc_mean = np.mean(qc_energies_all, axis=0)
+    qc_std = np.std(qc_energies_all, axis=0, ddof=1) if len(data_qc_list) > 1 else np.zeros_like(qc_mean)
+
+    fig, ax = plt.subplots(figsize=(6, 4.5))
+
+    ax.plot(
+        distances,
+        sim_nofvqe,
+        linestyle="--",
+        marker="s",
+        markersize=5,
+        label=r"Classical NOF-VQE",
+    )
+
+    ax.errorbar(
+        distances,
+        qc_mean,
+        yerr=qc_std,
+        fmt="o",
+        markersize=5,
+        capsize=3,
+        label=r"Quantum NOF-VQE",
+    )
+
+    # Optional: show individual QC runs faintly
+    for i, qc_run in enumerate(qc_energies_all):
+        ax.scatter(
+            distances,
+            qc_run,
+            s=18,
+            alpha=0.35,
+            label=None,
+        )
+
+    ax.set_xlabel(r"Distance ($\mathrm{\AA}$)")
+    ax.set_ylabel(r"Energy (Ha)")
+    ax.legend(frameon=True)
+    ax.tick_params(direction="in", top=True, right=True)
+
+    fig.tight_layout()
+    fig.savefig(f"{save_prefix}.pdf")
+    fig.savefig(f"{save_prefix}.png", dpi=300)
+
+    # Save averaged QC data
+    out = np.column_stack([distances, qc_mean, qc_std])
+    np.savetxt(
+        f"{save_prefix}_qc_mean_std.dat",
+        out,
+        header="distance_ang  QC_mean_energy_Ha  QC_std_energy_Ha",
+        fmt="%.10f",
+    )
+
+    return distances, sim_nofvqe, qc_mean, qc_std
 
 def plot_pes_sim_qc_stats(
     data_qc_list,
@@ -399,7 +486,7 @@ if __name__ == "__main__":
     # compute_pes(base_dir="cube_h4_pynof", save_prefix="cube_h4_pynof_pes", guess=True)
     # compute_pes(base_dir="cube_h4_pynof_HF_energy", save_prefix="cube_h4_pynof_HF_energy_pes", hf_only=True)
     # compute_pes(base_dir="cube_h2_nofvqe", save_prefix="cube_h2_nofvqe_pes")
-    # compute_pes(base_dir=base_dir, save_prefix=f"{base_dir}_pes", device="hybrid_real")
+    # compute_pes(base_dir="t_3_cube_h2_nofvqe", save_prefix="t_3_cube_h2_nofvqe_pes", device="hybrid")
     #pynof_data = "cube_h2_pynof_pes.dat"
     #nofvqe_data = "cube_h2_nofvqe_pes.dat" 
     #plot_pes(pynof_data,nofvqe_data)
@@ -411,5 +498,3 @@ if __name__ == "__main__":
     # plot_pes(pynof_data,nofvqe_data)
     # plot_pes_hf(pynof_data,hf_data)
     #plot_pes_sim_qc(nofvqe_data,hybrid_nofvqe_data)
-
-

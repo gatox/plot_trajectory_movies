@@ -233,8 +233,12 @@ if __name__ == "__main__":
     #     4.0, 3.75, 3.5, 3.25 
     # ]
     
+    # distances_ang = [
+    #     3.25, 3.5, 3.75, 4.0 
+    # ]
+    
     distances_ang = [
-        3.25, 3.5, 3.75, 4.0 
+        2.75 
     ]
     
     number_folder = "noise_sim_0_"
