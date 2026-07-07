@@ -128,14 +128,14 @@ class GenCubeHAtoms:
                 os.dup2(saved_stdout_fd, original_stdout_fd)
                 os.close(saved_stdout_fd)
         
-    def _run_nofvqe(self, filename, pnof, basis, C_MO, init_param, C_MO_opt=None, n_opt=None, n_raw=None, energy_eval=False):
+    def _run_nofvqe(self, filename, pnof, basis, C_MO, init_param, C_MO_opt=None, n_opt=None, n_raw=None, params_opt=None, energy_eval=False):
         from nofvqe import NOFVQE
         
         base = os.path.splitext(filename)[0]
         out_file = base + ".out"
         if energy_eval:
             out_file = "eva_" + out_file
-            dev = "hybrid_real"
+            dev = "real"
         else:
             dev = "simulator"
         
@@ -169,7 +169,6 @@ class GenCubeHAtoms:
                 resilience_level=resilience_level,
                     )
         C_opt=None 
-        params_opt=None
         # 1. Redirect the terminal output to that .out file
         with open(out_file, "w") as f:
             # Save original terminal address
@@ -180,7 +179,7 @@ class GenCubeHAtoms:
                 os.dup2(f.fileno(), original_stdout_fd)
                 # Energy evaluated from Optimal C_MO and ONs
                 if energy_eval:
-                    comp._evaluate_energy(C_MO_opt, n_opt, n_raw)
+                    comp._evaluate_energy(C_MO_opt, n_opt, n_raw, params_opt)
                 else:
                     # --- RUN PYNOF ---
                     # Reading xyz file and generating mol file
@@ -224,24 +223,14 @@ if __name__ == "__main__":
     method = "nofvqe" # Either nofvqe or pynof
     hf_energy = False # To compute HF energy only with pynof
     
-    # distances_ang = [
-    #     1.0, 1.125, 1.25, 1.375, 1.5, 1.625, 1.75, 1.875,
-    #     2.0, 2.25, 2.5, 2.75, 3.0, 3.25, 3.5, 3.75, 4.0
-    # ]
-    
-    # distances_ang = [
-    #     4.0, 3.75, 3.5, 3.25 
-    # ]
-    
-    # distances_ang = [
-    #     3.25, 3.5, 3.75, 4.0 
-    # ]
-    
     distances_ang = [
-        2.75 
+        1.0, 1.125, 1.25, 1.375, 1.5, 1.625, 1.75, 1.875,
+        2.0, 2.25, 2.5, 2.75, 3.0, 3.25, 3.5, 3.75, 4.0
     ]
     
-    number_folder = "noise_sim_0_"
+    #number_folder = "noise_sim_0_"
+
+    number_folder = "t_9_"
     
     if base_dir is None:
         if hf_energy:
@@ -311,18 +300,24 @@ if __name__ == "__main__":
                     print("")
                     C_MO = np.load("pynof_C.npy")
                     energy_eval = False
+                #if os.path.isfile("nofvqe_sim_params.npy") and os.path.isfile("nofvqe_C.npy"):
+                #    print("")
+                #    print("************************************")
+                #    print("* Reading C_MO and params as guess *")
+                #    print("************************************")
+                #    print("")
+                #    C_MO = np.load("nofvqe_C.npy")
+                #    init_param = np.load("nofvqe_sim_params.npy")
+                #    energy_eval = False
                 if os.path.isfile("nofvqe_sim_params.npy") and os.path.isfile("nofvqe_C.npy"):
                     print("")
-                    print("************************************")
-                    print("* Reading C_MO and params as guess *")
-                    print("************************************")
+                    print("********************************************************************")
+                    print("* Reading C_MO and Params. as guess to evaluate the Ene. in the QC *")
+                    print("********************************************************************")
                     print("")
-                    C_MO = np.load("nofvqe_C.npy")
-                    init_param = np.load("nofvqe_sim_params.npy")
-                    energy_eval = False
-                if os.path.isfile("nofvqe_sim_n.npy") and os.path.isfile("nofvqe_C.npy"):
                     C_MO_opt = np.load("nofvqe_C.npy")
                     n_opt = np.load("nofvqe_sim_n.npy")
+                    params_opt = np.load("nofvqe_sim_params.npy")
                     energy_eval = True
                     
                     if os.path.isfile("nofvqe_qc_eva_n.npy"):
@@ -333,7 +328,7 @@ if __name__ == "__main__":
                     energy_eval = False
                 #cal.extract_save_opts_params_ON(file_name)
                 #cal.copy_C_MO(subfolder_path,"nofvqe_C.npy")
-                C_MO, init_param = cal._run_nofvqe(file_name, pnof, basis, C_MO, init_param, C_MO_opt, n_opt, n_raw, energy_eval)      
+                C_MO, init_param = cal._run_nofvqe(file_name, pnof, basis, C_MO, init_param, C_MO_opt, n_opt, n_raw, params_opt, energy_eval)      
         finally:
             os.chdir(original_dir)      # Always jump back to the main folder
             
